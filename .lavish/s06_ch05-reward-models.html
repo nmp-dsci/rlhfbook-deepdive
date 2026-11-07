@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 5: Reward Modeling</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  table.terms td:first-child{white-space:nowrap}
+  .dg .tk{fill:var(--muted);font-family:var(--mono);font-size:12px;text-anchor:middle}
+  .dg .cp{fill:var(--band);stroke:var(--line);stroke-width:1}
+  .dg .dot{fill:var(--accent)}
+  .bt{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .bt input[type=range]{width:100%;margin-top:var(--s2);accent-color:var(--accent)}
+  .bt output{font-family:var(--mono)}
+  #run pre{overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+  #code-excerpt{margin-top:var(--s3)}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s05_ch04-instruction-tuning.html">Chapter 4</a></p>
+  <h1>Chapter 5: Reward Modeling</h1>
+  <p class="lede">A reward model is where RLHF learns what people prefer. It plays the part of the environment in RL, except you train it yourself from human preferences, and it stands in as a proxy for what you actually want. <a class="chip" href="#s1" title="Ch. 5 Reward Modeling (L22-L26)">1</a> Most of the chapter is about one loss and the three other kinds of model it gets confused with.</p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Bradley-Terry is the default.</strong> Each completion gets a score, and the probability one beats another depends only on the gap between their scores. <a class="chip" href="#s2" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L46-L57)">2</a></li>
+      <li><strong>The loss is classification.</strong> Push the chosen score above the rejected one with $-\log\sigma$ of the gap. <a class="chip" href="#s3" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L94-L101)">3</a> Both common forms are binary cross-entropy. <a class="chip" href="#s4" title="Slides lec2-chap4-5-9 § Two equivalent forms of the loss (L762-L775)">4</a></li>
+      <li><strong>Train on pairs, score anything.</strong> Training needs chosen and rejected completions, but at inference you can score any single completion. <a class="chip" href="#s5" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:31:16">5</a></li>
+      <li><strong>Three other models are easy to confuse with it.</strong> An ORM predicts correctness at every token, a PRM scores reasoning steps, and a value function predicts remaining return. <a class="chip" href="#s6" title="Ch. 5 Reward Modeling § Inference Across Reward Model Types (L474-L477)">6</a> An ORM is not a Bradley-Terry model trained on right and wrong answers. <a class="chip" href="#s7" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L425-L429)">7</a></li>
+      <li><strong>Much is still unsettled.</strong> The variants have not settled into a best practice, <a class="chip" href="#s8" title="Ch. 5 Reward Modeling § Other Reward Model Variants (L481-L482)">8</a> and the lecture calls training good reward models "a art of industry" the academic literature has barely captured. <a class="chip" href="#s9" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:20:56">9</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Derive the reward model loss from the Bradley-Terry model, including where the expectation goes.</li>
+      <li>Say where each of the four model types reads its score, and what its training labels are.</li>
+      <li>Explain why a Bradley-Terry model on correct and incorrect pairs is not an ORM.</li>
+      <li>Say what is known and what is open about LLM-as-a-judge and reward model benchmarks.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/05-reward-models">Chapter 5</a></td><td>Seven sections</td><td>The derivation, code for all three model types, and the comparison table.</td></tr>
+        <tr><td>Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1256s">20:56</a> to <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2619s">43:39</a></td><td>23 min</td><td>The derivation step by step, and the repeated warnings about ORM confusion.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L539-L1100">Lecture 2 slides</a>, L539 to L1100</td><td>32 slides</td><td>The derivation one step per slide, and a side-by-side of a Bradley-Terry model and an ORM.</td></tr>
+        <tr><td>Q&amp;A 2: <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=247s">4:07</a> to <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=339s">5:39</a></td><td>2 min</td><td>The correction to the derivation.</td></tr>
+        <tr><td>Q&amp;A 1: <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=309s">5:09</a> to <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=402s">6:42</a></td><td>2 min</td><td>Why there are so many kinds of reward model.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="bt">
+    <h2>Training a Bradley-Terry reward model</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1350s">22:30</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1507s">25:07</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1662s">27:42</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1876s">31:16</a></p>
+    <p>The Bradley-Terry model gives each item a latent strength. Writing the strength as $e^{r_i}$ lets the scores be unbounded, and the preference probability becomes a sigmoid of the score gap: <a class="chip" href="#s2" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L46-L57)">2</a></p>
+    <div class="fig" style="overflow-x:auto">$$P(i > j) = \frac{p_i}{p_i + p_j} = \frac{e^{r_i}}{e^{r_i} + e^{r_j}} = \sigma(r_i - r_j)$$</div>
+    <p>The slides call it "a useful approximation, not a law of nature", kept because it worked in early RLHF. <a class="chip" href="#s10" title="Slides lec2-chap4-5-9 § The Bradley-Terry model of preferences (L659-L672)">10</a> For a reward model, the items are two completions to one prompt, and a linear head on a language model produces each score. <a class="chip" href="#s11" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L60-L61)">11</a></p>
+    <p>Fit it by maximum likelihood over the dataset, taking the log <em>before</em> averaging, because $\mathbb{E}[P]$ and $\mathbb{E}[\log P]$ are not the same objective: <a class="chip" href="#s12" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L83-L92)">12</a></p>
+    <div class="fig" style="overflow-x:auto">$$\mathcal{L}(\theta) = -\log \sigma\!\left( r_\theta(y_c \mid x) - r_\theta(y_r \mid x) \right) = \log\!\left(1 + e^{\,r_\theta(y_r \mid x) - r_\theta(y_c \mid x)}\right)$$</div>
+    <div class="tablewrap"><table class="kt terms">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$x$</td><td>The prompt. <a class="chip" href="#s3" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L94-L101)">3</a></td></tr>
+        <tr><td>$y_c,\ y_r$</td><td>The chosen and the rejected completion. <a class="chip" href="#s3" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L94-L101)">3</a></td></tr>
+        <tr><td>$r_\theta(y \mid x)$</td><td>The reward model's scalar score, read at the last token. <a class="chip" href="#s13" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L103)">13</a></td></tr>
+        <tr><td>$\sigma$</td><td>The sigmoid. Only the score gap matters, so adding a constant to every score changes nothing. <a class="chip" href="#s2" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L46-L57)">2</a></td></tr>
+        <tr><td>Two forms</td><td>The log-sigmoid form follows InstructGPT, and the softplus form follows Anthropic's work. Both are binary cross-entropy. <a class="chip" href="#s3" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L94-L101)">3</a> <a class="chip" href="#s4" title="Slides lec2-chap4-5-9 § Two equivalent forms of the loss (L762-L775)">4</a> <a class="chip" href="#s14" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:30:46">14</a></td></tr>
+      </tbody>
+    </table></div>
+    <h3>Try the loss</h3>
+    <p>Move the score gap to see the probability and the loss. Both are computed from the two formulas above, nothing else.</p>
+    <div class="bt" id="bt-demo">
+      <label for="bt-delta"><strong>Score gap</strong> $\Delta = r_\theta(y_c \mid x) - r_\theta(y_r \mid x)$: <output id="bt-d">1.0</output></label>
+      <input id="bt-delta" type="range" min="-6" max="6" step="0.5" value="1" data-lavish-action>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>P(chosen preferred)</dt><dd><output id="bt-p">0.731</output> $= \sigma(\Delta)$</dd>
+        <dt>Loss</dt><dd><output id="bt-l">0.313</output> $= -\log \sigma(\Delta)$</dd>
+        <dt>Same result for</dt><dd>any two scores with this gap, such as <output id="bt-ex">2.0 and 1.0</output></dd>
+      </div>
+    </div>
+    <h3>What the model outputs</h3>
+    <ul>
+      <li><strong>A probability of being chosen, not a quality grade.</strong> The chapter says RLHF reward models output the probability that an input is "of high quality", meaning the chosen answer of a pair. <a class="chip" href="#s15" title="Ch. 5 Reward Modeling (L30-L31)">15</a> At inference that is the relative likelihood a text is chosen, as one logit. <a class="chip" href="#s16" title="Ch. 5 Reward Modeling § The Default Reward Model Architecture (L107-L108)">16</a></li>
+      <li><strong>The loss is the easy part.</strong> The challenge is the data loader and inference pipeline, <a class="chip" href="#s17" title="Ch. 5 Reward Modeling § Implementation Example (L114-L115)">17</a> <a class="chip" href="#s18" title="Ch. 5 Reward Modeling § Implementation Example (L186-L187)">18</a> and at its best the signal is "a lot of subtle signals". <a class="chip" href="#s19" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:24:36">19</a></li>
+    </ul>
+  </section>
+
+  <section id="types">
+    <h2>Four models, four places to read a score</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2154s">35:54</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2214s">36:54</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2371s">39:31</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2464s">41:04</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 216" role="img" aria-label="Where each model reads a score: a preference reward model at the final token only, an ORM at every completion token, a PRM at each step boundary, and a value function at every token.">
+  <text class="tk" x="177.0" y="20">x</text>
+  <text class="tk" x="233.0" y="20">x</text>
+  <text class="tk" x="289.0" y="20">x</text>
+  <text class="tk" x="345.0" y="20">y</text>
+  <text class="tk" x="401.0" y="20">y</text>
+  <text class="tk" x="457.0" y="20">y</text>
+  <text class="tk" x="513.0" y="20">⏎</text>
+  <text class="tk" x="569.0" y="20">y</text>
+  <text class="tk" x="625.0" y="20">y</text>
+  <text class="tk" x="681.0" y="20">y</text>
+  <text class="tk" x="737.0" y="20">EOS</text>
+  <text class="l" x="152" y="208" text-anchor="start">Prompt</text><text class="l" x="320" y="208" text-anchor="start">Completion: two reasoning steps, the first ending at a newline</text>
+  <g><title>Preference RM: one score, at the end</title><text class="rn" x="0" y="49">Preference RM</text><text class="l" x="0" y="64" text-anchor="start">one score, at the end</text>
+  <rect class="cp" x="152" y="36" width="50" height="28" rx="5"/>
+  <rect class="cp" x="208" y="36" width="50" height="28" rx="5"/>
+  <rect class="cp" x="264" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="320" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="376" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="432" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="488" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="544" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="600" y="36" width="50" height="28" rx="5"/>
+  <rect class="n" x="656" y="36" width="50" height="28" rx="5"/>
+  <rect class="na" x="712" y="36" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="737.0" cy="50" r="5"/>
+  </g>
+  <g><title>ORM: every completion token</title><text class="rn" x="0" y="91">ORM</text><text class="l" x="0" y="106" text-anchor="start">every completion token</text>
+  <rect class="cp" x="152" y="78" width="50" height="28" rx="5"/>
+  <rect class="cp" x="208" y="78" width="50" height="28" rx="5"/>
+  <rect class="cp" x="264" y="78" width="50" height="28" rx="5"/>
+  <rect class="na" x="320" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="345.0" cy="92" r="5"/>
+  <rect class="na" x="376" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="401.0" cy="92" r="5"/>
+  <rect class="na" x="432" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="457.0" cy="92" r="5"/>
+  <rect class="na" x="488" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="513.0" cy="92" r="5"/>
+  <rect class="na" x="544" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="569.0" cy="92" r="5"/>
+  <rect class="na" x="600" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="625.0" cy="92" r="5"/>
+  <rect class="na" x="656" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="681.0" cy="92" r="5"/>
+  <rect class="na" x="712" y="78" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="737.0" cy="92" r="5"/>
+  </g>
+  <g><title>PRM: each step boundary</title><text class="rn" x="0" y="133">PRM</text><text class="l" x="0" y="148" text-anchor="start">each step boundary</text>
+  <rect class="cp" x="152" y="120" width="50" height="28" rx="5"/>
+  <rect class="cp" x="208" y="120" width="50" height="28" rx="5"/>
+  <rect class="cp" x="264" y="120" width="50" height="28" rx="5"/>
+  <rect class="n" x="320" y="120" width="50" height="28" rx="5"/>
+  <rect class="n" x="376" y="120" width="50" height="28" rx="5"/>
+  <rect class="n" x="432" y="120" width="50" height="28" rx="5"/>
+  <rect class="na" x="488" y="120" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="513.0" cy="134" r="5"/>
+  <rect class="n" x="544" y="120" width="50" height="28" rx="5"/>
+  <rect class="n" x="600" y="120" width="50" height="28" rx="5"/>
+  <rect class="n" x="656" y="120" width="50" height="28" rx="5"/>
+  <rect class="na" x="712" y="120" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="737.0" cy="134" r="5"/>
+  </g>
+  <g><title>Value function: remaining return</title><text class="rn" x="0" y="175">Value function</text><text class="l" x="0" y="190" text-anchor="start">remaining return</text>
+  <rect class="cp" x="152" y="162" width="50" height="28" rx="5"/>
+  <rect class="cp" x="208" y="162" width="50" height="28" rx="5"/>
+  <rect class="cp" x="264" y="162" width="50" height="28" rx="5"/>
+  <rect class="na" x="320" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="345.0" cy="176" r="5"/>
+  <rect class="na" x="376" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="401.0" cy="176" r="5"/>
+  <rect class="na" x="432" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="457.0" cy="176" r="5"/>
+  <rect class="na" x="488" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="513.0" cy="176" r="5"/>
+  <rect class="na" x="544" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="569.0" cy="176" r="5"/>
+  <rect class="na" x="600" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="625.0" cy="176" r="5"/>
+  <rect class="na" x="656" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="681.0" cy="176" r="5"/>
+  <rect class="na" x="712" y="162" width="50" height="28" rx="5"/>
+  <circle class="dot" cx="737.0" cy="176" r="5"/>
+  </g>
+</svg></div>
+      <figcaption>Figure 1. Mine, drawn from the chapter's comparison table <a class="chip" href="#s20" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L411-L416)">20</a> and its descriptions of each model. <a class="chip" href="#s21" title="Ch. 5 Reward Modeling § Process Reward Models (L318-L320)">21</a> Dots mark where a score is read. The ORM and value rows look alike, which is the point of the next table.</figcaption>
+    </figure>
+    <div class="tablewrap"><table class="kt" style="min-width:600px">
+      <thead><tr><th>Model</th><th>Asks <a class="chip" href="#s6" title="Ch. 5 Reward Modeling § Inference Across Reward Model Types (L474-L477)">6</a></th><th>Trained on</th><th>Loss</th></tr></thead>
+      <tbody>
+        <tr><td>Preference RM</td><td>How good is this whole answer?</td><td>Chosen and rejected pairs <a class="chip" href="#s5" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:31:16">5</a></td><td>$-\log\sigma$ of the score gap <a class="chip" href="#s3" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L94-L101)">3</a></td></tr>
+        <tr><td>ORM</td><td>Does this answer end up correct?</td><td>One completion and a correct or incorrect label, copied to every token <a class="chip" href="#s22" title="Ch. 5 Reward Modeling § Outcome Reward Models (L219-L225)">22</a> <a class="chip" href="#s23" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:37:58">23</a></td><td>Binary cross-entropy per token <a class="chip" href="#s22" title="Ch. 5 Reward Modeling § Outcome Reward Models (L219-L225)">22</a></td></tr>
+        <tr><td>PRM</td><td>Are the reasoning steps sound?</td><td>Labels at step ends, traditionally -1, 0 or 1 <a class="chip" href="#s24" title="Ch. 5 Reward Modeling § Process Reward Models (L339-L341)">24</a></td><td>Cross-entropy at step boundaries <a class="chip" href="#s25" title="Ch. 5 Reward Modeling § Process Reward Models (L322)">25</a></td></tr>
+        <tr><td>Value function</td><td>How much reward remains from here?</td><td>On-policy rollouts under the current policy <a class="chip" href="#s26" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L432-L438)">26</a></td><td>Regression <a class="chip" href="#s20" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L411-L416)">20</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The ORM's per-token loss averages a binary cross-entropy over the $T$ completion tokens, each trained toward the whole answer's label $r$: <a class="chip" href="#s22" title="Ch. 5 Reward Modeling § Outcome Reward Models (L219-L225)">22</a></p>
+    <div class="fig" style="overflow-x:auto">$$\mathcal{L}_{\text{token}}(\theta) = -\mathbb{E}_{(s,r)\sim \mathcal{D}}\left[\frac{1}{T}\sum_{t=1}^{T} \Big( r\log p_\theta(s_t) + (1-r)\log\big(1-p_\theta(s_t)\big) \Big)\right]$$</div>
+    <h3>The confusions Lambert keeps warning about</h3>
+    <ul>
+      <li><strong>An ORM is not Bradley-Terry on right and wrong answers.</strong> That is still a contrastive, sequence-level model. <a class="chip" href="#s7" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L425-L429)">7</a> <a class="chip" href="#s27" title="Slides lec2-chap4-5-9 § Common confusion: &quot;ORM&quot; ≠ BT on correct vs. incorrect (L970-L983)">27</a> The lecture repeats it "because there was a phase where there's a lot of work misconstruing this". <a class="chip" href="#s28" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:36:54">28</a> <a class="chip" href="#s29" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:35:54">29</a></li>
+      <li><strong>An ORM is not a value function.</strong> Both have per-token heads, but ORM targets are fixed offline labels and value targets come from on-policy rollouts. <a class="chip" href="#s26" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L432-L438)">26</a> The lecture's shorthand: the ORM lives in probability space and the value function in reward space. <a class="chip" href="#s30" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:41:04">30</a></li>
+      <li><strong>"ORM" means different things in different papers.</strong> The original GSM8K version also trained on next-token prediction, which did not stick, <a class="chip" href="#s31" title="Ch. 5 Reward Modeling § Outcome Reward Models (L214-L215)">31</a> and the term is now used in several ways. <a class="chip" href="#s32" title="Ch. 5 Reward Modeling § Outcome Reward Models (L308-L313)">32</a></li>
+      <li><strong>ORM labels judge only the final answer.</strong> Reasoning errors are not captured, and the process is noisy. <a class="chip" href="#s33" title="Ch. 5 Reward Modeling § Outcome Reward Models (L301-L302)">33</a> One use the lecture suggests is looking for a sudden drop in predicted correctness at a math mistake. <a class="chip" href="#s34" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:39:00">34</a></li>
+    </ul>
+    <p>Each type tends to fill a niche in a recipe rather than sit at its centre. <a class="chip" href="#s35" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:05:09">35</a> Outcome models are for reasoning-heavy tasks, and the chapter calls them a relatively niche area. <a class="chip" href="#s36" title="Ch. 5 Reward Modeling § Outcome Reward Models (L193-L200)">36</a> At inference, a preference RM reranks completions for best-of-N or provides the terminal reward for RLHF, while an ORM's per-token scores need aggregating, for example by mean or minimum. <a class="chip" href="#s37" title="Ch. 5 Reward Modeling § Inference Across Reward Model Types (L446-L456)">37</a></p>
+  </section>
+
+  <section id="variants">
+    <h2>Other variants</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2031s">33:51</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2092s">34:52</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2123s">35:23</a></p>
+    <ul>
+      <li><strong>Margin loss.</strong> Llama 2 subtracted a margin from rating differences, such as 5 minus 2, so strong preferences get bigger gaps. <a class="chip" href="#s38" title="Ch. 5 Reward Modeling § Preference Margin Loss (L486-L497)">38</a></li>
+      <li><strong>Balancing comparisons.</strong> InstructGPT ranked 4 to 9 completions per prompt and weighted the resulting pairs, because they are correlated and naive shuffling overfits. <a class="chip" href="#s39" title="Ch. 5 Reward Modeling § Balancing Multiple Comparisons Per Prompt (L501-L505)">39</a></li>
+      <li><strong>K-wise loss.</strong> Starling used a Plackett-Luce ranking loss, which reduces to Bradley-Terry when $K = 2$. <a class="chip" href="#s40" title="Ch. 5 Reward Modeling § K-Wise Loss Function (L514-L522)">40</a></li>
+    </ul>
+    <p>None of these became standard, and most work uses the simpler form. <a class="chip" href="#s8" title="Ch. 5 Reward Modeling § Other Reward Model Variants (L481-L482)">8</a> <a href="#differ">The sources disagree</a> on what happened to two of them.</p>
+  </section>
+
+  <section id="judge">
+    <h2>LLM-as-a-judge, and evaluating reward models</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2526s">42:06</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2588s">43:08</a></p>
+    <p>Preference data is expensive, so a large area grew up around prompting a language model to judge two completions, as a human labeler would. <a class="chip" href="#s41" title="Ch. 5 Reward Modeling § Generative Reward Modeling (a.k.a. LLM-as-a-judge) (L528-L529)">41</a> Judges are very useful for filtering and supervising data, <a class="chip" href="#s42" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:42:36">42</a> but on reward model benchmarks they tend to trail trained reward models. A common trick is temperature 0 to reduce variance. <a class="chip" href="#s43" title="Ch. 5 Reward Modeling § Generative Reward Modeling (a.k.a. LLM-as-a-judge) (L555-L558)">43</a></p>
+    <p>The academic study of reward models only established itself in 2024, starting with RewardBench, <a class="chip" href="#s44" title="Ch. 5 Reward Modeling § Further Reading (L562-L564)">44</a> which Lambert helped start. <a class="chip" href="#s45" title="Slides lec2-chap4-5-9 § Reward model evaluation (L1085-L1098)">45</a> Even so, the lecture says the benchmarks are not well correlated with how reward models are used in RLHF, <a class="chip" href="#s46" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:08">46</a> and the RewardBench2 work did not get complete answers on what makes a good reward model for training. <a class="chip" href="#s47" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:21:27">47</a></p>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>The repository has scripts for all three model types, marked experimental. <a class="chip" href="#s48" title="Code code/reward_models/README.md (L8)">48</a> <strong>I did not run them.</strong> Run from <code>code/</code>: <a class="chip" href="#s49" title="Code code/README.md (L27-L28)">49</a></p>
+    <pre><code>uv run python -m reward_models.train_preference_rm --config reward_models/configs/preference_rm.yaml
+uv run python -m reward_models.train_orm --config reward_models/configs/orm.yaml
+uv run python -m reward_models.train_prm --samples 500 --epochs 2</code></pre>
+    <p>The default preference run trains Qwen3-0.6B-Base on 5,000 UltraFeedback pairs. <a class="chip" href="#s50" title="Code code/reward_models/configs/preference_rm.yaml (L9-L22)">50</a> Watch whether the chosen and rejected scores separate, then compare what the ORM and PRM can each score. <a class="chip" href="#s51" title="Ch. 5 Reward Modeling § Suggested Experiments (L583-L604)">51</a> The validation step counts a pair correct when the chosen score is higher, and logs the average margin. <a class="chip" href="#s52" title="Code code/reward_models/train_preference_rm.py (L262-L277)">52</a></p>
+    <p>The forward pass reads each score at the last real token and applies the same loss as above: <a class="chip" href="#s53" title="Code code/reward_models/train_preference_rm.py (L224-L230)">53</a></p>
+    <div id="code-excerpt"><pre><code>    def get_reward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -&gt; torch.Tensor:
+        """Compute scalar reward for a sequence.
+
+        Returns the reward from the last non-padding token position.
+        """
+        hidden = self.get_hidden_states(input_ids, attention_mask)
+
+        # Get last non-padding position for each sequence
+        seq_lengths = attention_mask.sum(dim=1) - 1
+        batch_indices = torch.arange(hidden.size(0), device=hidden.device)
+        last_hidden = hidden[batch_indices, seq_lengths]
+
+        reward = self.head(last_hidden).squeeze(-1)
+        return reward
+
+    def forward(
+        self,
+        chosen_ids: torch.Tensor,
+        chosen_mask: torch.Tensor,
+        rejected_ids: torch.Tensor,
+        rejected_mask: torch.Tensor,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Compute Bradley-Terry preference loss.
+
+        Returns:
+            loss: -log(sigmoid(r_chosen - r_rejected))
+            r_chosen: Rewards for chosen responses
+            r_rejected: Rewards for rejected responses
+        """
+        r_chosen = self.get_reward(chosen_ids, chosen_mask)
+        r_rejected = self.get_reward(rejected_ids, rejected_mask)
+
+        # Bradley-Terry loss
+        loss = -F.logsigmoid(r_chosen - r_rejected).mean()
+
+        return loss, r_chosen, r_rejected
+</code></pre></div>
+    <p style="margin-top:var(--s3)">The chapter's third suggestion is a contribution: a 50 to 200 example held-out evaluation that reports pair ordering without a full training run. <a class="chip" href="#s54" title="Ch. 5 Reward Modeling § Suggested Experiments (L606-L608)">54</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter is dated by the pinned commit, November 2026. Only the first is settled.</p>
+
+    <div class="callout"><p class="label">Settled by Lambert</p><p><strong>Where does the expectation go in the derivation?</strong></p><ul>
+      <li><strong>Lecture 2 (Apr 2026):</strong> maximize the preference probability directly, "transfer this probability to be an argmax". <a class="chip" href="#s55" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:27:42">55</a></li>
+      <li><strong>Q&amp;A 2 (Jul 2026), the correction:</strong> that is wrong, because training uses a sampled dataset with no explicit form of the probability. The first line needs to be an expectation. <a class="chip" href="#s56" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:07">56</a> <a class="chip" href="#s57" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:37">57</a></li>
+      <li><strong>Slides and chapter at this pin:</strong> both now take the log before averaging over the dataset. <a class="chip" href="#s58" title="Slides lec2-chap4-5-9 § Deriving the reward model loss (L746-L758)">58</a> <a class="chip" href="#s12" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L83-L92)">12</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Train for one epoch?</strong></p><ul>
+      <li><strong>Chapter and slides:</strong> the most common practice is 1 epoch, to avoid overfitting. <a class="chip" href="#s18" title="Ch. 5 Reward Modeling § Implementation Example (L186-L187)">18</a> <a class="chip" href="#s59" title="Slides lec2-chap4-5-9 § The loss is simple (L814-L827)">59</a></li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> says the same, then adds "This is a bit outdated." <a class="chip" href="#s60" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:32:50">60</a></li>
+      <li><strong>The book's code:</strong> uses 2 epochs because they gave cleaner validation curves in a small sweep, while still calling about one epoch common. <a class="chip" href="#s50" title="Code code/reward_models/configs/preference_rm.yaml (L9-L22)">50</a> <a class="chip" href="#s61" title="Code code/reward_models/README.md (L63)">61</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>What happened to the margin loss in Llama 3?</strong></p><ul>
+      <li><strong>Chapter and slides:</strong> Llama 3 removed it after diminishing improvements at scale. <a class="chip" href="#s38" title="Ch. 5 Reward Modeling § Preference Margin Loss (L486-L497)">38</a> <a class="chip" href="#s62" title="Slides lec2-chap4-5-9 § Preference margin loss (L835-L847)">62</a></li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> "Llama 3 didn't talk about this in their paper." <a class="chip" href="#s63" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:34:21">63</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is InstructGPT's grouping common?</strong></p><ul>
+      <li><strong>Chapter:</strong> all pairs from a prompt are "typically" put in the same batch and averaged. <a class="chip" href="#s39" title="Ch. 5 Reward Modeling § Balancing Multiple Comparisons Per Prompt (L501-L505)">39</a> The slides attribute this to InstructGPT. <a class="chip" href="#s64" title="Slides lec2-chap4-5-9 § K-wise loss and balancing comparisons (L855)">64</a></li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> "Haven't seen anyone else use this." <a class="chip" href="#s65" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:35:23">65</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Are generative reward models behind or winning?</strong></p><ul>
+      <li><strong>Chapter and slides:</strong> they tend to trail trained reward models on reward model evaluations. <a class="chip" href="#s43" title="Ch. 5 Reward Modeling § Generative Reward Modeling (a.k.a. LLM-as-a-judge) (L555-L558)">43</a> <a class="chip" href="#s66" title="Slides lec2-chap4-5-9 § Generative reward modeling: LLM-as-a-judge (L1081)">66</a></li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> the same, plus "reward modeling might shift to LM as a judge more, but TBD". <a class="chip" href="#s46" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:08">46</a></li>
+      <li><strong>Q&amp;A 1 (Jun 2026):</strong> generative reward models are "the most general one which is eating everything", with rubrics as their evolution. <a class="chip" href="#s67" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:05:40">67</a></li>
+      <li><span class="badge info">agent note</span> These may not conflict: benchmark accuracy and use in training pipelines are different measures.</li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>The code README undersells the ORM.</strong> Its table says the ORM "scores full responses", <a class="chip" href="#s68" title="Code code/reward_models/README.md (L14-L16)">68</a> but the script trains per-token labels, as the chapter describes. <a class="chip" href="#s69" title="Code code/reward_models/train_orm.py (L267-L269)">69</a></li>
+      <li><strong>Two PRM label schemes.</strong> The chapter's loss is for a binary-labeled PRM, <a class="chip" href="#s25" title="Ch. 5 Reward Modeling § Process Reward Models (L322)">25</a> while the traditional heads predict -1, 0 or 1. <a class="chip" href="#s24" title="Ch. 5 Reward Modeling § Process Reward Models (L339-L341)">24</a></li>
+      <li><strong>Inverse RL is a cousin, not a parent.</strong> Same problem statement, different implementation and focus, so usually studied separately. <a class="chip" href="#s70" title="Ch. 5 Reward Modeling (L32-L33)">70</a></li>
+      <li><strong>Captions mishear.</strong> "Entropic" in Lecture 2 is Anthropic, <a class="chip" href="#s71" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:30:16">71</a> and "RRM" is ORM. <a class="chip" href="#s72" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:39:31">72</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Add 10 to every score your reward model outputs. What happens to the loss?</summary>
+      <p>Nothing. Only score differences matter. <a class="chip" href="#s2" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L46-L57)">2</a></p>
+    </details>
+    <details><summary>Why take the log before averaging over the dataset?</summary>
+      <p>Because maximizing the expected probability is not the same as maximizing the expected log-probability, and the negative log-likelihood is the right objective. <a class="chip" href="#s12" title="Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L83-L92)">12</a> This is the fix from Q&amp;A 2. <a class="chip" href="#s57" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:37">57</a></p>
+    </details>
+    <details><summary>You pair a correct and an incorrect answer to each math problem and train with the Bradley-Terry loss. Is it an ORM?</summary>
+      <p>No. It is still a Bradley-Terry preference model, with correctness as the preference. <a class="chip" href="#s7" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L425-L429)">7</a> An ORM takes one completion and a label, and predicts at every token. <a class="chip" href="#s27" title="Slides lec2-chap4-5-9 § Common confusion: &quot;ORM&quot; ≠ BT on correct vs. incorrect (L970-L983)">27</a></p>
+    </details>
+    <details><summary>An ORM and a value head have the same shape. How would you tell them apart from the training code?</summary>
+      <p>Look at the targets. An ORM uses fixed offline labels copied to every token, and a value function uses targets computed from on-policy rollouts that change as the policy changes. <a class="chip" href="#s26" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L432-L438)">26</a></p>
+    </details>
+    <details><summary>Why can an ORM train on data a preference RM cannot use?</summary>
+      <p>It needs only one completion and a correctness label, not a pair for the same prompt, so it does not need two forward passes. <a class="chip" href="#s23" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:37:58">23</a> <a class="chip" href="#s20" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L411-L416)">20</a></p>
+    </details>
+    <details><summary>Your judge model and your trained reward model disagree on a pair. Which does the chapter trust more on benchmarks?</summary>
+      <p>The trained reward model, which tends to score better on reward model evaluations. <a class="chip" href="#s43" title="Ch. 5 Reward Modeling § Generative Reward Modeling (a.k.a. LLM-as-a-judge) (L555-L558)">43</a> Lambert also says those benchmarks do not track RLHF usefulness well, <a class="chip" href="#s46" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:08">46</a> so neither answer is final.</p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The four models differ in labels, not architecture.</strong> Not Lambert: in the chapter's code all four are a backbone plus a small head. <a class="chip" href="#s20" title="Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L411-L416)">20</a> I read the real differences as where the score is read and where the targets come from, which is what Figure 1 and the table show.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Validation accuracy is a sanity check, not quality.</strong> Not Lambert: the code's pair accuracy says the model orders held-out pairs, <a class="chip" href="#s52" title="Code code/reward_models/train_preference_rm.py (L262-L277)">52</a> but Lambert says benchmarks like this are not well correlated with usefulness in RLHF. <a class="chip" href="#s46" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:08">46</a></p>
+      <p style="margin-top:var(--s2)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;On the Chapter 5 page: the book suggests a 50 to 200 example held-out evaluation for code/reward_models that reports pair ordering without a full training run. Propose how it would work in that code, without running anything, and say what data it would need.&quot;,{tag:&#x27;next&#x27;,text:&quot;RM eval&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Sketch the held-out eval the book suggests</button></p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out the full derivation steps (one per slide in the deck), the PRM training code and the list of reward model benchmarks. Preference data itself comes in Chapters 10 and 11. I describe papers only through Lambert. The slides at this pin may be newer than the April 2026 recording.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 6 (Reinforcement Learning / Policy Gradients) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 6&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 6</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 5 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 5&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 5</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L22-L26">
+      <blockquote style="margin:0">Reward models are core to the modern approach to RLHF by being where the complex human preferences are learned. … These models act as proxy objectives for the core optimization … the reward model plays a role like the standard RL environment, providing the learning signal for the agent, but unlike a fixed environment, we get to learn it from human preferences.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L22-L26">Ch. 5 Reward Modeling (L22-L26)</a> · <a href="https://rlhfbook.com/c/05-reward-models#reward-modeling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L46-L57">
+      <blockquote style="margin:0">$$P(i &gt; j) = \frac{p_i}{p_i + p_j}.$$ … The Bradley-Terry model assumes that each item has a latent strength $p_i &gt; 0$, and that observed preferences are a noisy reflection of these underlying strengths. It is common to reparametrize the Bradley-Terry model with unbounded scores, where $p_i = e^{r_i}$ … Only differences in scores matter: adding the same constant $c$ to every $r_k$ leaves $P(i &gt; j)$ unchanged. These forms are a useful approximation of human preferences that often works well in RLHF.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L46-L57">Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L46-L57)</a> · <a href="https://rlhfbook.com/c/05-reward-models#training-a-bradley-terry-reward-model">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L94-L101">
+      <blockquote style="margin:0">The per-example loss is the log-sigmoid expression inside the expectation above … $$\mathcal{L}(\theta) = - \log \left( \sigma \left( r_{\theta}(y_c \mid x) - r_{\theta}(y_r \mid x) \right) \right)$$ … The second is a mathematically equivalent form expressed using the softplus function … They both appear in the RLHF literature.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L94-L101">Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L94-L101)</a> · <a href="https://rlhfbook.com/c/05-reward-models#training-a-bradley-terry-reward-model">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L762-L775">
+      <blockquote style="margin:0">Both are just binary cross-entropy — the reward model is learning to classify which completion was preferred.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L762-L775">Slides lec2-chap4-5-9 § Two equivalent forms of the loss (L762-L775)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="yt:4gIwiSPmQkU@00:31:16-00:31:48">
+      <blockquote style="margin:0">when you're training a reward model, you need two sequences. You need a chosen and rejected. It's contrastive, you need these pairs. At inference, you can pass any completion into the model.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1876s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:31:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L474-L477">
+      <blockquote style="margin:0">RM: "How good is this whole answer?" → scalar value ORM: "Does this answer end up correct?" → per-token predictions of the outcome (as a proxy for intermediate quality) PRM: "Are the reasoning steps sound?" → per-step scores Value: "How much reward remains from here?" → baseline for RL advantages</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L474-L477">Ch. 5 Reward Modeling § Inference Across Reward Model Types (L474-L477)</a> · <a href="https://rlhfbook.com/c/05-reward-models#inference-across-reward-model-types">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L425-L429">
+      <blockquote style="margin:0">What if you train a Bradley-Terry pairwise model with correct/incorrect pairs? … This is technically not an ORM and still trained directly with the contrastive, sequence-level loss.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L425-L429">Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L425-L429)</a> · <a href="https://rlhfbook.com/c/05-reward-models#comparing-reward-model-types-and-value-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L481-L482">
+      <blockquote style="margin:0">Reward modeling is a relatively under-explored area of RLHF. The traditional, Bradley-Terry reward modeling loss has been modified in many popular works, but the modifications have not solidified into a single best practice.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L481-L482">Ch. 5 Reward Modeling § Other Reward Model Variants (L481-L482)</a> · <a href="https://rlhfbook.com/c/05-reward-models#other-reward-model-variants">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="yt:4gIwiSPmQkU@00:20:56-00:21:57">
+      <blockquote style="margin:0">training reward models well is a art of industry that has not been translated into the academic literature very much.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1256s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:20:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L659-L672">
+      <blockquote style="margin:0">The canonical reward model uses the Bradley-Terry model (1952). … This is not the only possible model — but it's what worked in early RLHF and has stuck. It's a useful approximation, not a law of nature.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L659-L672">Slides lec2-chap4-5-9 § The Bradley-Terry model of preferences (L659-L672)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L60-L61">
+      <blockquote style="margin:0">converting a language model into a model that outputs a scalar score, often via a small linear head that produces a single reward value from the model's final hidden state.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L60-L61">Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L60-L61)</a> · <a href="https://rlhfbook.com/c/05-reward-models#training-a-bradley-terry-reward-model">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L83-L92">
+      <blockquote style="margin:0">The reward model is then fit by maximum likelihood over the preference dataset $D$ … Taking the logarithm before averaging over the dataset is what makes the negative-log-likelihood loss the right objective: maximizing the expected probability $\mathbb{E}[P]$ is not the same as maximizing the expected log-probability $\mathbb{E}[\log P]$.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L83-L92">Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L83-L92)</a> · <a href="https://rlhfbook.com/c/05-reward-models#training-a-bradley-terry-reward-model">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L103">
+      <blockquote style="margin:0">The model computes a scalar score for each completion from a sequence-level representation, often the end-of-sequence (EOS) token's hidden state, and the contrastive loss depends only on the score difference between the two.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L103">Ch. 5 Reward Modeling § Training a Bradley-Terry Reward Model (L103)</a> · <a href="https://rlhfbook.com/c/05-reward-models#training-a-bradley-terry-reward-model">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="yt:4gIwiSPmQkU@00:30:46-00:31:16">
+      <blockquote style="margin:0">Both of them are binary cross entropy losses. The reward model is learning to classify which completion was better.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1846s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:30:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L30-L31">
+      <blockquote style="margin:0">in RLHF that reward models actually output a probability of a certain input being "of high quality" (i.e. the chosen answer among a pairwise preference relation).</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L30-L31">Ch. 5 Reward Modeling (L30-L31)</a> · <a href="https://rlhfbook.com/c/05-reward-models#reward-modeling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L107-L108">
+      <blockquote style="margin:0">appends a small linear head to the language model and produces a scalar reward score for a prompt-completion pair … At inference time, the model outputs the relative likelihood that the piece of text is chosen as a single logit from the model.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L107-L108">Ch. 5 Reward Modeling § The Default Reward Model Architecture (L107-L108)</a> · <a href="https://rlhfbook.com/c/05-reward-models#the-default-reward-model-architecture">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L114-L115">
+      <blockquote style="margin:0">Implementing the reward modeling loss is quite simple. More of the implementation challenge is on setting up a separate data loader and inference pipeline.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L114-L115">Ch. 5 Reward Modeling § Implementation Example (L114-L115)</a> · <a href="https://rlhfbook.com/c/05-reward-models#implementation-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L186-L187">
+      <blockquote style="margin:0">most of the implementation complexity for reward models (and much of post-training) is around constructing the data-loaders correctly and distributed learning systems. Note, when training reward models, the most common practice is to train for only 1 epoch to avoid overfitting.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L186-L187">Ch. 5 Reward Modeling § Implementation Example (L186-L187)</a> · <a href="https://rlhfbook.com/c/05-reward-models#implementation-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:4gIwiSPmQkU@00:24:36-00:25:07">
+      <blockquote style="margin:0">at its best it's a lot of subtle signals.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1476s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:24:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L411-L416">
+      <blockquote style="margin:0">Reward Models | Sequence-level quality score $r_\theta(x, y)$ | Contrastive loss between pairwise (or N-wise) comparisons … Outcome Reward Models | Probability that an answer is correct per-token | Labeled outcomes … Process Reward Models | A reward or score for intermediate steps at end of reasoning steps … Value Functions | The expected return given the current state | Trained via regression to each point in sequence</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L411-L416">Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L411-L416)</a> · <a href="https://rlhfbook.com/c/05-reward-models#comparing-reward-model-types-and-value-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L318-L320">
+      <blockquote style="margin:0">Process Reward Models (PRMs), originally called process-supervised reward models, are reward models trained to output scores at every step in a chain-of-thought reasoning process. These differ from a standard RM that outputs a score only at an EOS token or an ORM that outputs a score at every token.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L318-L320">Ch. 5 Reward Modeling § Process Reward Models (L318-L320)</a> · <a href="https://rlhfbook.com/c/05-reward-models#process-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L219-L225">
+      <blockquote style="margin:0">the outcome reward model is training a per-token predictor of if an answer is right with a cross-entropy loss. … $$\mathcal{L}_{\text{token}}(\theta) = -\mathbb{E}_{(s,r)\sim \mathcal{D}}\left[\frac{1}{T}\sum_{t=1}^{T} \left( r\log p_\theta(s_t) + (1-r)\log\left(1-p_\theta(s_t)\right) \right)\right]$$ … where $s$ is a completion of $T$ tokens, $r \in \{0,1\}$ is a binary label … and $p_\theta(s_t) = \sigma(w_\theta(s_t))$ is the probability of correctness predicted at token $t$</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L219-L225">Ch. 5 Reward Modeling § Outcome Reward Models (L219-L225)</a> · <a href="https://rlhfbook.com/c/05-reward-models#outcome-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:4gIwiSPmQkU@00:37:58-00:38:29">
+      <blockquote style="margin:0">you don't necessarily need two forward passes for the outcome reward model. You only need to know if each token was correct</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2278s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:37:58</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L339-L341">
+      <blockquote style="margin:0">Traditionally PRMs are trained with a language modeling head that outputs a token only at the end of a reasoning step … These predictions tend to be -1 for incorrect, 0 for neutral, and 1 for correct. These labels do not necessarily tie to whether or not the model is on the right path, but rather to whether the step is correct.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L339-L341">Ch. 5 Reward Modeling § Process Reward Models (L339-L341)</a> · <a href="https://rlhfbook.com/c/05-reward-models#process-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L322">
+      <blockquote style="margin:0">Following, a binary-labeled PRM is commonly optimized with a per-step cross-entropy loss:</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L322">Ch. 5 Reward Modeling § Process Reward Models (L322)</a> · <a href="https://rlhfbook.com/c/05-reward-models#process-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L432-L438">
+      <blockquote style="margin:0">ORMs predict, at every token, whether the completion will conclude with a correct answer. Targets come from offline labels … Value functions predict the expected remaining return … Targets are typically computed from on-policy rollouts under the current policy … ORMs are trained offline from fixed labels, while value functions are trained on-policy and used to compute advantages</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L432-L438">Ch. 5 Reward Modeling § Comparing Reward Model Types (and Value Functions) (L432-L438)</a> · <a href="https://rlhfbook.com/c/05-reward-models#comparing-reward-model-types-and-value-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L970-L983">
+      <blockquote style="margin:0">Some papers use "outcome reward model" to mean a Bradley-Terry model trained on correct vs. incorrect completions. This conflates two different architectures … A BT model trained on (correct, incorrect) pairs is still a preference RM</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L970-L983">Slides lec2-chap4-5-9 § Common confusion: &quot;ORM&quot; ≠ BT on correct vs. incorrect (L970-L983)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:4gIwiSPmQkU@00:36:54-00:37:25">
+      <blockquote style="margin:0">I'm just repeating this because there was a phase where there's a lot of work misconstruing this</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2214s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:36:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:4gIwiSPmQkU@00:35:54-00:36:54">
+      <blockquote style="margin:0">outcome reward models are not just Bradley-Terry reward models for if the answer was right or wrong. An outcome reward model is actually trained to predict a likelihood of correctness at every token.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2154s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:35:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:4gIwiSPmQkU@00:41:04-00:41:34">
+      <blockquote style="margin:0">the outcome reward model is much more grounded in probability space, and the value function is much more grounded in reward space.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2464s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:41:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L214-L215">
+      <blockquote style="margin:0">this is implemented as a small head that outputs a scalar logit at every token, rather than a linear head of a traditional RM that outputs one logit for the entire sequence. Additionally, in this original GSM8K paper the authors jointly trained their ORM with the next-token, language modeling loss -- this practice did not continue as the default.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L214-L215">Ch. 5 Reward Modeling § Outcome Reward Models (L214-L215)</a> · <a href="https://rlhfbook.com/c/05-reward-models#outcome-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L308-L313">
+      <blockquote style="margin:0">These models have continued to be used, but are less supported in open-source RLHF tools. … the term outcome reward model (ORM) has been used in multiple ways.</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L308-L313">Ch. 5 Reward Modeling § Outcome Reward Models (L308-L313)</a> · <a href="https://rlhfbook.com/c/05-reward-models#outcome-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L301-L302">
+      <blockquote style="margin:0">an ORM will output a probability of correctness at every token in the sequence (judged only by the final answer -- reasoning errors are not captured in the ORM training process). This can be a noisy process</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L301-L302">Ch. 5 Reward Modeling § Outcome Reward Models (L301-L302)</a> · <a href="https://rlhfbook.com/c/05-reward-models#outcome-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:4gIwiSPmQkU@00:39:00-00:39:31">
+      <blockquote style="margin:0">if you had in this sequence an obvious error in the math, could would the outcome reward model see a sudden drop in the probability of correctness?</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2340s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:39:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:x-MqKBzoxkI@00:05:09-00:06:11">
+      <blockquote style="margin:0">all of the reward models have different uses and they end up being used in these niches in post-training recipes where they help solve a specific problem rather than being at the center of things right now.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=309s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:05:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L193-L200">
+      <blockquote style="margin:0">For reasoning-heavy tasks, one can use an Outcome Reward Model (ORM). … one completion should be a correct solution to the problem and one incorrect … outcome reward models are a relatively niche area in the post-training literature … The key idea is to learn a per-token signal of how likely the completion is to end in a correct answer</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L193-L200">Ch. 5 Reward Modeling § Outcome Reward Models (L193-L200)</a> · <a href="https://rlhfbook.com/c/05-reward-models#outcome-reward-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L446-L456">
+      <blockquote style="margin:0">Usage: rerank $k$ completions, pick top-1 (best-of-N sampling); or provide terminal reward for RLHF … Usage: score finished candidates; aggregate via mean, min (tail risk), or product</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L446-L456">Ch. 5 Reward Modeling § Inference Across Reward Model Types (L446-L456)</a> · <a href="https://rlhfbook.com/c/05-reward-models#inference-across-reward-model-types">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L486-L497">
+      <blockquote style="margin:0">The most common practice is to binarize the data along the preference direction … Llama 2 proposes using the margin between two data points, $m(y_c, y_r)$, to distinguish the magnitude of preference … Note that in Llama 3 the margin term was removed as the team observed diminishing improvements after scaling.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L486-L497">Ch. 5 Reward Modeling § Preference Margin Loss (L486-L497)</a> · <a href="https://rlhfbook.com/c/05-reward-models#preference-margin-loss">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L501-L505">
+      <blockquote style="margin:0">InstructGPT studies the impact of using $K = 4$ to $9$ completions per prompt to rank … shuffling them into the dataset naively causes the reward model to overfit. … In practice, all $\binom{K}{2}$ comparisons from a single prompt are typically included in the same training batch and averaged together</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L501-L505">Ch. 5 Reward Modeling § Balancing Multiple Comparisons Per Prompt (L501-L505)</a> · <a href="https://rlhfbook.com/c/05-reward-models#balancing-multiple-comparisons-per-prompt">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L514-L522">
+      <blockquote style="margin:0">used in the popular, early RLHF'd models Starling 7B and 34B, is a K-wise loss function based on the Plackett-Luce model … When $K = 2$, this reduces to the Bradley-Terry (BT) model for pairwise comparisons.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L514-L522">Ch. 5 Reward Modeling § K-Wise Loss Function (L514-L522)</a> · <a href="https://rlhfbook.com/c/05-reward-models#k-wise-loss-function">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L528-L529">
+      <blockquote style="margin:0">With the cost of preference data, a large research area emerged to use existing language models as a judge of human preferences or in other evaluation settings. The core idea is to prompt a language model with instructions on how to judge, a prompt, and two completions (much as would be done with human labelers).</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L528-L529">Ch. 5 Reward Modeling § Generative Reward Modeling (a.k.a. LLM-as-a-judge) (L528-L529)</a> · <a href="https://rlhfbook.com/c/05-reward-models#generative-reward-modeling-aka-llm-as-a-judge">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:4gIwiSPmQkU@00:42:36-00:43:08">
+      <blockquote style="margin:0">these just perform they're just so useful in filtering and supervising data. … the reward model benchmarks, these classifier types, these Bradley-Terry models of PRMs and so on tend to outperform language models as a judge.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2556s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:42:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L555-L558">
+      <blockquote style="margin:0">on RM evaluations they tend to be behind existing reward models, showing that reward modeling is an important technique for current RLHF. A common trick to improve the robustness of LLM-as-a-judge workflows is to use a sampling temperature of 0 to reduce variance of ratings.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L555-L558">Ch. 5 Reward Modeling § Generative Reward Modeling (a.k.a. LLM-as-a-judge) (L555-L558)</a> · <a href="https://rlhfbook.com/c/05-reward-models#generative-reward-modeling-aka-llm-as-a-judge">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L562-L564">
+      <blockquote style="margin:0">The academic literature for reward modeling established itself in 2024. The bulk of early progress in reward modeling has focused on establishing benchmarks and identifying behavior modes. The first RM benchmark, RewardBench, provided common infrastructure for testing reward models.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L562-L564">Ch. 5 Reward Modeling § Further Reading (L562-L564)</a> · <a href="https://rlhfbook.com/c/05-reward-models#further-reading">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1085-L1098">
+      <blockquote style="margin:0">I very happily helped kickstart this area with the first one!</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1085-L1098">Slides lec2-chap4-5-9 § Reward model evaluation (L1085-L1098)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:4gIwiSPmQkU@00:43:08-00:43:39">
+      <blockquote style="margin:0">reward modeling might shift to LM as a judge more, but TBD. … I still don't think we do a great job correlating these benchmarks to how</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2588s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:4gIwiSPmQkU@00:21:27-00:21:57">
+      <blockquote style="margin:0">the RewardBench2 paper, which we tried to understand deeply like what makes a good reward model for training and what are the ways that you can tell you're training a good reward model. We didn't get complete answers on this</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1287s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:21:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/README.md#L8">
+      <blockquote style="margin:0">IN DEVELOPMENT: These implementations are experimental.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/README.md?plain=1#L8">Code code/reward_models/README.md (L8)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L27-L28">
+      <blockquote style="margin:0">uv run python -m reward_models.train_preference_rm --config reward_models/configs/preference_rm.yaml … uv run python -m reward_models.train_orm --config reward_models/configs/orm.yaml</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L27-L28">Code code/README.md (L27-L28)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/configs/preference_rm.yaml#L9-L22">
+      <blockquote style="margin:0">model_id: Qwen/Qwen3-0.6B-Base … dataset_name: argilla/ultrafeedback-binarized-preferences-cleaned … samples: 5000 … epochs: 2 lr: 5.0e-5</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/configs/preference_rm.yaml#L9-L22">Code code/reward_models/configs/preference_rm.yaml (L9-L22)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L583-L604">
+      <blockquote style="margin:0">Watch whether the reward margin between chosen and rejected responses grows in the demo and W&amp;B logs. … Compare what each model can score after training: the ORM should distinguish correct and incorrect final answers, while the PRM should assign scores across intermediate reasoning steps.</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L583-L604">Ch. 5 Reward Modeling § Suggested Experiments (L583-L604)</a> · <a href="https://rlhfbook.com/c/05-reward-models#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/train_preference_rm.py#L262-L277">
+      <blockquote style="margin:0">margin = r_chosen - r_rejected … total_correct += (margin &gt; 0).sum().item() … "val/accuracy": total_correct / n, … "val/reward_margin": total_margin / n,</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/train_preference_rm.py#L262-L277">Code code/reward_models/train_preference_rm.py (L262-L277)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/train_preference_rm.py#L224-L230">
+      <blockquote style="margin:0">r_chosen = self.get_reward(chosen_ids, chosen_mask) r_rejected = self.get_reward(rejected_ids, rejected_mask) # Bradley-Terry loss loss = -F.logsigmoid(r_chosen - r_rejected).mean()</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/train_preference_rm.py#L224-L230">Code code/reward_models/train_preference_rm.py (L224-L230)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L606-L608">
+      <blockquote style="margin:0">A useful contribution is a 50- to 200-example evaluation for `reward_models/` that reports accuracy or preference-pair ordering without requiring a full training run.</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L606-L608">Ch. 5 Reward Modeling § Suggested Experiments (L606-L608)</a> · <a href="https://rlhfbook.com/c/05-reward-models#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:4gIwiSPmQkU@00:27:42-00:28:43">
+      <blockquote style="margin:0">we want to maximize this. Um so we try to find the parameters that maximize this like preference probability. … And so what you will do is you just transfer this probability to be an argmax where we need to solve for theta.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1662s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:27:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:gB-bYUECpzE@00:04:07-00:04:37">
+      <blockquote style="margin:0">There is also a minor issue in the derivation of the Bradley-Terry loss for reward model, which is in lecture two and chapter five.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=247s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:gB-bYUECpzE@00:04:37-00:05:39">
+      <blockquote style="margin:0">what this is wrong about is that in practice we're training this on a sample data set and we don't have a clear explicit form of this probability. … What we needed to do is have this first line be an expectation.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=277s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L746-L758">
+      <blockquote style="margin:0">Training maximizes the log-likelihood over the dataset -- take $\log$ before averaging, since $\mathbb{E}[\log P] \neq \mathbb{E}[P]$</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L746-L758">Slides lec2-chap4-5-9 § Deriving the reward model loss (L746-L758)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L814-L827">
+      <blockquote style="margin:0">Practical note: reward models are typically trained for only 1 epoch to avoid overfitting to the preference data.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L814-L827">Slides lec2-chap4-5-9 § The loss is simple (L814-L827)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="yt:4gIwiSPmQkU@00:32:50-00:33:20">
+      <blockquote style="margin:0">most reward models are only trained for one epoch to avoid overfitting to the preference data. This is a bit outdated.</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1970s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:32:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/README.md#L63">
+      <blockquote style="margin:0">Reward models are commonly trained for around one epoch to reduce overfitting. This example uses two epochs because it produced cleaner validation curves in a small local 5k-pair sweep</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/README.md?plain=1#L63">Code code/reward_models/README.md (L63)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L835-L847">
+      <blockquote style="margin:0">Note: Llama 3 removed the margin term — the team observed diminishing improvements at scale.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L835-L847">Slides lec2-chap4-5-9 § Preference margin loss (L835-L847)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:4gIwiSPmQkU@00:34:21-00:34:52">
+      <blockquote style="margin:0">This worked in Llama 2, but this sort of practice was not continued often, so it's not like most papers we see doing this. … I.e. Llama 3 didn't talk about this in their paper.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2061s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:34:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L855">
+      <blockquote style="margin:0">InstructGPT balances multiple comparisons per prompt to prevent overfitting (and included all prompts in the same batch at training time to make this work)</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L855">Slides lec2-chap4-5-9 § K-wise loss and balancing comparisons (L855)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="yt:4gIwiSPmQkU@00:35:23-00:35:54">
+      <blockquote style="margin:0">Haven't seen anyone else use this, but this is what you're looking at when you see the InstructGPT paper</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2123s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:35:23</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1081">
+      <blockquote style="margin:0">Current status: generative RMs tend to underperform trained reward models on RM evaluations, but are cheaper to set up and used widely in evaluation and training pipelines.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1081">Slides lec2-chap4-5-9 § Generative reward modeling: LLM-as-a-judge (L1081)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="yt:x-MqKBzoxkI@00:05:40-00:06:42">
+      <blockquote style="margin:0">I think generative reward models are really the most general one which is eating everything cuz rubrics where you give the models a really specific scoring criteria are the evolution of generative reward models</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=340s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:05:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/README.md#L14-L16">
+      <blockquote style="margin:0">ORM | `train_orm.py` | Outcome Reward Model - scores full responses</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/README.md?plain=1#L14-L16">Code code/reward_models/README.md (L14-L16)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/reward_models/train_orm.py#L267-L269">
+      <blockquote style="margin:0">mask = labels != -100 … loss = F.binary_cross_entropy_with_logits(logits[mask], labels[mask].float())</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/reward_models/train_orm.py#L267-L269">Code code/reward_models/train_orm.py (L267-L269)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/05-reward-models.md#L32-L33">
+      <blockquote style="margin:0">closely related to inverse reinforcement learning … the implementation and focus areas are entirely different, so they're often considered as totally separate areas of study.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L32-L33">Ch. 5 Reward Modeling (L32-L33)</a> · <a href="https://rlhfbook.com/c/05-reward-models#reward-modeling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="yt:4gIwiSPmQkU@00:30:16-00:30:46">
+      <blockquote style="margin:0">Entropic represents the same loss function when you implement it with a different equation here</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1816s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:30:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="yt:4gIwiSPmQkU@00:39:31-00:40:02">
+      <blockquote style="margin:0">the like training input, which is contrastive for Bradley-Terry versus not necessarily for RRM</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2371s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:39:31</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  const slider = document.getElementById('bt-delta');
+  const show = () => {
+    const d = Number(slider.value);
+    const p = 1 / (1 + Math.exp(-d));
+    document.getElementById('bt-d').textContent = d.toFixed(1);
+    document.getElementById('bt-p').textContent = p.toFixed(3);
+    document.getElementById('bt-l').textContent = (-Math.log(p)).toFixed(3);
+    document.getElementById('bt-ex').textContent = (d + 1).toFixed(1) + ' and 1.0, or ' + (d - 3).toFixed(1) + ' and -3.0';
+  };
+  slider.addEventListener('input', show);
+  show();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/reward_models/train_preference_rm.py (L195-L230)", contents: "    def get_reward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:\n        \"\"\"Compute scalar reward for a sequence.\n\n        Returns the reward from the last non-padding token position.\n        \"\"\"\n        hidden = self.get_hidden_states(input_ids, attention_mask)\n\n        # Get last non-padding position for each sequence\n        seq_lengths = attention_mask.sum(dim=1) - 1\n        batch_indices = torch.arange(hidden.size(0), device=hidden.device)\n        last_hidden = hidden[batch_indices, seq_lengths]\n\n        reward = self.head(last_hidden).squeeze(-1)\n        return reward\n\n    def forward(\n        self,\n        chosen_ids: torch.Tensor,\n        chosen_mask: torch.Tensor,\n        rejected_ids: torch.Tensor,\n        rejected_mask: torch.Tensor,\n    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:\n        \"\"\"Compute Bradley-Terry preference loss.\n\n        Returns:\n            loss: -log(sigmoid(r_chosen - r_rejected))\n            r_chosen: Rewards for chosen responses\n            r_rejected: Rewards for rejected responses\n        \"\"\"\n        r_chosen = self.get_reward(chosen_ids, chosen_mask)\n        r_rejected = self.get_reward(rejected_ids, rejected_mask)\n\n        # Bradley-Terry loss\n        loss = -F.logsigmoid(r_chosen - r_rejected).mean()\n\n        return loss, r_chosen, r_rejected\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
