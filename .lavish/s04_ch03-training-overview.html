@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 3: Training Overview</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s03_ch02-history.html">Chapter 2</a></p>
+  <h1>Chapter 3: Training Overview</h1>
+  <p class="lede">Chapter 3 is the map for the rest of the book. It gives you one objective: maximize a learned proxy for human preferences, with a penalty for moving too far from the starting model. It then gives you the recipes that use it, which later chapters keep pointing back to. <a class="chip" href="#s1" title="Ch. 3 Training Overview (L27-L29)">1</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Standard RL.</strong> An agent acts, the environment responds, and the agent maximizes discounted reward over a trajectory. <a class="chip" href="#s2" title="Ch. 3 Training Overview § Problem Formulation (L43-L49)">2</a></li>
+      <li><strong>RLHF prunes that setup down.</strong> A learned model replaces the environment's reward, state transitions go away, and a whole response gets one undiscounted reward. <a class="chip" href="#s3" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L111)">3</a> <a class="chip" href="#s4" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L112)">4</a> <a class="chip" href="#s5" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L113)">5</a> Lambert calls this "pretty contrived", and says the magic is that RL's methods still work. <a class="chip" href="#s6" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54">6</a></li>
+      <li><strong>A penalty protects what the model already knows.</strong> RLHF starts from a strong pretrained model, <a class="chip" href="#s7" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L136-L139)">7</a> so it adds a KL penalty, and $\beta$ sets how far the model may move. <a class="chip" href="#s8" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)">8</a></li>
+      <li><strong>RLHF is one tool among several.</strong> Modern RLHF-trained models start with instruction fine-tuning, then use a mix of reward models, rejection sampling, policy gradients and direct alignment. <a class="chip" href="#s9" title="Ch. 3 Training Overview § Optimization Tools (L153-L157)">9</a> <a class="chip" href="#s10" title="Ch. 3 Training Overview § Optimization Tools (L159)">10</a></li>
+      <li><strong>The recipes keep changing.</strong> InstructGPT's three steps gave way to Tülu 3, DeepSeek R1 and specialist recipes merged with MOPD. The trend is more steps, more algorithms and more diverse data, <a class="chip" href="#s11" title="Ch. 3 Training Overview § Canonical Training Recipes (L178-L181)">11</a> with compute shifting toward RLVR. <a class="chip" href="#s12" title="Slides lec1-chap1-3 § How training recipes have evolved (L901-L907)">12</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Write the RL objective and point to what RLHF removes from it.</li>
+      <li>Explain each term of the RLHF objective, and which way $\beta$ moves the model.</li>
+      <li>Say which later chapter teaches each post-training tool.</li>
+      <li>Sketch the InstructGPT, Tülu 3, DeepSeek R1 and MOPD recipes, and say what changed each time.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/03-training-overview">Chapter 3</a></td><td>Two parts</td><td>Problem formulation, then recipes. It is newer than the lecture, which does not cover MOPD.</td></tr>
+        <tr><td>Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=907s">15:07</a> to <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1093s">18:13</a>, <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1374s">22:54</a> to <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1716s">28:36</a>, <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1902s">31:42</a> to <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2057s">34:17</a>, <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2242s">37:22</a> to <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2335s">38:55</a></td><td>13 min</td><td>RL basics, the objective, recipes over time, and RLVR.</td></tr>
+        <tr><td>Lecture 1 slides: <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L335-L443">RL</a>, <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L564-L770">RLHF</a>, <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L854-L957">tools and recipes</a>, <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L1084-L1092">RL, RLHF, RLVR</a></td><td>21 slides</td><td>The objective unpacked term by term, and comparison tables the chapter does not have.</td></tr>
+        <tr><td>Lecture 0: <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=937s">15:37</a> to <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=1093s">18:13</a>, <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=1247s">20:47</a> to <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=1370s">22:50</a></td><td>5 min</td><td>The chapter's header links this as a prerequisite. <a class="chip" href="#s13" title="Ch. 3 Training Overview (L15-L19)">13</a> It covers KL and RL, but read the correction below.</td></tr>
+        <tr><td>Q&amp;A 2: <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=155s">2:35</a> to <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=277s">4:37</a></td><td>2 min</td><td>The correction that KL is not a distance.</td></tr>
+        <tr><td>Q&amp;A 3: <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=661s">11:01</a></td><td>11 min</td><td>Reader questions on recipes: merging skills, dropping KL, prompt budgets, and RL versus SFT.</td></tr>
+        <tr><td><a href="https://www.youtube.com/watch?v=6yIMb0K-aS4">How language model post-training is done today</a> (Jan 2025)</td><td>54 min</td><td>The Tülu 3 recipe in depth. It does not cover o1.</td></tr>
+        <tr><td><a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A">How we built a leading reasoning model</a> (Dec 2025): <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=781s">13:01</a> to <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=937s">15:37</a>, <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2371s">39:31</a> to <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2433s">40:33</a></td><td>4 min of 62</td><td>What the Olmo 3 recipe looks like, and what RL costs.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="rl">
+    <h2>Standard RL</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=938s">15:38</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=968s">16:08</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1031s">17:11</a></p>
+    <p>An agent samples actions from a policy, given the state of the environment, to maximize reward. <a class="chip" href="#s14" title="Ch. 3 Training Overview § Problem Formulation (L34-L35)">14</a> The lecture's short version is trial and error, balancing exploration and exploitation. <a class="chip" href="#s15" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:15:38">15</a> Two equations carry the setup.</p>
+    <p>A trajectory's probability multiplies the start state, every action the policy chooses and every transition the environment makes: <a class="chip" href="#s16" title="Ch. 3 Training Overview § Problem Formulation (L37-L41)">16</a></p>
+    <div class="fig" style="overflow-x:auto">$$p_{\pi}(\tau)=\rho_0(s_0)\prod_{t=0}^{T-1}\pi(a_t\mid s_t)\,p(s_{t+1}\mid s_t,a_t)$$</div>
+    <p>The goal is the policy with the highest expected discounted reward across those trajectories: <a class="chip" href="#s2" title="Ch. 3 Training Overview § Problem Formulation (L43-L49)">2</a></p>
+    <div class="fig" style="overflow-x:auto">$$\max_\pi \; \mathbb{E}_{\tau \sim p_{\pi}} \left[ \sum_{t=0}^{T-1} \gamma^t r(s_t, a_t) \right]$$</div>
+    <div class="tablewrap"><table class="kt terms">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$\rho_0(s_0)$</td><td>The initial state distribution. <a class="chip" href="#s16" title="Ch. 3 Training Overview § Problem Formulation (L37-L41)">16</a></td></tr>
+        <tr><td>$\pi(a_t\mid s_t)$</td><td>The policy: maps each state to a probability distribution over actions. <a class="chip" href="#s14" title="Ch. 3 Training Overview § Problem Formulation (L34-L35)">14</a></td></tr>
+        <tr><td>$p(s_{t+1}\mid s_t,a_t)$</td><td>The transition: how the environment moves to its next state. <a class="chip" href="#s16" title="Ch. 3 Training Overview § Problem Formulation (L37-L41)">16</a></td></tr>
+        <tr><td>$\gamma$</td><td>The discount, from 0 to 1: balances near-term against future rewards. <a class="chip" href="#s2" title="Ch. 3 Training Overview § Problem Formulation (L43-L49)">2</a></td></tr>
+        <tr><td>$T$</td><td>The horizon. For continuing tasks, $T\to\infty$ and $\gamma&lt;1$ keeps the objective well-defined. <a class="chip" href="#s2" title="Ch. 3 Training Overview § Problem Formulation (L43-L49)">2</a></td></tr>
+        <tr><td>$J(\pi)$</td><td>The usual name for the expected return of a policy. <a class="chip" href="#s2" title="Ch. 3 Training Overview § Problem Formulation (L43-L49)">2</a></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>One setup, three settings</h3>
+    <p>The chapter teaches RL with a thermostat, then contrasts it with RLHF in a table. Putting them side by side shows what survives. Each column's sources are cited in its heading.</p>
+    <div class="tablewrap"><table class="kt" style="min-width:600px">
+      <thead><tr><th>Piece</th><th>Standard RL <a class="chip" href="#s14" title="Ch. 3 Training Overview § Problem Formulation (L34-L35)">14</a> <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a></th><th>Thermostat <a class="chip" href="#s18" title="Ch. 3 Training Overview § A Simple Example: The Thermostat {#example-rl-thermostat} (L62-L69)">18</a> <a class="chip" href="#s19" title="Ch. 3 Training Overview § A Simple Example: The Thermostat {#example-rl-thermostat} (L73-L75)">19</a></th><th>RLHF on a language model <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a></th></tr></thead>
+      <tbody>
+        <tr><td>State</td><td>$s_t$ from the environment</td><td>Room temperature, e.g. 65°F</td><td>Prompt $x$ sampled from a dataset</td></tr>
+        <tr><td>Action</td><td>One environment action $a_t$</td><td>Heater on or off</td><td>Completion $y$, a sequence of tokens</td></tr>
+        <tr><td>Reward</td><td>Environment reward function, often per step</td><td>+1 within 2° of target, otherwise 0</td><td>Learned model $r_\theta(x,y)$, usually one reward for the full completion</td></tr>
+        <tr><td>Policy</td><td>Learned from scratch</td><td>Starts essentially random</td><td>Fine-tuned from a pretrained model</td></tr>
+        <tr><td>Transition</td><td>Dynamics $p(s_{t+1}\mid s_t,a_t)$</td><td>Room warms or cools, and the physics is outside the agent's control</td><td>Typically none: the completion does not define the next prompt</td></tr>
+        <tr><td>Horizon</td><td>Multi-step, $T&gt;1$</td><td>Not stated as a number</td><td>Often $T=1$, usually with $\gamma=1$</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">CartPole is the chapter's richer example, with four continuous state variables and physics-based transitions. <a class="chip" href="#s20" title="Ch. 3 Training Overview § Classic RL Example: CartPole (L79-L80)">20</a> The point the lecture draws from it is that classical RL is a multi-step control problem, <a class="chip" href="#s21" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:17:41">21</a> which is exactly what RLHF gives up. <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L92-L101">Its update equations</a> are left out here.</p>
+  </section>
+
+  <section id="rlhf">
+    <h2>Manipulating the setup: what RLHF changes</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1374s">22:54</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1404s">23:24</a></p>
+    <figure class="fig">
+      <div class="dg-pair">
+<svg class="dg" style="flex:360 1 260px" viewBox="0 0 360 226" role="img" aria-label="Standard RL: the agent sends an action to the environment, and the environment returns the next state and a reward.">
+  <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <text class="ph" x="180" y="20">Standard RL</text>
+  <g id="rl-action"><title>The agent's action changes the environment</title><path class="e" d="M240 66H292V180H242" marker-end="url(#ah1)"/><text class="l" x="298" y="118" text-anchor="start">Action</text><text class="l" x="298" y="134" text-anchor="start">a<tspan dy="3" font-size="10">t</tspan></text></g>
+  <g id="rl-state"><title>The environment returns the next state and a reward</title><path class="e" d="M120 180H72V66H118" marker-end="url(#ah1)"/><text class="l" x="66" y="118" text-anchor="end">State s<tspan dy="3" font-size="10">t</tspan></text><text class="l" x="66" y="134" text-anchor="end">Reward r<tspan dy="3" font-size="10">t</tspan></text></g>
+  <g id="rl-agent"><title>The agent is the policy being learned</title><rect class="n" x="120" y="38" width="120" height="56" rx="8"/><text class="t" x="180" y="62">Agent</text><text class="m" x="180" y="81">π<tspan dy="3" font-size="10">θ</tspan><tspan dy="-3">(·)</tspan></text></g>
+  <g id="rl-env"><title>The environment sets both the dynamics and the reward</title><rect class="n" x="120" y="152" width="120" height="56" rx="8"/><text class="t" x="180" y="185">Environment</text></g>
+</svg>
+<svg class="dg" style="flex:400 1 300px" viewBox="0 0 400 226" role="img" aria-label="RLHF: prompts from training data go to the agent, its completions go to a reward model, and the reward model returns a scalar reward used for the policy update. The training data and the reward model replace the environment.">
+  <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <text class="ph" x="200" y="20">RLHF</text>
+  <g id="rlhf-prompts"><title>Prompts are sampled from a dataset</title><path class="e" d="M96 166H158" marker-end="url(#ah2)"/><text class="l" x="127" y="144" text-anchor="middle">Prompts</text><text class="l" x="127" y="159" text-anchor="middle">s<tspan dy="3" font-size="10">i</tspan></text></g>
+  <g id="rlhf-completions"><title>The completion is the action</title><path class="e" d="M272 166H350V63H274" marker-end="url(#ah2)"/><text class="l" x="311" y="184" text-anchor="middle">Completions</text><text class="l" x="311" y="199" text-anchor="middle">a<tspan dy="3" font-size="10">i</tspan></text></g>
+  <g id="rlhf-reward"><title>One scalar reward for the whole completion</title><path class="e" d="M216 90V128"  marker-end="url(#ah2)"/><text class="l" x="224" y="106" text-anchor="start">Scalar reward</text><text class="l" x="224" y="121" text-anchor="start">r<tspan dy="3" font-size="10">i</tspan></text></g>
+  <g id="rlhf-data"><title>Training data replaces the environment's states</title><rect class="na" x="4" y="138" width="92" height="56" rx="8"/><text class="t" x="50" y="162">Training</text><text class="t" x="50" y="180">data</text></g>
+  <g id="rlhf-rm"><title>A learned reward model replaces the environment's reward</title><rect class="na" x="160" y="36" width="112" height="54" rx="8"/><text class="t" x="216" y="59">Reward</text><text class="t" x="216" y="77">model</text></g>
+  <g id="rlhf-agent"><title>The agent is the language model, fine-tuned from a pretrained start</title><rect class="n" x="160" y="130" width="112" height="66" rx="8"/><text class="t" x="216" y="158">Agent</text><text class="m" x="216" y="178">π<tspan dy="3" font-size="10">θ</tspan><tspan dy="-3">(·)</tspan></text></g>
+  <text class="l" x="216" y="216" text-anchor="middle">Policy update</text>
+</svg>
+</div>
+      <figcaption>Figure 1. Redrawn from the chapter's <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rl.png">RL</a> and <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rlhf.png">RLHF</a> figures. <a class="chip" href="#s22" title="Ch. 3 Training Overview § Problem Formulation (L52-L54)">22</a> Highlighted boxes are what replace the environment. The RLHF loop's policy update is written out in <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rlhf.png">the original</a>.</figcaption>
+    </figure>
+    <p>RLHF sets a few pieces of RL to specific definitions to fit language models. <a class="chip" href="#s23" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L107)">23</a> There are three changes:</p>
+    <ol>
+      <li><strong>A reward model replaces the reward function.</strong> This gives the designer more flexibility and control over the result, at the cost of implementation complexity. <a class="chip" href="#s3" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L111)">3</a></li>
+      <li><strong>No state transitions.</strong> A prompt comes from a dataset, the completion is the action, and those two make a complete episode. <a class="chip" href="#s4" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L112)">4</a></li>
+      <li><strong>One reward per response, with no discounting.</strong> The reward covers a whole sequence of tokens, which is why this is sometimes called a bandit problem. Implementations usually set $\gamma = 1$ so the algorithm sees every token as part of the same action. <a class="chip" href="#s5" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L113)">5</a></li>
+    </ol>
+    <p>With one step and a learned reward, the time horizon and discount drop out of the objective: <a class="chip" href="#s24" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L127-L130)">24</a></p>
+    <div class="fig" style="overflow-x:auto">$$\max_\pi \; \mathbb{E}_{\tau \sim \pi} \left[r_\theta(s_t, a_t) \right]$$</div>
+    <p>The lecture is blunter than the chapter: there is no environment, the model generates a completion and stops, and it is surprising that methods built for RL still work once the setup is pruned this far. <a class="chip" href="#s6" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54">6</a></p>
+    <h3>Two things to keep straight</h3>
+    <ul>
+      <li><strong>The reward is a proxy.</strong> At its best, the reward model only correlates with user satisfaction. <a class="chip" href="#s25" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:30:40">25</a> <a class="chip" href="#s26" title="Slides lec1-chap1-3 § Caveat: Proxy objectives and over-optimization (L885-L895)">26</a> Chapter 14 covers what happens when you optimize it too hard.</li>
+      <li><strong>A response-level reward can still train a token-level loss.</strong> A reader asked why anyone would choose token-level over sequence-level rewards. Lambert answered that these are two kinds of granularity: rewards are not getting much finer, but outcome-based rewards are used to get a token-level loss in the implementation. <a class="chip" href="#s27" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:06:42">27</a></li>
+    </ul>
+    <h3>RLVR, for comparison</h3>
+    <p>RLVR keeps the same system but swaps the reward model for a reward function again. <a class="chip" href="#s28" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:37:22">28</a> The chapter has no table for this, so the slides' version is the clearest place to see all three. <a class="chip" href="#s29" title="Slides lec1-chap1-3 § Comparing classical RL vs. LLM RLHF and RLVR (L1086-L1092)">29</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:480px">
+      <thead><tr><th></th><th>Classical RL</th><th>RLHF</th><th>RLVR</th></tr></thead>
+      <tbody>
+        <tr><td>Reward</td><td>Environment</td><td>Learned (proxy)</td><td>Verifiable (exact)</td></tr>
+        <tr><td>State transitions</td><td>Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Reward granularity</td><td>Per-step</td><td>Per-response</td><td>Per-response</td></tr>
+        <tr><td>Primary challenge</td><td>Explore-exploit trade-off</td><td>Over-optimization</td><td>Task generalization</td></tr>
+        <tr><td>Example</td><td>CartPole</td><td>Chat style tuning</td><td>Math reasoning</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="kl">
+    <h2>Fine-tuning and regularization</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1404s">23:24</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1656s">27:36</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1686s">28:06</a></p>
+    <p>Standard RL starts from a random policy. RLHF starts from a strong pretrained model, and that strong prior creates a need to stop the optimization drifting too far. <a class="chip" href="#s7" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L136-L139)">7</a> In early RLHF work, the lecture says, changing the model too much degraded it into "total yapping". <a class="chip" href="#s30" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:28:06">30</a> The most common fix is a KL penalty: <a class="chip" href="#s8" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)">8</a></p>
+    <div class="fig" style="overflow-x:auto">$$\max_{\pi} \; \mathbb{E}_{x \sim D,\; y \sim \pi(\cdot \mid x)} \underbrace{r_\phi(x, y)}_{\text{maximize the reward}} - \underbrace{\beta D_{\mathrm{KL}}\!\left(\pi(\cdot \mid x)\,\|\,\pi_{\mathrm{ref}}(\cdot \mid x)\right)}_{\text{but don't change the model too much}}$$</div>
+    <p class="sub">This form is from the slides. <a class="chip" href="#s31" title="Slides lec1-chap1-3 § The RLHF objective, unpacked (L741-L770)">31</a> The chapter writes the same objective with $r_\theta(s_t,a_t)$. <a class="chip" href="#s8" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)">8</a></p>
+    <div class="tablewrap"><table class="kt terms">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$x \sim D$</td><td>A prompt from the dataset. <a class="chip" href="#s32" title="Slides lec1-chap1-3 § Classical RL vs. RLHF (L578-L581)">32</a></td></tr>
+        <tr><td>$y \sim \pi(\cdot\mid x)$</td><td>A completion generated by the model being trained. <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a></td></tr>
+        <tr><td>$r_\phi(x,y)$</td><td>The learned reward model's score for that completion. <a class="chip" href="#s31" title="Slides lec1-chap1-3 § The RLHF objective, unpacked (L741-L770)">31</a></td></tr>
+        <tr><td>$\beta$</td><td>The penalty's strength. A larger $\beta$ keeps the model closer to its start, and a smaller one gives more freedom to chase reward. <a class="chip" href="#s8" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)">8</a></td></tr>
+        <tr><td>$D_{\mathrm{KL}}$</td><td>How far the new policy moves from the reference on this prompt. <a class="chip" href="#s31" title="Slides lec1-chap1-3 § The RLHF objective, unpacked (L741-L770)">31</a> Not a true distance: <a href="#differ">see below</a>. <a class="chip" href="#s33" title="Slides lec1-chap1-3 § Step 3/3: RL against the reward model (L720)">33</a></td></tr>
+        <tr><td>$\pi_{\mathrm{ref}}$</td><td>The reference model, normally the SFT checkpoint from earlier in the recipe, <a class="chip" href="#s34" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:27:36">34</a> held frozen. <a class="chip" href="#s35" title="Ch. 6 Reinforcement Learning § The Role of Reinforcement Learning in RLHF (L38)">35</a></td></tr>
+      </tbody>
+    </table></div>
+    <ul style="margin-top:var(--s3)">
+      <li><strong>Think of it as a budget.</strong> A lot of RLHF study goes into how to spend a "KL budget". Chapter 15 goes further. <a class="chip" href="#s36" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L144-L145)">36</a></li>
+      <li><strong>It is the main defense, and it is not complete.</strong> The slides call $\beta$ the main defense against over-optimization, which remains a fundamental tension in preference-based training. <a class="chip" href="#s26" title="Slides lec1-chap1-3 § Caveat: Proxy objectives and over-optimization (L885-L895)">26</a></li>
+      <li><strong>It costs you in systems.</strong> You keep a reference model alongside the trained model and the reward model, and the lecture calls the system side very hard. <a class="chip" href="#s37" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:27:03">37</a> The 2025 talk describes the same thing: the agent has a few language models inside it. <a class="chip" href="#s38" title="How language model post-training is done today @ 00:38:57">38</a> This is what the chapter's opening means by linking multiple models together. <a class="chip" href="#s39" title="Ch. 3 Training Overview (L25)">39</a></li>
+      <li><strong>RLVR often drops it.</strong> For basic math and code RLVR, Lambert says it seems you do not need a KL penalty, because verifiable answers avoid the same over-optimization problem, though this is getting messier with agentic models. <a class="chip" href="#s40" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:11">40</a> <a class="chip" href="#s41" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">41</a> <a href="s01_q-rlvr-kl-penalty.html">Page s01</a> answers this question in full. In the 2025 talk, RLVR runs at AI2 showed very low KL. <a class="chip" href="#s42" title="How language model post-training is done today @ 00:41:01">42</a></li>
+    </ul>
+  </section>
+
+  <section id="tools">
+    <h2>Optimization tools</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1809s">30:09</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1995s">33:15</a></p>
+    <p>The chapter lists the tools the rest of the book teaches. <a class="chip" href="#s9" title="Ch. 3 Training Overview § Optimization Tools (L153-L157)">9</a> People used to treat post-training and RLHF as the same thing. The 2025 talk says RLHF is really the preference tuning part, <a class="chip" href="#s43" title="How language model post-training is done today @ 00:08:18">43</a> and the lecture calls it "just one of these tools". <a class="chip" href="#s44" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:33:15">44</a> That talk splits training into instruction tuning, preference tuning and RL fine-tuning: you do not need all three, though the standard workflow uses them. <a class="chip" href="#s45" title="How language model post-training is done today @ 00:08:48">45</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Tool</th><th>What it does <a class="chip" href="#s9" title="Ch. 3 Training Overview § Optimization Tools (L153-L157)">9</a></th><th>Read</th><th>Watch</th></tr></thead>
+      <tbody>
+        <tr><td>Reward modeling</td><td>Trains a model on preference data so it can output a scalar reward for new text.</td><td><a href="https://rlhfbook.com/c/05-reward-models">Ch. 5</a></td><td><a href="https://www.youtube.com/watch?v=4gIwiSPmQkU">Lec. 2</a></td></tr>
+        <tr><td>Instruction fine-tuning</td><td>A prerequisite. Teaches the question-answer format by imitating preselected examples.</td><td><a href="https://rlhfbook.com/c/04-instruction-tuning">Ch. 4</a></td><td><a href="https://www.youtube.com/watch?v=4gIwiSPmQkU">Lec. 2</a></td></tr>
+        <tr><td>Rejection sampling</td><td>The most basic RLHF technique. A reward model filters candidate completions for instruction fine-tuning.</td><td><a href="https://rlhfbook.com/c/09-rejection-sampling">Ch. 9</a></td><td><a href="https://www.youtube.com/watch?v=4gIwiSPmQkU">Lec. 2</a></td></tr>
+        <tr><td>Policy gradients</td><td>The RL algorithms of the seminal RLHF work. Update the language model against a reward model's signal.</td><td><a href="https://rlhfbook.com/c/06-policy-gradients">Ch. 6</a></td><td><a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM">Lec. 3</a>, <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg">Lec. 4</a></td></tr>
+        <tr><td>Direct alignment</td><td>Optimizes the policy directly from pairwise preferences, with no intermediate reward model.</td><td><a href="https://rlhfbook.com/c/08-direct-alignment">Ch. 8</a></td><td><a href="https://www.youtube.com/watch?v=6g6b4gvO-y0">Lec. 6</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s4)">The slides compare three ways to tune on preferences, and say they optimize the same objective and differ in how they move the policy. <a class="chip" href="#s46" title="Slides lec1-chap1-3 § The preference tuning landscape (L871-L878)">46</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th></th><th>Rejection sampling</th><th>Online RL (PPO)</th><th>DPO</th></tr></thead>
+      <tbody>
+        <tr><td>Mechanism</td><td>Filter, then SFT</td><td>Generate, score, update policy</td><td>Direct gradient on preferences</td></tr>
+        <tr><td>Reward model</td><td>Required</td><td>Required</td><td>Implicit</td></tr>
+        <tr><td>On-policy data</td><td>Yes, from the current model</td><td>Yes, each step</td><td>No, a fixed preference dataset</td></tr>
+        <tr><td>Complexity</td><td>Low</td><td>High</td><td>Low</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Lambert speaks from experience on two of these. DPO is what built Zephyr-Beta, Tülu 2 and 3, and Olmo 2 and 3. <a class="chip" href="#s47" title="Slides lec1-chap1-3 § What if we optimize this more directly? (L846-L849)">47</a> Rejection sampling: "I personally haven't used it in practice and gotten it to work." <a class="chip" href="#s48" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:29:39">48</a> Choosing among these methods for your evaluation goals is, in the lecture's words, what post-training is. <a class="chip" href="#s49" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:30:09">49</a></p>
+  </section>
+
+  <section id="why-rl">
+    <h2>Subtle advantages of RL</h2>
+    <p>Rejection sampling and DPO are far simpler than getting RL working, yet RL-based methods continue to win out, and the updates "generally help the model a lot". The chapter says this is hard to quantify and gives two forms: <a class="chip" href="#s50" title="Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L164-L168)">50</a></p>
+    <ul>
+      <li><strong>RL can "fix" rough edges.</strong> The model becomes easier to chat with or more robust. The exact reason is not well known. <a class="chip" href="#s51" title="Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L170)">51</a></li>
+      <li><strong>RL can be surgical.</strong> It tends not to "squash" general capabilities. The chapter's example is Tülu 3. <a class="chip" href="#s52" title="Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L171)">52</a> The 2025 talk puts this as stability: RL as fine-tuning does not degrade things out of distribution. <a class="chip" href="#s53" title="How language model post-training is done today @ 00:44:39">53</a></li>
+    </ul>
+    <p>Q&amp;A 3 takes the harder version: if RL is basically SFT with regularization, why not just SFT? <a class="chip" href="#s54" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:23">54</a> Lambert gives two reasons. RL generates on-policy experience that you cannot produce ahead of time, <a class="chip" href="#s55" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:55">55</a> and it has negative gradients, so it also shows the model what not to do. <a class="chip" href="#s56" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">56</a> Lambert also says more models could get by with just SFT than people think, especially small ones. <a class="chip" href="#s57" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26">57</a></p>
+    <p>The price is engineering. The Olmo 3 talk says of RL infrastructure, "this is very hard. Do not take this lightly", <a class="chip" href="#s58" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:26:05">58</a> and that three to four people spent their entire summer on it. <a class="chip" href="#s59" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:25:33">59</a></p>
+  </section>
+
+  <section id="recipes">
+    <h2>Canonical training recipes</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1902s">31:42</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1963s">32:43</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2026s">33:46</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 330" role="img" aria-label="Four post-training recipes in order. InstructGPT and Tülu 3 have three stages. DeepSeek R1 has four, with two RL stages. A MOPD recipe has a shared SFT stage, then domain SFT and RL for each specialist, then a merge into one model.">
+  <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <text class="rn" x="0" y="30">InstructGPT</text>
+  <text class="l" x="0" y="47" text-anchor="start">2022</text>
+  <g><title>Teaches the question-answer format</title><rect class="n" x="112" y="4" width="156" height="66" rx="7"/><text class="st" x="190.0" y="33">Instruction tuning</text><text class="sd" x="190.0" y="49">~10K examples</text></g>
+  <path class="e" d="M275 37H285" marker-end="url(#ah3)"/>
+  <g><title>Trained from the instruction-tuned checkpoint</title><rect class="n" x="286" y="4" width="156" height="66" rx="7"/><text class="st" x="364.0" y="25">Reward model</text><text class="sd" x="364.0" y="41">~100K prompts, pairwise</text><text class="sd" x="364.0" y="57">paper: 33K prompts</text></g>
+  <path class="e" d="M449 37H459" marker-end="url(#ah3)"/>
+  <g><title>The model is optimized against the reward model</title><rect class="na" x="460" y="4" width="156" height="66" rx="7"/><text class="st" x="538.0" y="25">RL on reward model</text><text class="sd" x="538.0" y="41">~100K prompts</text><text class="sd" x="538.0" y="57">paper: 31K prompts</text></g>
+  <text class="rn" x="0" y="112">Tülu 3</text>
+  <text class="l" x="0" y="129" text-anchor="start">2024</text>
+  <g><title>Drawn from a mix of frontier models</title><rect class="n" x="112" y="86" width="156" height="66" rx="7"/><text class="st" x="190.0" y="107">Instruction tuning</text><text class="sd" x="190.0" y="123">~1M examples,</text><text class="sd" x="190.0" y="139">primarily synthetic</text></g>
+  <path class="e" d="M275 119H285" marker-end="url(#ah3)"/>
+  <g><title>Boosts the chattiness of the model</title><rect class="n" x="286" y="86" width="156" height="66" rx="7"/><text class="st" x="364.0" y="115">On-policy preferences</text><text class="sd" x="364.0" y="131">~1M preference pairs</text></g>
+  <path class="e" d="M449 119H459" marker-end="url(#ah3)"/>
+  <g><title>A small-scale RL run to boost skills such as mathematics</title><rect class="na" x="460" y="86" width="156" height="66" rx="7"/><text class="st" x="538.0" y="115">RLVR</text><text class="sd" x="538.0" y="131">~10K prompts</text></g>
+  <text class="rn" x="0" y="194">DeepSeek R1</text>
+  <text class="l" x="0" y="211" text-anchor="start">2025</text>
+  <g><title>Sampled from an earlier RL checkpoint, R1-Zero, and heavily filtered</title><rect class="n" x="112" y="168" width="156" height="66" rx="7"/><text class="st" x="190.0" y="189">Cold start</text><text class="sd" x="190.0" y="205">100K+ on-policy</text><text class="sd" x="190.0" y="221">reasoning samples</text></g>
+  <path class="e" d="M275 201H285" marker-end="url(#ah3)"/>
+  <g><title>Repeatedly covers reasoning problems</title><rect class="na" x="286" y="168" width="156" height="66" rx="7"/><text class="st" x="364.0" y="197">Large-scale RLVR</text><text class="sd" x="364.0" y="213">"until convergence"</text></g>
+  <path class="e" d="M449 201H459" marker-end="url(#ah3)"/>
+  <g><title>Roughly 3/4 reasoning problems and 1/4 general queries</title><rect class="n" x="460" y="168" width="156" height="66" rx="7"/><text class="st" x="538.0" y="197">Rejection sampling</text><text class="sd" x="538.0" y="213">then SFT on ~800K samples</text></g>
+  <path class="e" d="M623 201H633" marker-end="url(#ah3)"/>
+  <g><title>Polishes the model</title><rect class="na" x="634" y="168" width="156" height="66" rx="7"/><text class="st" x="712.0" y="189">Mixed RL</text><text class="sd" x="712.0" y="205">verifiable rewards plus</text><text class="sd" x="712.0" y="221">preference reward models</text></g>
+  <text class="rn" x="0" y="276">MOPD recipe</text>
+  <text class="l" x="0" y="293" text-anchor="start">MiMo-V2-Flash</text>
+  <text class="l" x="0" y="308" text-anchor="start">2026</text>
+  <g><title>Shared SFT before the domains split</title><rect class="n" x="112" y="250" width="156" height="66" rx="7"/><text class="st" x="190.0" y="279">General SFT</text><text class="sd" x="190.0" y="295">one shared model</text></g>
+  <path class="e" d="M275 283H285" marker-end="url(#ah3)"/>
+  <g><title>For example writing, coding or math</title><rect class="n" x="292" y="256" width="156" height="66" rx="7"/><rect class="n" x="289" y="253" width="156" height="66" rx="7"/><rect class="n" x="286" y="250" width="156" height="66" rx="7"/><text class="st" x="364.0" y="279">Domain SFT</text><text class="sd" x="364.0" y="295">one teacher per domain</text></g>
+  <path class="e" d="M449 283H459" marker-end="url(#ah3)"/>
+  <g><title>Each specialist gets its own RL</title><rect class="n" x="466" y="256" width="156" height="66" rx="7"/><rect class="n" x="463" y="253" width="156" height="66" rx="7"/><rect class="na" x="460" y="250" width="156" height="66" rx="7"/><text class="st" x="538.0" y="279">Domain RL</text><text class="sd" x="538.0" y="295">extensive, per teacher</text></g>
+  <path class="e" d="M623 283H633" marker-end="url(#ah3)"/>
+  <g><title>Multi-teacher on-policy distillation, covered in Chapter 12</title><rect class="n" x="634" y="250" width="156" height="66" rx="7"/><text class="st" x="712.0" y="271">MOPD</text><text class="sd" x="712.0" y="287">merges the teachers</text><text class="sd" x="712.0" y="303">into one final model</text></g>
+</svg></div>
+      <figcaption>Figure 2. Four recipes, drawn from the chapter's lists. <a class="chip" href="#s60" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L185-L188)">60</a> <a class="chip" href="#s61" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L189-L190)">61</a> <a class="chip" href="#s62" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L209-L214)">62</a> <a class="chip" href="#s63" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L227-L230)">63</a> <a class="chip" href="#s64" title="Ch. 3 Training Overview § Transition to MOPD and Agents (L237-L244)">64</a> Years are from the slide table and the bibliography. <a class="chip" href="#s12" title="Slides lec1-chap1-3 § How training recipes have evolved (L901-L907)">12</a> <a class="chip" href="#s65" title="book/chapters/bib.bib (L1574-L1578)">65</a> Highlighted stages are RL. Stacked boxes mean one per domain. The originals: <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rlhf-basic.png">InstructGPT</a>, <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/tulu3.png">Tülu 3</a>, <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/deepseek-r1-pipeline.png">DeepSeek R1</a>, <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rlhf-mopd.png">MOPD</a>.</figcaption>
+    </figure>
+    <h3>What each one added</h3>
+    <ul>
+      <li><strong>InstructGPT: the template.</strong> Around ChatGPT's launch this was the accepted method, with RLHF at the centre. <a class="chip" href="#s60" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L185-L188)">60</a> The lecture calls it "a bit outdated", but the simplest way to get to RLHF, <a class="chip" href="#s66" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:23:55">66</a> and probably directionally what the original ChatGPT used. <a class="chip" href="#s67" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:43">67</a></li>
+      <li><strong>Tülu 3: open, and with RLVR.</strong> A fully open recipe where RLHF plays a major role. <a class="chip" href="#s62" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L209-L214)">62</a> It has been applied to Llama 3.1, OLMo 2 and SmolLM. <a class="chip" href="#s68" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L216)">68</a> The lecture calls it a mature version of the InstructGPT recipe, <a class="chip" href="#s69" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:12">69</a> and Olmo 3 uses a similar three stages, SFT then DPO then RL. <a class="chip" href="#s70" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:03">70</a></li>
+      <li><strong>DeepSeek R1: RL moves earlier.</strong> Reasoning models re-ordered the stages and redistributed compute, and R1 is the clearest documented case. <a class="chip" href="#s71" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L220-L221)">71</a> Large-scale RL comes before the general SFT stage, and the last stage mixes verifiable rewards with preference reward models. <a class="chip" href="#s63" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L227-L230)">63</a></li>
+      <li><strong>MOPD: specialists, then a merge.</strong> The move to coding agents came with MOPD, which merges diverse skills into one model, while RL compute kept growing. The chapter says these recipes have less depth and more breadth. <a class="chip" href="#s64" title="Ch. 3 Training Overview § Transition to MOPD and Agents (L237-L244)">64</a> Reported counts include more than ten experts for Nemotron 3 Ultra and nine for Kimi K3. <a class="chip" href="#s72" title="Ch. 3 Training Overview § Transition to MOPD and Agents (L248)">72</a> Labs are far from unanimous, though: GLM-5 runs a three-stage RL process before MOPD. <a class="chip" href="#s73" title="Ch. 3 Training Overview § Transition to MOPD and Agents (L250-L252)">73</a> Q&amp;A 3 sums up what is happening now: sequential by optimizer, parallel by domain. <a class="chip" href="#s74" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:03:40">74</a> Lecture 1 does not cover this, so go to <a href="https://rlhfbook.com/c/12-synthetic-data">Chapter 12</a> <a class="chip" href="#s75" title="Ch. 12 Synthetic Data &amp; Distillation § Modern OPD Variants (L258)">75</a> and <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE">Lecture 7</a>.</li>
+    </ul>
+    <h3>How to read the trend</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>Measure</th><th>What changed</th></tr></thead>
+      <tbody>
+        <tr><td>Stages</td><td>You could have five or probably 20 intermediate model versions. <a class="chip" href="#s76" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:43">76</a> Q&amp;A 3 calls it "a shocking number". <a class="chip" href="#s77" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:00:32">77</a> Olmo 3 is "the simplest it can get", <a class="chip" href="#s78" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:02:03">78</a> and the most complex models have not released full details. <a class="chip" href="#s79" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L198-L204)">79</a></td></tr>
+        <tr><td>Prompts</td><td>In early 2023 the plan was 10,000 instructions and 100,000 preferences, <a class="chip" href="#s80" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42">80</a> and standard recipes now use millions at every stage. <a class="chip" href="#s81" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42">81</a> Lambert also calls that rule of thumb a little outdated, because bigger models tend to need less data. <a class="chip" href="#s82" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46">82</a></td></tr>
+        <tr><td>Tokens</td><td>Prompt counts hide this one. Olmo 3's SFT set is a couple million prompts but about 20 times the tokens of older sets. <a class="chip" href="#s83" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:15:06">83</a> Long reasoning completions may even have reduced the number of prompts. <a class="chip" href="#s84" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:07:21">84</a> So teams balance by flops rather than prompts. <a class="chip" href="#s85" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:38">85</a></td></tr>
+        <tr><td>Compute</td><td>Tülu 3 and Olmo 2 could run the whole recipe in a week. Olmo 3's 32B RL ran almost three weeks, against about 45 days for pretraining. <a class="chip" href="#s86" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:39:31">86</a> Olmo 3.1 took about 28 days on 224 GPUs. <a class="chip" href="#s87" title="Slides lec1-chap1-3 § Olmo 3.1: Extending the RL run (L1166-L1172)">87</a> Post-training "used to be fairly cheap in compute". <a class="chip" href="#s88" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:43:04">88</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The slides split the years roughly: 2023 simple SFT, 2024 DPO and longer recipes, 2025 RLVR and complex recipes, 2026 agentic training and multi-turn RL. <a class="chip" href="#s89" title="Slides lec1-chap1-3 § From RLHF to &quot;post-training&quot; (L940-L944)">89</a> The lecture marks 2024 as when it stopped being more about RLHF and started being more about post-training. <a class="chip" href="#s90" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:33:46">90</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter is dated by the commit this page pins, November 2026. Only the first question is settled.</p>
+
+    <div class="callout">
+      <p class="label">Settled by Lambert</p>
+      <p><strong>Is KL a distance? No, but people say it anyway.</strong></p>
+      <ul>
+        <li><strong>Jan 2025 talk:</strong> "KL distance constraint". <a class="chip" href="#s91" title="How language model post-training is done today @ 00:23:52">91</a></li>
+        <li><strong>Lecture 0 (Jun 2026):</strong> "it is a distance". <a class="chip" href="#s92" title="ML Foundations (prerequisites) for Post-Training | Post-Training Course, Lecture 0 @ 00:15:37">92</a></li>
+        <li><strong>Q&amp;A 2 (Jul 2026), the correction:</strong> KL is not a mathematical distance, because a distance must be symmetric and KL is not. <a class="chip" href="#s93" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:02:35">93</a> People say "distance" as an easy way to communicate how much a model has changed. <a class="chip" href="#s94" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:03:06">94</a> The slides at this pin carry a footnote. <a class="chip" href="#s33" title="Slides lec1-chap1-3 § Step 3/3: RL against the reward model (L720)">33</a></li>
+        <li><strong>Chapter (Nov 2026):</strong> still says "distance-based regularizer" and "penalty on the distance". <a class="chip" href="#s1" title="Ch. 3 Training Overview (L27-L29)">1</a> <a class="chip" href="#s8" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)">8</a> Read that as the same shorthand.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <p class="label">Open</p>
+      <p><strong>Did InstructGPT's RL stage reuse the preference prompts?</strong></p>
+      <ul>
+        <li><strong>Chapter text:</strong> "a separate ~100K prompts" and "a likely separate set", while also saying the paper does not document it. <a class="chip" href="#s61" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L189-L190)">61</a></li>
+        <li><strong>Chapter figure:</strong> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rlhf-basic.png">the same recipe's figure</a> labels that arrow "Re-use preference prompts". <a class="chip" href="#s95" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L194)">95</a></li>
+        <li><strong>Lecture 1 (Apr 2026):</strong> recalling 2023 practice, "train on those prompts after we had a reward model". <a class="chip" href="#s80" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42">80</a></li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <p class="label">Open</p>
+      <p><strong>How much better is RL than DPO?</strong></p>
+      <ul>
+        <li><strong>Jan 2025 talk:</strong> RL wins "just by a little bit", and it is not necessarily worth the time for everyone. <a class="chip" href="#s96" title="How language model post-training is done today @ 00:30:04">96</a></li>
+        <li><strong>Dec 2025 talk:</strong> as a substitute for improving your RLHF stack, "DPO is largely fine". <a class="chip" href="#s97" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:20:51">97</a></li>
+        <li><strong>Lecture 1 (Apr 2026):</strong> "no one has proof that DPO is actually bad". <a class="chip" href="#s98" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:29:08">98</a> Its slides say DPO achieves about 80% or more of final performance, <a class="chip" href="#s47" title="Slides lec1-chap1-3 § What if we optimize this more directly? (L846-L849)">47</a> and that RL generally wins "but evidence is mixed". <a class="chip" href="#s46" title="Slides lec1-chap1-3 § The preference tuning landscape (L871-L878)">46</a></li>
+        <li><strong>Chapter (Nov 2026):</strong> "RL-based methods continue to win out". That passage also counts RLVR, so it is broader than the preference-tuning comparison above. <a class="chip" href="#s50" title="Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L164-L168)">50</a></li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <p class="label">Open</p>
+      <p><strong>How narrow was Tülu 3's RL stage?</strong></p>
+      <ul>
+        <li><strong>Chapter (Nov 2026):</strong> trained with RL "only on math prompts", <a class="chip" href="#s52" title="Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L171)">52</a> and elsewhere, to boost core skills "such as mathematics". <a class="chip" href="#s62" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L209-L214)">62</a></li>
+        <li><strong>Q&amp;A 3 (Aug 2026):</strong> "when we did RLVR in math". <a class="chip" href="#s40" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:11">40</a></li>
+        <li><strong>Jan 2025 talk:</strong> the final stage aimed at "a bunch of" key verifiable evaluations. <a class="chip" href="#s99" title="How language model post-training is done today @ 00:36:52">99</a> Learning curves at AI2 cover GSM8K, math and IFEval, <a class="chip" href="#s100" title="How language model post-training is done today @ 00:42:35">100</a> and IFEval-style instruction following is one of its examples. <a class="chip" href="#s101" title="How language model post-training is done today @ 00:37:56">101</a> It also describes three stages, "GSM and then ifal and then math". <a class="chip" href="#s102" title="How language model post-training is done today @ 00:43:38">102</a></li>
+        <li><strong>Caveat:</strong> the curves passage says only "ai2", <a class="chip" href="#s42" title="How language model post-training is done today @ 00:41:01">42</a> and the captions garble the model's name in the three-stages passage, so these may be other runs.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <p class="label">Open</p>
+      <p><strong>What comes first, SFT or RL?</strong></p>
+      <ul>
+        <li><strong>SFT first:</strong> the chapter says modern RLHF-trained models always use instruction fine-tuning first, <a class="chip" href="#s10" title="Ch. 3 Training Overview § Optimization Tools (L159)">10</a> and that many models start with instruction datasets before moving onto RL. <a class="chip" href="#s103" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L233)">103</a> Q&amp;A 3 (Aug 2026) describes the standard recipe as SFT then RL. <a class="chip" href="#s104" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:01:03">104</a></li>
+        <li><strong>RL first:</strong> the Dec 2025 talk says frontier recipes "start with RL", with a cold start. <a class="chip" href="#s105" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:13:01">105</a> Lecture 1 (Apr 2026) describes R1-Zero's RL as directly on a base model, <a class="chip" href="#s106" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:42:34">106</a> and the chapter's R1 recipe draws its first data from R1-Zero. <a class="chip" href="#s63" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L227-L230)">63</a></li>
+        <li><span class="badge info">agent note</span> "Always" is scoped to RLHF-trained models, which may explain part of this. Lambert does not say so.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <p class="label">Open</p>
+      <p><strong>Is the environment really gone?</strong></p>
+      <ul>
+        <li><strong>Chapter:</strong> the heading says "No state transitions exist", <a class="chip" href="#s4" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L112)">4</a> and the table softens it to "typically no", with multi-turn modeled as a longer horizon. <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a></li>
+        <li><strong>Slides:</strong> "No" for RLVR too. <a class="chip" href="#s29" title="Slides lec1-chap1-3 § Comparing classical RL vs. LLM RLHF and RLVR (L1086-L1092)">29</a></li>
+        <li><strong>Lecture 1 (Apr 2026):</strong> "RLVR is starting to add it back in" with agentic models. <a class="chip" href="#s107" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:38:25">107</a> Lecture 0 (Jun 2026) says advanced agentic RL seems more like a traditional RL problem. <a class="chip" href="#s108" title="ML Foundations (prerequisites) for Post-Training | Post-Training Course, Lecture 0 @ 00:21:17">108</a></li>
+      </ul>
+    </div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>"Much more granular".</strong> Lecture 1 says one reward per sequence is "much more granular", <a class="chip" href="#s109" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54">109</a> but the chapter calls per-step rewards the fine-grained ones, <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a> and the same lecture later calls classic RL "very granular". <a class="chip" href="#s107" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:38:25">107</a> <span class="badge info">agent note</span> I read the first as a slip.</li>
+      <li><strong>N/A does not mean no RL.</strong> The slide table lists R1's RL stage as N/A. <a class="chip" href="#s12" title="Slides lec1-chap1-3 § How training recipes have evolved (L901-L907)">12</a> The lecture explains: "it's just different". <a class="chip" href="#s69" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:12">69</a> The chapter's R1 recipe has two RL stages. <a class="chip" href="#s63" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L227-L230)">63</a></li>
+      <li><strong>The letters change.</strong> The chapter uses $r_\theta$, with $\theta$ also in $\pi_\theta$ in the same table. <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a> The slides use $r_\phi$ for the reward model. <a class="chip" href="#s31" title="Slides lec1-chap1-3 § The RLHF objective, unpacked (L741-L770)">31</a> Sums stop at $T-1$ in the chapter <a class="chip" href="#s2" title="Ch. 3 Training Overview § Problem Formulation (L43-L49)">2</a> and at $T$ on a slide. <a class="chip" href="#s110" title="Slides lec1-chap1-3 § Classical reinforcement learning (RL) (L343-L346)">110</a> Sutton and Barto index rewards at $t+1$, and the book has moved to zero indexing. <a class="chip" href="#s111" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:08:46">111</a></li>
+      <li><strong>CartPole's equations differ.</strong> The chapter gives a "simplified" update with a $\tfrac{4}{3}$ term. <a class="chip" href="#s112" title="Ch. 3 Training Overview § Classic RL Example: CartPole (L92-L96)">112</a> The slide labels its version "the full state update", without that term. <a class="chip" href="#s113" title="Slides lec1-chap1-3 § CartPole: The dynamics (L429-L438)">113</a></li>
+      <li><strong>Dates are loose.</strong> The phases list puts Tülu 3 under 2025, <a class="chip" href="#s89" title="Slides lec1-chap1-3 § From RLHF to &quot;post-training&quot; (L940-L944)">89</a> while the slide table says 2024. <a class="chip" href="#s12" title="Slides lec1-chap1-3 § How training recipes have evolved (L901-L907)">12</a> The key <code>mimo2025flash</code> is a January 2026 report. <a class="chip" href="#s65" title="book/chapters/bib.bib (L1574-L1578)">65</a></li>
+      <li><strong>Captions mishear model names.</strong> "223" in Lecture 1 is Tülu 3: the lecture says "223" named RLVR, <a class="chip" href="#s114" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:37:22">114</a> and the slide says Tülu 3 did. <a class="chip" href="#s115" title="Slides lec1-chap1-3 § Reinforcement learning with *verifiable* rewards (L1076)">115</a> Quotes on this page keep such errors.</li>
+    </ul>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>This chapter has no code of its own: the README's experiment table starts at Chapter 4, <a class="chip" href="#s116" title="Code code/README.md (L26-L31)">116</a> and the suggested exercises also start at Chapter 4. <a class="chip" href="#s117" title="Code code/README.md (L43)">117</a> There are two ways in. <strong>I ran neither.</strong></p>
+    <p><strong>CartPole on your laptop.</strong> Lambert's own suggestion in Lecture 1: ask Claude to build a cart pole example and an RL algorithm to solve it, then watch it improve. <a class="chip" href="#s118" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:17:11">118</a></p>
+    <p><strong>One starter experiment per tool.</strong> Run these after <code>cd code/ &amp;&amp; uv sync</code>. <a class="chip" href="#s119" title="Code code/README.md (L13-L17)">119</a> <a class="chip" href="#s116" title="Code code/README.md (L26-L31)">116</a></p>
+    <div class="tablewrap"><table class="kt refs-cmd" style="min-width:560px">
+      <thead><tr><th>Tool</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr><td>Instruction fine-tuning</td><td><code>uv run python -m instruction_tuning.train --config instruction_tuning/configs/sft_olmo2_1b.yaml</code></td></tr>
+        <tr><td>Reward modeling</td><td><code>uv run python -m reward_models.train_preference_rm --config reward_models/configs/preference_rm.yaml</code></td></tr>
+        <tr><td>Policy gradients</td><td><code>uv run python -m policy_gradients.train --config policy_gradients/configs/grpo.yaml</code></td></tr>
+        <tr><td>Direct alignment</td><td><code>uv run python -m direct_alignment.train --loss dpo --max_samples 1000</code></td></tr>
+        <tr><td>Rejection sampling</td><td><code>uv run python -m rejection_sampling.train --config rejection_sampling/configs/top_per_prompt.yaml</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Map the thermostat onto RLHF. What plays the state and the action, and what has no counterpart?</summary>
+      <p>The prompt is the state and the completion is the action. <a class="chip" href="#s4" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L112)">4</a> The room's physics has no counterpart, because a completion does not define the next prompt. <a class="chip" href="#s17" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)">17</a></p>
+    </details>
+    <details><summary>Why set $\gamma = 1$ in RLHF when standard RL uses $\gamma &lt; 1$?</summary>
+      <p>The reward covers the whole completion, so there is no sequence of later rewards to balance against earlier ones. Setting $\gamma = 1$ helps the algorithm see every token as part of the same action. <a class="chip" href="#s5" title="Ch. 3 Training Overview § Manipulating the Standard RL Setup (L113)">5</a></p>
+    </details>
+    <details><summary>Reward keeps climbing, but the text degrades into repetition. Which way do you move $\beta$, and why might that not be enough?</summary>
+      <p>Increase it, since a larger $\beta$ keeps the model closer to its start. <a class="chip" href="#s8" title="Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)">8</a> Changing the model too much is what degraded early RLHF models. <a class="chip" href="#s30" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:28:06">30</a> It may not be enough, because the reward model is a proxy and over-optimization remains a fundamental tension. <a class="chip" href="#s26" title="Slides lec1-chap1-3 § Caveat: Proxy objectives and over-optimization (L885-L895)">26</a></p>
+    </details>
+    <details><summary>If RL's loss can look like SFT's with a regularizer, what does RL give you that SFT cannot?</summary>
+      <p>Experience generated from the current model, which you cannot produce ahead of time, <a class="chip" href="#s55" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:55">55</a> and negative gradients that show the model what not to do. <a class="chip" href="#s56" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">56</a></p>
+    </details>
+    <details><summary>A MOPD recipe and DeepSeek R1 both show four stages in Figure 2. Is their complexity the same kind?</summary>
+      <p>No. The chapter says MOPD recipes have less depth in iterative model versions, but more breadth, because they need many specialized experts. <a class="chip" href="#s64" title="Ch. 3 Training Overview § Transition to MOPD and Agents (L237-L244)">64</a></p>
+    </details>
+    <details><summary>Olmo 3's SFT set has a couple million prompts, and Tülu 3's has about one million. Is that about twice the training?</summary>
+      <p>No. Olmo 3's set is about 20 times the tokens, because of long thinking traces. <a class="chip" href="#s83" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:15:06">83</a> <a class="chip" href="#s62" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L209-L214)">62</a> This is why teams balance by flops rather than prompts. <a class="chip" href="#s85" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:38">85</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>"No on-policy data" for DPO.</strong> Not Lambert: the slide says DPO uses a fixed preference dataset, <a class="chip" href="#s46" title="Slides lec1-chap1-3 § The preference tuning landscape (L871-L878)">46</a> while Tülu 3's middle stage is called on-policy preference data, <a class="chip" href="#s62" title="Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L209-L214)">62</a> and the Olmo talk describes that recipe's middle stage as DPO. <a class="chip" href="#s70" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:03">70</a> I read these as compatible. You can generate preferences once from your own checkpoint, which is what the 2025 talk describes, <a class="chip" href="#s120" title="How language model post-training is done today @ 00:34:45">120</a> and then train on them as a fixed set. RL regenerates at every step. I have not read the paper.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Treat "~100K" as a budget.</strong> Not Lambert: the chapter's approximate numbers match the lecture's 2023 purchasing plan more closely than the paper's 33K and 31K, <a class="chip" href="#s80" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42">80</a> <a class="chip" href="#s61" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L189-L190)">61</a> so I read them as a rule of thumb, not a record of what OpenAI did.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>You can skip CartPole's equations on a first pass.</strong> Not Lambert: I searched the chapters and lecture slides, and CartPole appears only in Chapter 3 and Lecture 1. For a first pass, the multi-step idea is the part that matters later.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Do not carry $\beta$ across to RLVR unchanged.</strong> Not Lambert: the objective above is RLHF's. With a verifiable reward, the proxy problem that motivates much of the penalty is gone, <a class="chip" href="#s29" title="Slides lec1-chap1-3 § Comparing classical RL vs. LLM RLHF and RLVR (L1086-L1092)">29</a> which fits the reports that RLVR often drops it. <a class="chip" href="#s41" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">41</a></p>
+      <p style="margin-top:var(--s2)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;On the Chapter 3 page: Lambert&#x27;s sources differ on two things the papers could settle: whether InstructGPT&#x27;s RL stage reused the preference prompts, and which domains T\u00fclu 3&#x27;s RLVR stage trained on. Read both papers and tell me, labelling the answer clearly as outside Lambert&#x27;s material.&quot;,{tag:&#x27;next&#x27;,text:&quot;Check papers&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Check the papers, outside Lambert's material</button></p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out CartPole's update equations, the details of each InstructGPT step (Chapters 4, 5 and 6 cover them), the elicitation theory (on <a href="s02_ch01-introduction.html">the Chapter 1 page</a>) and the o1 scaling plots from Lecture 1. I describe papers only through Lambert. The slides at this pin may be newer than the April 2026 recording.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 4 (Instruction Fine-Tuning) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 4&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 4</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 3 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 3&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 3</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L27-L29">
+      <blockquote style="margin:0">we introduce the core objective of RLHF, which is optimizing a proxy reward for human preferences with a distance-based regularizer … Then we showcase canonical recipes … These example recipes will serve as references for later in the book</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L27-L29">Ch. 3 Training Overview (L27-L29)</a> · <a href="https://rlhfbook.com/c/03-training-overview#training-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L43-L49">
+      <blockquote style="margin:0">Across a finite episode with horizon $T$, the goal of an RL agent is to solve the following optimization, where $\gamma$ is a discount factor from 0 to 1 that balances the desirability of near-term versus future rewards: $$\max_\pi \; \mathbb{E}_{\tau \sim p_{\pi}} \left[ \sum_{t=0}^{T-1} \gamma^t r(s_t, a_t) \right].$$ … The expected return for a given policy is often denoted $J(\pi)$ … For continuing tasks, one often takes $T\to\infty$ and relies on discounting ($\gamma&lt;1$) to keep the objective well-defined.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L43-L49">Ch. 3 Training Overview § Problem Formulation (L43-L49)</a> · <a href="https://rlhfbook.com/c/03-training-overview#problem-formulation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L111">
+      <blockquote style="margin:0">Switching from a reward function to a reward model. In RLHF, a learned model of human preferences, $r_\theta(s_t, a_t)$ (or any other classification model) is used instead of an environmental reward function. This gives the designer a substantial increase in the flexibility of the approach and control over the final results, but at the cost of implementation complexity.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L111">Ch. 3 Training Overview § Manipulating the Standard RL Setup (L111)</a> · <a href="https://rlhfbook.com/c/03-training-overview#manipulating-the-standard-rl-setup">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L112">
+      <blockquote style="margin:0">No state transitions exist. In RLHF, the initial states for the domain are prompts sampled from a training dataset and the "action" is the completion to said prompt … The combination of one prompt and one completion constitutes a complete episode or rollout</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L112">Ch. 3 Training Overview § Manipulating the Standard RL Setup (L112)</a> · <a href="https://rlhfbook.com/c/03-training-overview#manipulating-the-standard-rl-setup">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L113">
+      <blockquote style="margin:0">Response-level rewards and no discounting. RLHF attribution of reward is done for an entire sequence of actions, composed of multiple generated tokens, rather than in a fine-grained manner (this single-step structure is sometimes called a bandit problem in the RL literature). To help the RL algorithms for RLHF see every token as part of the same action, implementations usually use a discount factor of $\gamma = 1$ (no discounting)</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L113">Ch. 3 Training Overview § Manipulating the Standard RL Setup (L113)</a> · <a href="https://rlhfbook.com/c/03-training-overview#manipulating-the-standard-rl-setup">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="yt:o6l6tJQgUg4@00:22:54-00:23:55">
+      <blockquote style="margin:0">RLHF is pretty contrived because there's no environment. The agent is the language model. It generates a completion and it just does that and then it stops. … the magic is that the methods we designed for reinforcement learning algorithms worked when we kind of prune the setup down here.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1374s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L136-L139">
+      <blockquote style="margin:0">In traditional RL problems, the agent must learn from a randomly initialized policy, but with RLHF, we start from a strong pretrained base model with many initial capabilities. This strong prior for RLHF induces a need to prevent the optimization from drifting too far from the initial policy.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L136-L139">Ch. 3 Training Overview § Fine-Tuning and Regularization (L136-L139)</a> · <a href="https://rlhfbook.com/c/03-training-overview#fine-tuning-and-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L140-L142">
+      <blockquote style="margin:0">The most common change to the optimization function is to add a KL divergence penalty on the distance between the current RLHF policy and the starting point of the optimization. The $\beta$ hyperparameter set when training the model controls the strength of this constraint -- a larger $\beta$ keeps the model closer to its starting point, while a smaller $\beta$ gives the optimizer more freedom to chase reward: $$\max_\pi \; \mathbb{E}_{\tau \sim \pi} \left[r_\theta(s_t, a_t)\right] - \beta  \mathcal{D}_{\text{KL}}(\pi(\cdot|s_t) \| \pi_{\text{ref}}(\cdot|s_t)).$$</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L140-L142">Ch. 3 Training Overview § Fine-Tuning and Regularization (L140-L142)</a> · <a href="https://rlhfbook.com/c/03-training-overview#fine-tuning-and-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L153-L157">
+      <blockquote style="margin:0">Reward modeling (Chapter 5): A model is trained to capture the signal from collected preference data and can then output a scalar reward indicating the quality of future text. Instruction fine-tuning (Chapter 4): A prerequisite to RLHF where models are taught the question-answer format … by imitating preselected examples. Rejection sampling (Chapter 9): The most basic RLHF technique where candidate completions for instruction fine-tuning are filtered by a reward model imitating human preferences. Policy gradients (Chapter 6): The reinforcement learning algorithms used in the seminal examples of RLHF to update parameters of a language model with respect to the signal from a reward model. Direct alignment algorithms (Chapter 8): Algorithms that directly optimize a policy from pairwise preference data, rather than learning an intermediate reward model to then optimize later.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L153-L157">Ch. 3 Training Overview § Optimization Tools (L153-L157)</a> · <a href="https://rlhfbook.com/c/03-training-overview#optimization-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L159">
+      <blockquote style="margin:0">Modern RLHF-trained models always utilize instruction fine-tuning followed by a mixture of the other optimization options.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L159">Ch. 3 Training Overview § Optimization Tools (L159)</a> · <a href="https://rlhfbook.com/c/03-training-overview#optimization-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L178-L181">
+      <blockquote style="margin:0">As the recipes age, training models with the same characteristics becomes easier and requires less data. There is a general trend of post-training involving more optimization steps with more training algorithms across more diverse training datasets and evaluations.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L178-L181">Ch. 3 Training Overview § Canonical Training Recipes (L178-L181)</a> · <a href="https://rlhfbook.com/c/03-training-overview#canonical-training-recipes">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L901-L907">
+      <blockquote style="margin:0">InstructGPT (2022) | Tülu 3 (2024) | DeepSeek R1 (2025) … RL stage | ~100K prompts | ~10K (RLVR) | N/A … An overall trend is to use far more compute across all the stages, but shifting more to RLVR.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L901-L907">Slides lec1-chap1-3 § How training recipes have evolved (L901-L907)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L15-L19">
+      <blockquote style="margin:0">label: "Lecture 0: Prerequisites" … label: "Lecture 1: Overview (Chapters 1–3)"</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L15-L19">Ch. 3 Training Overview (L15-L19)</a> · <a href="https://rlhfbook.com/c/03-training-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L34-L35">
+      <blockquote style="margin:0">an agent takes actions $a_t$ sampled from a policy $\pi(a_t\mid s_t)$ given the state of the environment $s_t$ to maximize reward $r(s_t,a_t)$ … A policy is a function that maps each state to a probability distribution over actions.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L34-L35">Ch. 3 Training Overview § Problem Formulation (L34-L35)</a> · <a href="https://rlhfbook.com/c/03-training-overview#problem-formulation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="yt:o6l6tJQgUg4@00:15:38-00:16:08">
+      <blockquote style="margin:0">it's known as trial and error learning, you balance exploration and exploitation.</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=938s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:15:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L37-L41">
+      <blockquote style="margin:0">the environment evolves according to transition (dynamics) $p(s_{t+1}\mid s_t, a_t)$ with an initial state distribution $\rho_0(s_0)$. … A trajectory's overall probability is the product of the initial state probability, every action choice the policy makes, and every state transition the environment produces: $$p_{\pi}(\tau)=\rho_0(s_0)\prod_{t=0}^{T-1}\pi(a_t\mid s_t)\,p(s_{t+1}\mid s_t,a_t).$$</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L37-L41">Ch. 3 Training Overview § Problem Formulation (L37-L41)</a> · <a href="https://rlhfbook.com/c/03-training-overview#problem-formulation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L116-L124">
+      <blockquote style="margin:0">Policy | Learned from scratch (random init) | Fine-tuned from a pretrained language model … Reward signal | Environment reward function $r(s_t,a_t)$ | Learned reward / preference model $r_\theta(x,y)$ (prompt $x$, completion $y$) … State transition | Yes: dynamics $p(s_{t+1}\mid s_t,a_t)$ | Typically no: prompts $x$ sampled from a dataset; the completion does not define the next prompt … Action | Single environment action $a_t$ | A completion $y$ (a sequence of tokens) sampled from $\pi_\theta(\cdot\mid x)$ … Reward granularity | Often per-step / fine-grained | Usually response-level (bandit-style) over the full completion, usually no discounting ($\gamma = 1$) … Horizon | Multi-step episode ($T&gt;1$) | Often single-step ($T=1$), though multi-turn can be modeled as longer-horizon</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L116-L124">Ch. 3 Training Overview § Manipulating the Standard RL Setup (L116-L124)</a> · <a href="https://rlhfbook.com/c/03-training-overview#manipulating-the-standard-rl-setup">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L62-L69">
+      <blockquote style="margin:0">State ($s_t$): the current room temperature, e.g. 65$^\circ$F. Action ($a_t$): turn the heater on or off. Reward ($r$): +1 when the temperature is within 2$^\circ$ of the target, 0 otherwise. Policy ($\pi$): the rule that decides whether to turn the heater on or off given the current temperature. … Transition: the room warms when the heater is on and cools when it is off. The agent influences these dynamics through its actions, but the underlying physics -- how fast the room heats or cools -- are outside its control.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L62-L69">Ch. 3 Training Overview § A Simple Example: The Thermostat {#example-rl-thermostat} (L62-L69)</a> · <a href="https://rlhfbook.com/c/03-training-overview#a-simple-example-the-thermostat-example-rl-thermostat">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L73-L75">
+      <blockquote style="margin:0">Initially, the thermostat's policy is essentially random … Over many episodes of trial and error, the agent discovers that turning the heater on when the room is cold and off when it is warm leads to more reward</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L73-L75">Ch. 3 Training Overview § A Simple Example: The Thermostat {#example-rl-thermostat} (L73-L75)</a> · <a href="https://rlhfbook.com/c/03-training-overview#a-simple-example-the-thermostat-example-rl-thermostat">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L79-L80">
+      <blockquote style="margin:0">consider the classic CartPole (inverted pendulum) control task … CartPole involves four continuous state variables and physics-based transitions</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L79-L80">Ch. 3 Training Overview § Classic RL Example: CartPole (L79-L80)</a> · <a href="https://rlhfbook.com/c/03-training-overview#classic-rl-example-cartpole">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:o6l6tJQgUg4@00:17:41-00:18:13">
+      <blockquote style="margin:0">classically RL is a multi-step control problem.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1061s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:17:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L52-L54">
+      <blockquote style="margin:0">Standard RL loop … A standard illustration of the RL loop is shown in @fig:rl (compare this to the RLHF loop in @fig:rlhf).</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L52-L54">Ch. 3 Training Overview § Problem Formulation (L52-L54)</a> · <a href="https://rlhfbook.com/c/03-training-overview#problem-formulation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L107">
+      <blockquote style="margin:0">The RL formulation for RLHF is seen as a less open-ended problem, where a few key pieces of RL are set to specific definitions in order to accommodate language models.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L107">Ch. 3 Training Overview § Manipulating the Standard RL Setup (L107)</a> · <a href="https://rlhfbook.com/c/03-training-overview#manipulating-the-standard-rl-setup">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L127-L130">
+      <blockquote style="margin:0">the optimization can be re-written without the time horizon and discount factor (and with an explicit reward model): $$\max_\pi \; \mathbb{E}_{\tau \sim \pi} \left[r_\theta(s_t, a_t) \right].$$ … while RLHF is heavily inspired by RL optimizers and problem formulations, the actual implementation is very distinct from traditional RL.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L127-L130">Ch. 3 Training Overview § Manipulating the Standard RL Setup (L127-L130)</a> · <a href="https://rlhfbook.com/c/03-training-overview#manipulating-the-standard-rl-setup">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="yt:o6l6tJQgUg4@00:30:40-00:31:12">
+      <blockquote style="margin:0">we learn a proxy through the data in the form of a reward model, it's like only at its best correlated with user satisfaction and preference.</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1840s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:30:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L885-L895">
+      <blockquote style="margin:0">The reward model is a proxy, not ground truth. Even a well-trained RM is only correlated with real user satisfaction. … The KL penalty $\beta$ is the main defense — it limits how far the policy can drift from the reference model. But over-optimization is a fundamental tension in all preference-based training.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L885-L895">Slides lec1-chap1-3 § Caveat: Proxy objectives and over-optimization (L885-L895)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="yt:x-MqKBzoxkI@00:06:42-00:07:12">
+      <blockquote style="margin:0">The rewards we are getting is not actually moving to be that much more granular in token level, but you use these outcome-based rewards in order to get a token level loss that is in the implementation.</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=402s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:06:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:o6l6tJQgUg4@00:37:22-00:38:25">
+      <blockquote style="margin:0">RLVR is much simpler than RLHF, where it removes the reward model and replaces it with a verifiable reward. … the system diagram is very similar. You just take the reward model and you change it to a reward function again, which is almost better suited to the fundamentals of RL.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2242s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:37:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L1086-L1092">
+      <blockquote style="margin:0">Classical RL | RLHF | RLVR … Reward | Environment | Learned (proxy) | Verifiable (exact) … State transitions | Yes | No | No … Reward granularity | Per-step | Per-response | Per-response … Primary challenge | Explore-Exploit Trade-off | Over-optimization | Task generalization … Example | CartPole | Chat style tuning | Math reasoning</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L1086-L1092">Slides lec1-chap1-3 § Comparing classical RL vs. LLM RLHF and RLVR (L1086-L1092)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:o6l6tJQgUg4@00:28:06-00:28:36">
+      <blockquote style="margin:0">In early RLHF work, when you change the model too much, the model degrades into total yapping.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1686s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:28:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L741-L770">
+      <blockquote style="margin:0">$$\max_{\pi} \; \mathbb{E}_{x \sim D,\; y \sim \pi(\cdot \mid x)} \underbrace{r_\phi(x, y)}_{\text{maximize the reward}} - \underbrace{\beta D_{\mathrm{KL}}\!\left(\pi(\cdot \mid x)\,\|\,\pi_{\mathrm{ref}}(\cdot \mid x)\right)}_{\text{but don't change the model too much}}$$ … The reference model $\pi_{\mathrm{ref}}$ keeps the policy anchored to the SFT model. … measures how far the new policy moves from that reference on prompt $x$. $\beta$ controls the tradeoff between improving behavior and staying close to what the model already knows.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L741-L770">Slides lec1-chap1-3 § The RLHF objective, unpacked (L741-L770)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L578-L581">
+      <blockquote style="margin:0">No environment — prompts sampled from a dataset … Reward is learned from human preferences (a proxy) … Response-level reward (bandit-style, not per-token) … Regularized with KL penalty to stay close to the base model</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L578-L581">Slides lec1-chap1-3 § Classical RL vs. RLHF (L578-L581)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L720">
+      <blockquote style="margin:0">People often colloquially call this the “KL distance” between the models, even though it is not a true metric.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L720">Slides lec1-chap1-3 § Step 3/3: RL against the reward model (L720)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:o6l6tJQgUg4@00:27:36-00:28:06">
+      <blockquote style="margin:0">we have this KL penalty, which is the distance between the initial model. The initial model is normally the SFT checkpoint that we trained earlier in the three-step recipe</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1656s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:27:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L38">
+      <blockquote style="margin:0">the frozen initial model (typically the instruction-tuned model before RL) computes log probabilities on the same text to calculate a KL penalty that prevents excessive drift</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L38">Ch. 6 Reinforcement Learning § The Role of Reinforcement Learning in RLHF (L38)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#the-role-of-reinforcement-learning-in-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L144-L145">
+      <blockquote style="margin:0">a lot of study into RLHF training goes into understanding how to spend a certain "KL budget" as measured by a distance from the initial model. For more details, see Chapter 15 on Regularization.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L144-L145">Ch. 3 Training Overview § Fine-Tuning and Regularization (L144-L145)</a> · <a href="https://rlhfbook.com/c/03-training-overview#fine-tuning-and-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:o6l6tJQgUg4@00:27:03-00:27:36">
+      <blockquote style="margin:0">you need to have a reference model stored with your trained model and the reward model. Like the system side is very hard.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1623s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:27:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="yt:6yIMb0K-aS4@00:38:57-00:39:28">
+      <blockquote style="margin:0">the agent actually has a few different language models within it it has a generating policy which is the weights that are getting updated it has a reference policy</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2337s">How language model post-training is done today @ 00:38:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L25">
+      <blockquote style="margin:0">RLHF, while optimizing a simple loss function, involves training multiple, different AI models in sequence and then linking them together in a complex, online optimization.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L25">Ch. 3 Training Overview (L25)</a> · <a href="https://rlhfbook.com/c/03-training-overview#training-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="yt:6StK9ttLNbQ@00:04:11-00:05:15">
+      <blockquote style="margin:0">based on the verifiable ground truth makes it easier so they don't run into the same over optimization problem. I think this is the right way to think about it … when we did RLVR in math, the models are pretty good at separating domains into really specific modes within the model</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=251s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="yt:6StK9ttLNbQ@00:05:15-00:06:18">
+      <blockquote style="margin:0">math and code RLVR it seems like you do not need a KL penalty. … I think the KL penalty stuff is becoming much messier as we go into agentic models and regularization is getting much harder.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=315s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:6yIMb0K-aS4@00:41:01-00:42:35">
+      <blockquote style="margin:0">when we do this kind of rlv ai2 … it's very very low KL distance relative to this kind of preference shoting literature where this rvr is only moving the model a little bit for the most successful runs</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2461s">How language model post-training is done today @ 00:41:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:6yIMb0K-aS4@00:08:18-00:08:48">
+      <blockquote style="margin:0">previously post training was equivalent to rhf people said these were the same things but really reinforce learning from Human feedback is about Point number two preference fine tuning</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=498s">How language model post-training is done today @ 00:08:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:o6l6tJQgUg4@00:33:15-00:33:46">
+      <blockquote style="margin:0">RLHF is kind of just one of these tools.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1995s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:33:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="yt:6yIMb0K-aS4@00:08:48-00:09:19">
+      <blockquote style="margin:0">you don't need to use all of these different methods but the standard workflow will use all of these</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=528s">How language model post-training is done today @ 00:08:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L871-L878">
+      <blockquote style="margin:0">Mechanism | Filter, then SFT | Generate, score, update policy | Direct gradient on preferences … Reward model | Required | Required | Implicit (no separate RM) … On-policy data | Yes (generate from current model) | Yes (generate each step) | No (fixed preference dataset) … Complexity | Low | High | Low … All three optimize the same underlying objective — they differ in how they move the policy toward higher-reward completions. There is substantial debate on which of these is the best for final performance, which RL generally wins, but evidence is mixed.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L871-L878">Slides lec1-chap1-3 § The preference tuning landscape (L871-L878)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L846-L849">
+      <blockquote style="margin:0">Far simpler to implement … Far cheaper to run … Achieves ~80% or more of the final performance … I used it to build models like Zephyr-Beta, Tülu 2/3, Olmo 2/3, etc.</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L846-L849">Slides lec1-chap1-3 § What if we optimize this more directly? (L846-L849)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="yt:o6l6tJQgUg4@00:29:39-00:30:09">
+      <blockquote style="margin:0">I personally haven't used it in practice and gotten it to work.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1779s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:29:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:o6l6tJQgUg4@00:30:09-00:31:12">
+      <blockquote style="margin:0">post-training is like how do you choose which of these many methods to get the most out of your model given your specific evaluation goals.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1809s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:30:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L164-L168">
+      <blockquote style="margin:0">Plenty of them, such as rejection sampling (Chapter 9) and direct alignment algorithms like DPO (Chapter 8), are far simpler than getting RL working. Still, despite the simplicity of alternatives, RL-based methods continue to win out. Some trends, such as the inference-time scaling with reinforcement learning with verifiable rewards (RLVR), are obvious … the gradient updates it provides "generally help the model a lot." This is hard to quantify</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L164-L168">Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L164-L168)</a> · <a href="https://rlhfbook.com/c/03-training-overview#subtle-advantages-of-rl-in-post-training-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L170">
+      <blockquote style="margin:0">RL stages can "fix" rough edges on the model, making the model easier to chat with or more robust … The exact reason for this is not well-known in the literature</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L170">Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L170)</a> · <a href="https://rlhfbook.com/c/03-training-overview#subtle-advantages-of-rl-in-post-training-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L171">
+      <blockquote style="margin:0">RL can be done surgically — the model does a good job of learning where the prompt distribution lies, and RL tends to not "squash" the general capabilities of the model. A good example of this is Tülu 3 being trained with RL only on math prompts, while maintaining capabilities across a broad task suite</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L171">Ch. 3 Training Overview § Subtle Advantages of RL in Post-Training Language Models (L171)</a> · <a href="https://rlhfbook.com/c/03-training-overview#subtle-advantages-of-rl-in-post-training-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="yt:6yIMb0K-aS4@00:44:39-00:45:10">
+      <blockquote style="margin:0">we're applying reinforc learning in a fine-tuning domain where it has a lot of stability and doesn't cause degradation to things that are out of distribution</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2679s">How language model post-training is done today @ 00:44:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="yt:6StK9ttLNbQ@00:08:23-00:09:26">
+      <blockquote style="margin:0">if RL is basically SFT with regularization, why not just SFT?</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=503s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:23</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:6StK9ttLNbQ@00:08:55-00:09:58">
+      <blockquote style="margin:0">SFT alone can not get you everything and RL essentially is a way of generating nice data and nice experience for the model and then updating the model. … you can't just go back and generate that data a priori such that you could only do SFT.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=535s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:6StK9ttLNbQ@00:10:28-00:11:01">
+      <blockquote style="margin:0">RL has negative gradients. So, instead of SFT is just showing the model what it should do by saying what the correct token is, RL also shows the model what it should not do.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=628s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:6StK9ttLNbQ@00:09:26-00:10:28">
+      <blockquote style="margin:0">models today could get what by with just SFT, especially small models, than people think.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=566s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:uaZ3yRdYg8A@00:26:05-00:26:35">
+      <blockquote style="margin:0">I reiterate multiple times that this is very hard. Do not take this lightly.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=1565s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:26:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="yt:uaZ3yRdYg8A@00:25:33-00:26:05">
+      <blockquote style="margin:0">three to four excellent engineer and researcher researchers just building this infrastructure and that was like their entire summer</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=1533s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:25:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L185-L188">
+      <blockquote style="margin:0">Around the time ChatGPT first came out, the widely accepted ("canonical") method for post-training an LM had three major steps, with RLHF being the central piece … Instruction tuning on ~10K examples</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L185-L188">Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L185-L188)</a> · <a href="https://rlhfbook.com/c/03-training-overview#instructgpt-foundational-rlhf-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L189-L190">
+      <blockquote style="margin:0">Training a reward model on ~100K prompts with pairwise completions (paper used 33K prompts) … Training the instruction-tuned model with RLHF on a separate ~100K prompts (paper used exactly 31K and does not document whether prompts were reused from other stages): The model is optimized against the reward model with a likely separate set of prompts</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L189-L190">Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L189-L190)</a> · <a href="https://rlhfbook.com/c/03-training-overview#instructgpt-foundational-rlhf-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L209-L214">
+      <blockquote style="margin:0">A fully open example of this multi-stage approach to post-training where RLHF plays a major role is Tülu 3. … Instruction tuning on ~1M examples: This primarily synthetic dataset, drawn from a mix of frontier models … On-policy preference data on ~1M preference pairs: This stage substantially boosts the chattiness … Reinforcement Learning with Verifiable Rewards on ~10K prompts: This stage is a small-scale reinforcement learning run to boost core skills such as mathematics</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L209-L214">Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L209-L214)</a> · <a href="https://rlhfbook.com/c/03-training-overview#tülu-3-introducing-rlvr-to-instruct-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L227-L230">
+      <blockquote style="margin:0">"Cold-start" with 100K+ on-policy reasoning samples: This data is sampled from an earlier RL checkpoint, R1-Zero, and heavily filtered … Large-scale reinforcement learning training: This stage repeatedly covers reasoning problems with the model, running RLVR "until convergence" … Rejection sampling and SFT: Near convergence, they apply rejection sampling to the RL checkpoint to build an SFT dataset of ~800K samples … Mixed reinforcement learning training on reasoning problems (verifiable rewards) with general preference tuning reward models to polish the model.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L227-L230">Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L227-L230)</a> · <a href="https://rlhfbook.com/c/03-training-overview#deepseek-r1-scaling-rlvr-for-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L237-L244">
+      <blockquote style="margin:0">the evolution into coding agents, which was accompanied by another change in canonical post-training recipes. … multi-teacher on-policy distillation (MOPD, covered in Chapter 12), became a popular tool for merging multiple, diverse skills into a final model. Second is simpler, as post-training compute continued to scale rapidly, especially in reinforcement learning phases. … general SFT is followed by domain-specialized teacher training (more SFT and extensive RL), then uses multi-teacher on-policy distillation (MOPD) to merge them into a final model. … these recipes have less complexity in the form of iterative model versions (a depth) of the recipe, but more complexity in needing to specialize many crucial experts (a form of breadth).</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L237-L244">Ch. 3 Training Overview § Transition to MOPD and Agents (L237-L244)</a> · <a href="https://rlhfbook.com/c/03-training-overview#transition-to-mopd-and-agents">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/bib.bib#L1574-L1578">
+      <blockquote style="margin:0">@misc{mimo2025flash, title={MiMo-V2-Flash Technical Report}, … year={2026}, month=jan</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L1574-L1578">book/chapters/bib.bib (L1574-L1578)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:o6l6tJQgUg4@00:23:55-00:24:26">
+      <blockquote style="margin:0">This is all a bit outdated, but it is shows the simplest possible way to get to RLHF.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1435s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:23:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="yt:o6l6tJQgUg4@00:32:43-00:33:15">
+      <blockquote style="margin:0">this is uh probably directionally like what the original ChatGPT was trained with</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1963s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L216">
+      <blockquote style="margin:0">The recipe has been successfully applied to Llama 3.1, OLMo 2, and SmolLM models</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L216">Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L216)</a> · <a href="https://rlhfbook.com/c/03-training-overview#tülu-3-introducing-rlvr-to-instruct-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="yt:o6l6tJQgUg4@00:32:12-00:32:43">
+      <blockquote style="margin:0">I put NA here cuz it's kind of just like it's just different. … It's like 223 is kind of like a mature version of the InstructGPT recipe</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1932s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="yt:uaZ3yRdYg8A@00:14:03-00:14:34">
+      <blockquote style="margin:0">this three-stage recipe is similar to our Tulu-3 where we go to SFT, DPO preference learning and RL.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=843s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L220-L221">
+      <blockquote style="margin:0">the best practices in post-training evolved again to re-order and redistribute compute across training stages. The clearest documentation of a reasoning model post-training recipe is DeepSeek R1</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L220-L221">Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L220-L221)</a> · <a href="https://rlhfbook.com/c/03-training-overview#deepseek-r1-scaling-rlvr-for-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L248">
+      <blockquote style="margin:0">Nemotron 3 Ultra at more than ten, Kimi K3 at nine, and DeepSeek V4 at more than ten</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L248">Ch. 3 Training Overview § Transition to MOPD and Agents (L248)</a> · <a href="https://rlhfbook.com/c/03-training-overview#transition-to-mopd-and-agents">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L250-L252">
+      <blockquote style="margin:0">Post-training recipes still vary widely across models. MOPD is a popular new tool, but labs are far from unanimous in its usage. … GLM-5 uses MOPD but details a more complex, three-stage RL process before MOPD</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L250-L252">Ch. 3 Training Overview § Transition to MOPD and Agents (L250-L252)</a> · <a href="https://rlhfbook.com/c/03-training-overview#transition-to-mopd-and-agents">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="yt:6StK9ttLNbQ@00:03:40-00:04:11">
+      <blockquote style="margin:0">You do training sequentially by optimizer and um you fork into go parallel by domain is what's happening now</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=220s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:03:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/12-synthetic-data.md#L258">
+      <blockquote style="margin:0">to create Multi-Teacher On-Policy Distillation (MOPD)</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/12-synthetic-data.md?plain=1#L258">Ch. 12 Synthetic Data &amp; Distillation § Modern OPD Variants (L258)</a> · <a href="https://rlhfbook.com/c/12-synthetic-data#modern-opd-variants">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="yt:o6l6tJQgUg4@00:32:43-00:33:15">
+      <blockquote style="margin:0">You could have five, you could have probably have 20 intermediate model versions between getting this final model.</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1963s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:32:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:6StK9ttLNbQ@00:00:32-00:01:33">
+      <blockquote style="margin:0">in industry like there's a shocking number of stages and sequencings to the models</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=32s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:00:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="yt:6StK9ttLNbQ@00:02:03-00:02:34">
+      <blockquote style="margin:0">Olmo 3 is not a complicated recipe. This is the simplest it can get in order to make a good recipe.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=123s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:02:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L198-L204">
+      <blockquote style="margin:0">Modern versions of post-training involve many, many more model versions and training stages … The most complex models trained in this era and onwards have not released full details of their training process.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L198-L204">Ch. 3 Training Overview § Tülu 3: Introducing RLVR to Instruct Models (L198-L204)</a> · <a href="https://rlhfbook.com/c/03-training-overview#tülu-3-introducing-rlvr-to-instruct-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:o6l6tJQgUg4@00:31:42-00:32:12">
+      <blockquote style="margin:0">started doing RLHF in early 2023, the idea was we need to buy 10,000 instruction tuning data points with human answers, we need to get 100,000 preference points from somebody like Scale AI, and we need to train on those prompts after we had a reward model.</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1902s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:o6l6tJQgUg4@00:31:42-00:32:12">
+      <blockquote style="margin:0">for standard recipes, they're using millions of prompts at every stage.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1902s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="yt:6StK9ttLNbQ@00:05:46-00:07:52">
+      <blockquote style="margin:0">this rule of thumb is okay and that bigger models tend to need less data. … I think this is a little bit outdated.</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="yt:uaZ3yRdYg8A@00:15:06-00:15:37">
+      <blockquote style="margin:0">It's a couple million prompts. It ends up being in token count because these are long context about like 20 times the tokens of our old SFT data sets like Tulu-3 or Olmo 2 SFT</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=906s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:15:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="yt:6StK9ttLNbQ@00:07:21-00:08:23">
+      <blockquote style="margin:0">There's just a chance with reasoning models as there are so many more tokens per completion in your training data that the number of prompts has decreased</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=441s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:07:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="yt:x-MqKBzoxkI@00:04:38-00:05:09">
+      <blockquote style="margin:0">So you start to balance your post-training mix by flops rather than prompts</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=278s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="yt:uaZ3yRdYg8A@00:39:31-00:40:33">
+      <blockquote style="margin:0">Our 7B runs ran for about 4 days. Our 32B runs ran for almost 3 weeks. … previous post-trained models like Tulu 3 and Olmo 2, we could do the whole recipe in the week. … this 21 days is very big proportional to pre-training, which only takes like 45 days.</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2371s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:39:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L1166-L1172">
+      <blockquote style="margin:0">Olmo 3.1: Extending the RL run … Training a general, 32B reasoning model. Full RL training took about 28 days on 224 GPUs.</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L1166-L1172">Slides lec1-chap1-3 § Olmo 3.1: Extending the RL run (L1166-L1172)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:o6l6tJQgUg4@00:43:04-00:43:36">
+      <blockquote style="margin:0">post-training used to be fairly cheap in compute but now it is a substantial amount of time.</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2584s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:43:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L940-L944">
+      <blockquote style="margin:0">the field has gone through multiple distinct phases (roughly): 1. 2023: Simple SFT for better chatbots and reproducing RLHF fundamentals (Alpaca, Vicuna, etc.) 2. 2024: DPO dominates open models and training stages expand (Zephyr-beta, Tülu 2, etc.) 3. 2025: RLVR, complex recipes (Tülu 3, Olmo 3, Nemotron 3, R1, etc.) 4. 2026: Agentic training, multi-turn RL, etc.</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L940-L944">Slides lec1-chap1-3 § From RLHF to &quot;post-training&quot; (L940-L944)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="yt:o6l6tJQgUg4@00:33:46-00:34:17">
+      <blockquote style="margin:0">2024 is the year when it stopped being more about RLHF and started being more about post-training.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2026s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:33:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="yt:6yIMb0K-aS4@00:23:52-00:24:54">
+      <blockquote style="margin:0">we don't want the model weights to drift too far from their initial values so we add this KL distance constraint on the probabilities of the model</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=1432s">How language model post-training is done today @ 00:23:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:MMDNaeIFVy8@00:15:37-00:16:07">
+      <blockquote style="margin:0">It is defined as a directional quantity. So it's asymmetric … But it is a distance. So it's non- negative.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=937s">ML Foundations (prerequisites) for Post-Training | Post-Training Course, Lecture 0 @ 00:15:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="yt:gB-bYUECpzE@00:02:35-00:03:06">
+      <blockquote style="margin:0">I talk about KL divergence as a distance and this is definitely it's a KL divergence is not a mathematical distance. A distance is a definition where a distance needs to be a symmetric function with the two quantities and the KL is by definition asymmetric, so it's not a distance.</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=155s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:02:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:gB-bYUECpzE@00:03:06-00:03:37">
+      <blockquote style="margin:0">people will colloquially refer to the KL divergence as the KL distance mostly as an easy way to communicate how much has a model changed during training.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=186s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:03:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L194">
+      <blockquote style="margin:0">A rendition of the early, three stage RLHF process with SFT, a reward model, and then optimization.</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L194">Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L194)</a> · <a href="https://rlhfbook.com/c/03-training-overview#instructgpt-foundational-rlhf-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="yt:6yIMb0K-aS4@00:30:04-00:31:07">
+      <blockquote style="margin:0">the RL stuff ends up winning out just by a little bit … it's not necessarily worth the time for everyone to do this training</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=1804s">How language model post-training is done today @ 00:30:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:uaZ3yRdYg8A@00:20:51-00:21:24">
+      <blockquote style="margin:0">applying engineers to improve on your RLHF stack as a substitute for DPO, you don't really need to do because DPO is largely fine.</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=1251s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:20:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:o6l6tJQgUg4@00:29:08-00:29:39">
+      <blockquote style="margin:0">no one has proof that DPO is actually bad for the models</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1748s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:29:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:6yIMb0K-aS4@00:36:52-00:37:25">
+      <blockquote style="margin:0">to the three we'd use this kind of RL F tuning as the final stage for a general instruct model to improve a bunch of key um a key evaluations where the outcomes are verifiable</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2212s">How language model post-training is done today @ 00:36:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:6yIMb0K-aS4@00:42:35-00:43:38">
+      <blockquote style="margin:0">these learning curves for GSM AK math IFL all on the training site gain performance while as really on gsm and math do the generalizations um translate the clearest and kind of some IFL</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2555s">How language model post-training is done today @ 00:42:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="yt:6yIMb0K-aS4@00:37:56-00:38:27">
+      <blockquote style="margin:0">we have an example on hugging phase which is just for instruction following</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2276s">How language model post-training is done today @ 00:37:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="yt:6yIMb0K-aS4@00:43:38-00:44:39">
+      <blockquote style="margin:0">one of the fun things that we tried foro to … we just did r lvr on different training sets … we applied it in three different stages where we can do something like GSM and then ifal and then math</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2618s">How language model post-training is done today @ 00:43:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L233">
+      <blockquote style="margin:0">Many models start with tailored instruction datasets with chain-of-thought sequences … providing a fast step to strong behaviors with SFT alone before moving onto RL</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L233">Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L233)</a> · <a href="https://rlhfbook.com/c/03-training-overview#deepseek-r1-scaling-rlvr-for-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="yt:6StK9ttLNbQ@00:01:03-00:01:33">
+      <blockquote style="margin:0">a standard post-training recipe today is something like supervised fine-tuning SFT for the base of reasoning behavior, and then reinforcement learning RL to make the model more agentic and capable after this.</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=63s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:01:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="yt:uaZ3yRdYg8A@00:13:01-00:14:03">
+      <blockquote style="margin:0">This is very different than frontier model recipes where they start with RL, they do this cold start in very scaled RL reasoning to begin with to get these dynamic behaviors.</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=781s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:13:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="yt:o6l6tJQgUg4@00:42:34-00:43:04">
+      <blockquote style="margin:0">during this RL zero phase which was directly on a base model.</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2554s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:42:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="yt:o6l6tJQgUg4@00:38:25-00:38:55">
+      <blockquote style="margin:0">classic RL. It's like very granular, it's multi-step. The environment is very deeply embedded in the problem, whereas like RLHF really removed the environment, and RLVR is starting to add it back in with the notions of agentic models acting.</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2305s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:38:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="yt:MMDNaeIFVy8@00:21:17-00:21:48">
+      <blockquote style="margin:0">the advanced agentic RL for the things like cloud code and all the tools that we have coming where they're doing really complex longunning tasks seem more like a traditional RL problem</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=1277s">ML Foundations (prerequisites) for Post-Training | Post-Training Course, Lecture 0 @ 00:21:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="yt:o6l6tJQgUg4@00:22:54-00:23:24">
+      <blockquote style="margin:0">And then it's like kind of just one reward per sequence. So it's much more granular.</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1374s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L343-L346">
+      <blockquote style="margin:0">$$J(\pi) = \mathbb{E}_{\tau \sim \pi}\!\left[\sum_{t=0}^{T} \gamma^t r(s_t, a_t)\right]$$</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L343-L346">Slides lec1-chap1-3 § Classical reinforcement learning (RL) (L343-L346)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="yt:gB-bYUECpzE@00:08:46-00:09:17">
+      <blockquote style="margin:0">Sutton and Barto does this kind of T plus one indexing. … now the book is all centralized in this type of zero notation.</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=526s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:08:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L92-L96">
+      <blockquote style="margin:0">A standard simplified CartPole update uses the constants cart mass $m_c$, pole mass $m_p$, pole half-length $l$, and gravity $g$ … $$\ddot{\theta}_t = \frac{g\sin\theta_t - \cos\theta_t\,\alpha}{l\left(\tfrac{4}{3} - \frac{m_p\cos^2\theta_t}{m_c + m_p}\right)}$$</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L92-L96">Ch. 3 Training Overview § Classic RL Example: CartPole (L92-L96)</a> · <a href="https://rlhfbook.com/c/03-training-overview#classic-rl-example-cartpole">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L429-L438">
+      <blockquote style="margin:0">The full state update: … $$\ddot{\theta}_t = \frac{g \sin\theta_t - \cos\theta_t \cdot \ddot{x}_t}{l}$$ … This is why classical RL is a multi-step control problem</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L429-L438">Slides lec1-chap1-3 § CartPole: The dynamics (L429-L438)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="yt:o6l6tJQgUg4@00:37:22-00:37:55">
+      <blockquote style="margin:0">I was leading the paper of that named RLVR, which was 223</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2242s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:37:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L1076">
+      <blockquote style="margin:0">RLVR was named by Tülu 3 and popularized by DeepSeek R1</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L1076">Slides lec1-chap1-3 § Reinforcement learning with *verifiable* rewards (L1076)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L26-L31">
+      <blockquote style="margin:0">uv run python -m instruction_tuning.train --config instruction_tuning/configs/sft_olmo2_1b.yaml … uv run python -m reward_models.train_preference_rm --config reward_models/configs/preference_rm.yaml … uv run python -m policy_gradients.train --config policy_gradients/configs/grpo.yaml … uv run python -m direct_alignment.train --loss dpo --max_samples 1000 … uv run python -m rejection_sampling.train --config rejection_sampling/configs/top_per_prompt.yaml</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L26-L31">Code code/README.md (L26-L31)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L43">
+      <blockquote style="margin:0">The book chapters now include suggested exercises at the end of Chapters 4, 5, 6, 8, 9, and 12.</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L43">Code code/README.md (L43)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:o6l6tJQgUg4@00:17:11-00:17:41">
+      <blockquote style="margin:0">You will be able to ask Claude to build a cart pole example and an RL algorithm to solve it and you'll be able to run it on your laptop and see it improve over time.</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1031s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:17:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L13-L17">
+      <blockquote style="margin:0">All commands below assume: … cd code/ uv sync</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L13-L17">Code code/README.md (L13-L17)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="yt:6yIMb0K-aS4@00:34:45-00:35:49">
+      <blockquote style="margin:0">on policy data is data where the completion comes from the model checkpoint they you're trying to learn on … the best way to have IND distribution data is to generate it from the model you're training on</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2085s">How language model post-training is done today @ 00:34:45</a></figcaption>
+    </figure>
+  </section>
+</main>
+</body>
+</html>

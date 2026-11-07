@@ -9,3 +9,4 @@ written anywhere under `notes/` is checked by `make check`.
 | 2026-11-07 | Why does RLVR often omit the KL penalty? (reference example) | [s01](../.lavish/s01_q-rlvr-kl-penalty.html) |
 | 2026-11-07 | Walk me through Chapter 1 | [s02](../.lavish/s02_ch01-introduction.html) |
 | 2026-11-07 | Walk me through Chapter 2 | [s03](../.lavish/s03_ch02-history.html) |
+| 2026-11-07 | Summarize Chapter 3 | [s04](../.lavish/s04_ch03-training-overview.html) |
