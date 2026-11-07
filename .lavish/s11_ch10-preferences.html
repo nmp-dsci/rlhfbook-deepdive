@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 10: The Nature of Preferences</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid input[type=range]{width:100%;accent-color:var(--accent)}
+  .wid output{font-family:var(--mono)}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  .poems{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:var(--s3);margin-top:var(--s3)}
+  .poem{margin:0}
+  .poem p{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  .dg .lane{stroke:var(--line-2);stroke-width:1}
+  .dg .axis,.dg .tick{stroke:var(--line-3);stroke-width:1.5}
+  .dg .dot{fill:var(--accent)}
+  .dg .lead{stroke:var(--line-3);stroke-width:1}
+  .dg .ev{fill:var(--ink);font-size:11.5px}
+  .dg .rn{font-size:12.5px}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite],.kv,#notes .callout,.wid label{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s10_ch09-rejection-sampling.html">Chapter 9</a></p>
+  <h1>Chapter 10: The Nature of Preferences</h1>
+  <p class="lede">RLHF exists for problems where writing a reward function is hard, and human preferences are what it models instead. <a class="chip" href="#s1" title="Ch. 10 The Nature of Preferences (L22-L23)">1</a> This chapter asks what a preference is, and how economics, psychology, philosophy and other fields shaped the tools for measuring and optimizing one. <a class="chip" href="#s2" title="Ch. 10 The Nature of Preferences (L24)">2</a> Its argument: assumptions inherited from economics, philosophy and optimal control "often do not apply in practice". <a class="chip" href="#s3" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L88)">3</a> There is no math to derive here and no code. It is the conceptual chapter, and Lambert calls its problems "the lasting problem of RLHF". <a class="chip" href="#s4" title="Slides lec8-chap10-11-preferences § The nature of preferences is the lasting problem of RLHF (L643-L646)">4</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Preferences replace correctness.</strong> When there is no right answer, as with "which poem is better?", you ask people to compare. <a class="chip" href="#s5" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L71-L73)">5</a> <a class="chip" href="#s6" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:39">6</a></li>
+      <li><strong>RLHF borrows from three fields.</strong> Philosophy and economics, optimal control and RL, and deep learning, each with its own idea of what a preference is. <a class="chip" href="#s7" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L78-L82)">7</a> <a class="chip" href="#s8" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L84-L85)">8</a></li>
+      <li><strong>Costs, rewards and preferences are different things.</strong> RLHF treats them as interchangeable. <a class="chip" href="#s9" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L106-L108)">9</a> <a class="chip" href="#s10" title="Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L336-L342)">10</a></li>
+      <li><strong>The tools assume a stable, single reward.</strong> RL's guarantees hold for a closed-form reward; human preferences drift and do not compress into one number. <a class="chip" href="#s11" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L158)">11</a> <a class="chip" href="#s12" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L173-L174)">12</a> <a class="chip" href="#s13" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L178-L179)">13</a></li>
+      <li><strong>The theory that licenses a scalar reward does not hold here.</strong> The VNM theorem allows a utility function only if preferences meet axioms they break in practice. <a class="chip" href="#s14" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L181)">14</a> <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Explain why RLHF collects comparisons rather than demonstrations or scores.</li>
+      <li>Name the three fields RLHF draws on, and what each assumes about a preference.</li>
+      <li>Say what the VNM theorem requires, and which requirements RLHF data breaks.</li>
+      <li>Explain why a single scalar reward cannot represent some groups' preferences.</li>
+      <li>Distinguish the two meanings of "value" in RLHF papers.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/10-preferences">Chapter 10</a></td><td>Short</td><td>The history and the argument, with the citations to follow up.</td></tr>
+        <tr><td>Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1216s">20:16</a>, and <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1867s">31:07</a> to <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2148s">35:48</a></td><td>25 min</td><td>Recorded July 2026. The first part follows this chapter; the end returns to open questions. The middle is Chapter 11.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L45-L364">Lecture 8 slides</a>, Part 1</td><td>21 slides</td><td>Adds Bradley-Terry, objective mismatch, social choice and prospect theory.</td></tr>
+        <tr><td>Talk, Dec 2023: <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=2s">0:02</a> to <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=1028s">17:08</a></td><td>17 min</td><td>The same history, given at a social choice workshop when the paper behind it came out.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="replace">
+    <h2>When preference replaces correctness</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=32s">0:32</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=65s">1:05</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=129s">2:09</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=159s">2:39</a></p>
+    <p>The framing question: "how do we hill climb on capabilities we don't really know how to score". <a class="chip" href="#s16" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:00:32">16</a> <a class="chip" href="#s17" title="Slides lec8-chap10-11-preferences § How do we hillclimb on capabilities we don&#x27;t really know how to score? (L60-L67)">17</a> The answer RLHF took is that it is easier to judge between a good and a bad example than to write a good one. <a class="chip" href="#s18" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:01:05">18</a> In 2023 Lambert called this "the fundamental assumption" RLHF is built on. <a class="chip" href="#s19" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:45">19</a></p>
+    <p>The chapter's test: on February 26, 2025, Lambert asked Claude 3.7 Sonnet and ChatGPT with GPT-4o for a short poem about an optimistic goldfish. <a class="chip" href="#s20" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L28-L31)">20</a></p>
+    <div class="poems">
+      <figure class="card poem"><p class="label">Example 1 <a class="chip" href="#s21" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L35-L50)">21</a></p><p>**Response**: The Optimistic Goldfish</p><p>A little goldfish, bright and bold,<br>Swam in circles, dreams untold.<br>Though the bowl was small and round,<br>Endless wonders still abound.</p><p>&quot;The world is vast,&quot; she&#x27;d always say,<br>&quot;I&#x27;ll find new joys in every day!&quot;<br>With every ripple, every gleam,<br>She&#x27;d chase the sunlight, chase a dream.</p><p>No walls could dim her hopeful view,<br>For in her heart, the ocean grew.<br>And though she swam in just one place,<br>She met each day with love and grace.</p></figure>
+      <figure class="card poem"><p class="label">Example 2 <a class="chip" href="#s22" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L54-L69)">22</a></p><p>**Response**: The Optimistic Goldfish</p><p>In a bowl of curved glass,<br>Swims a goldfish, bright and bold.<br>Three seconds of memory, they say,<br>Yet each circuit feels brand new and gold.</p><p>&quot;Today might bring fresh flakes,<br>Or perhaps a castle tall.<br>The water seems especially clear—<br>What adventure awaits beyond this wall?&quot;</p><p>Round and round with gleaming scales,<br>Forever finding joy anew.<br>Each moment fresh, each circle bright,<br>The optimist in golden hue.</p></figure>
+    </div>
+    <p style="margin-top:var(--s3)">Which is better, and which model wrote which? Compare that with "Who is the president of the United States?", which has a right answer. <a class="chip" href="#s5" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L71-L73)">5</a> In the lecture Lambert admits he no longer knows which model wrote which. Ask many people and "you will get a distribution of answers". <a class="chip" href="#s23" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:09">23</a> Preferences are what you reach for when there is no right answer, <a class="chip" href="#s24" title="Slides lec8-chap10-11-preferences § When preference replaces correctness (L125-L130)">24</a> and preference tuning "has been very effective at improving capabilities". <a class="chip" href="#s25" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:39">25</a></p>
+    <p>Modern RLHF is the meeting point of three areas: philosophy, psychology, economics and decision theory; optimal control and RL; and deep learning. <a class="chip" href="#s7" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L78-L82)">7</a> <a class="chip" href="#s26" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:07:48">26</a> Each brings its own assumptions about what a preference is. In practice RLHF is studied as empirical alignment, maximizing skills, not as calibration to values. <a class="chip" href="#s8" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L84-L85)">8</a> Work on "pluralistic alignment" across populations continues, though. <a class="chip" href="#s27" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L86)">27</a></p>
+  </section>
+
+  <section id="origins">
+    <h2>The origins of RLHF and preferences</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=253s">4:13</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=284s">4:44</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=468s">7:48</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=499s">8:19</a></p>
+    <p>The chapter, and the first half of the lecture, follow a 2023 paper Lambert wrote with two colleagues, <em>The History and Risks of Reinforcement Learning and Human Feedback</em>. <a class="chip" href="#s28" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:04:44">28</a> It traces RLHF back through the fields it borrows from and asks "what breaks in the borrowing". Its main charge is that RLHF treats costs, rewards and preferences as interchangeable, and inherits RL's optimizers without their convergence guarantees. <a class="chip" href="#s29" title="Slides lec8-chap10-11-preferences § The paper behind the first half of this lecture (L160-L164)">29</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 400" role="img" aria-label="Timeline in three lanes. Philosophy, economics and decision theory: Port Royal Logic 1662, Ramsey 1931, Von Neumann-Morgenstern 1947, Arrow 1950, Bradley-Terry 1952, Sen 1973, Hirschman 1984. Optimal control and RL: Bellman 1957, utility-to-go 1960, TD learning 1988, Q-learning 1992. Deep learning and RLHF: DQN 2013, AlphaZero 2017, reward modeling 2018, RLHF for summarization 2020.">
+  <text class="rn" x="10" y="24">Philosophy, economics, decision theory</text><line class="lane" x1="10" x2="790" y1="70" y2="70"/>
+  <text class="rn" x="10" y="144">Optimal control and RL</text><line class="lane" x1="10" x2="790" y1="190" y2="190"/>
+  <text class="rn" x="10" y="264">Deep learning and RLHF</text><line class="lane" x1="10" x2="790" y1="310" y2="310"/>
+  <line class="axis" x1="40" x2="128" y1="372" y2="372"/><line class="axis" x1="140" x2="780" y1="372" y2="372"/>
+  <text class="l" x="134" y="376" text-anchor="middle">//</text>
+  <line class="tick" x1="150.0" x2="150.0" y1="372" y2="377"/><text class="l" x="150.0" y="390" text-anchor="middle">1925</text>
+  <line class="tick" x1="307.5" x2="307.5" y1="372" y2="377"/><text class="l" x="307.5" y="390" text-anchor="middle">1950</text>
+  <line class="tick" x1="465.0" x2="465.0" y1="372" y2="377"/><text class="l" x="465.0" y="390" text-anchor="middle">1975</text>
+  <line class="tick" x1="622.5" x2="622.5" y1="372" y2="377"/><text class="l" x="622.5" y="390" text-anchor="middle">2000</text>
+  <line class="tick" x1="780.0" x2="780.0" y1="372" y2="377"/><text class="l" x="780.0" y="390" text-anchor="middle">2025</text>
+  <text class="l" x="70" y="390" text-anchor="middle">1662</text>
+  <g><title>1662: Port Royal Logic</title><line class="lead" x1="70.0" y1="70" x2="84.3" y2="60"/><circle class="dot" cx="70.0" cy="70" r="5"/><text class="ev" x="84.3" y="56" text-anchor="middle">Port Royal Logic 1662</text></g>
+  <g><title>1931: Ramsey</title><line class="lead" x1="187.8" y1="70" x2="187.8" y2="80"/><circle class="dot" cx="187.8" cy="70" r="5"/><text class="ev" x="187.8" y="92" text-anchor="middle">Ramsey 1931</text></g>
+  <g><title>1947: Von Neumann-Morgenstern</title><circle class="dot" cx="288.6" cy="70" r="5"/><text class="ev" x="288.6" y="56" text-anchor="middle">Von Neumann-Morgenstern 1947</text></g>
+  <g><title>1950: Arrow</title><line class="lead" x1="307.5" y1="70" x2="307.5" y2="80"/><circle class="dot" cx="307.5" cy="70" r="5"/><text class="ev" x="307.5" y="92" text-anchor="middle">Arrow 1950</text></g>
+  <g><title>1952: Bradley-Terry</title><line class="lead" x1="320.1" y1="70" x2="320.1" y2="44"/><circle class="dot" cx="320.1" cy="70" r="5"/><text class="ev" x="320.1" y="40" text-anchor="middle">Bradley-Terry 1952</text></g>
+  <g><title>1973: Sen</title><circle class="dot" cx="452.4" cy="70" r="5"/><text class="ev" x="452.4" y="56" text-anchor="middle">Sen 1973</text></g>
+  <g><title>1984: Hirschman</title><line class="lead" x1="521.7" y1="70" x2="521.7" y2="80"/><circle class="dot" cx="521.7" cy="70" r="5"/><text class="ev" x="521.7" y="92" text-anchor="middle">Hirschman 1984</text></g>
+  <g><title>1957: Bellman, MDPs</title><circle class="dot" cx="351.6" cy="190" r="5"/><text class="ev" x="351.6" y="176" text-anchor="middle">Bellman, MDPs 1957</text></g>
+  <g><title>1960: Utility-to-go</title><line class="lead" x1="370.5" y1="190" x2="370.5" y2="200"/><circle class="dot" cx="370.5" cy="190" r="5"/><text class="ev" x="370.5" y="212" text-anchor="middle">Utility-to-go 1960</text></g>
+  <g><title>1988: TD learning</title><circle class="dot" cx="546.9" cy="190" r="5"/><text class="ev" x="546.9" y="176" text-anchor="middle">TD learning 1988</text></g>
+  <g><title>1992: Q-learning</title><line class="lead" x1="572.1" y1="190" x2="572.1" y2="200"/><circle class="dot" cx="572.1" cy="190" r="5"/><text class="ev" x="572.1" y="212" text-anchor="middle">Q-learning 1992</text></g>
+  <g><title>2013: DQN</title><circle class="dot" cx="704.4" cy="310" r="5"/><text class="ev" x="704.4" y="296" text-anchor="middle">DQN 2013</text></g>
+  <g><title>2017: AlphaZero</title><line class="lead" x1="729.6" y1="310" x2="729.6" y2="320"/><circle class="dot" cx="729.6" cy="310" r="5"/><text class="ev" x="729.6" y="332" text-anchor="middle">AlphaZero 2017</text></g>
+  <g><title>2018: Reward modeling</title><line class="lead" x1="735.9" y1="310" x2="719.0" y2="284"/><circle class="dot" cx="735.9" cy="310" r="5"/><text class="ev" x="719.0" y="280" text-anchor="middle">Reward modeling 2018</text></g>
+  <g><title>2020: RLHF summarization</title><line class="lead" x1="748.5" y1="310" x2="709.1" y2="336"/><circle class="dot" cx="748.5" cy="310" r="5"/><text class="ev" x="709.1" y="348" text-anchor="middle">RLHF summarization 2020</text></g>
+</svg></div>
+      <figcaption>Figure 1. Mine, a simplified version of the chapter's timeline of subfields converging on RLHF. <a class="chip" href="#s30" title="Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L102)">30</a> Dates are from the chapter, <a class="chip" href="#s31" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L110-L112)">31</a> <a class="chip" href="#s32" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L114-L115)">32</a> <a class="chip" href="#s33" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L128-L130)">33</a> the slides <a class="chip" href="#s34" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L223-L247)">34</a> <a class="chip" href="#s35" title="Slides lec8-chap10-11-preferences § Where utility theory breaks down (L271-L275)">35</a> <a class="chip" href="#s36" title="Slides lec8-chap10-11-preferences § The other root: Optimal control &amp; RL (L321-L326)">36</a> and the 2023 talk. <a class="chip" href="#s37" title="15min History of Reinforcement Learning and Human Feedback @ 00:13:00">37</a> The talk dates reward modeling to 2018 <a class="chip" href="#s38" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:12">38</a> and RLHF for summarization to 2020. <a class="chip" href="#s39" title="15min History of Reinforcement Learning and Human Feedback @ 00:06:48">39</a> Bentham sits off the chart; the slides date him only to the "early 1800s". <a class="chip" href="#s40" title="Slides lec8-chap10-11-preferences § Utility, from logic to a number (L209-L211)">40</a></figcaption>
+    </figure>
+    <p>Everything rests on the assumption that human preferences exist, which goes back to Aristotle's <em>Topics</em>. <a class="chip" href="#s41" title="Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L100)">41</a> <a class="chip" href="#s42" title="15min History of Reinforcement Learning and Human Feedback @ 00:02:38">42</a> Philosophy is the oldest branch, and language models are "deeply kind of imbued with philosophical thinking". <a class="chip" href="#s43" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:08:19">43</a> Problem specifications have since kept moving away from domains where optimal solutions exist, toward under-specified models used as approximations. <a class="chip" href="#s44" title="Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L97-L98)">44</a></p>
+    <h3>Aside: objective mismatch</h3>
+    <p>Lambert brings in the idea from his PhD in model-based RL: a dynamics model is trained for prediction accuracy, not control, so a "better" model can give a worse policy. RLHF repeats this one level up. A reward model is trained for classification accuracy, not for the quality of the policy it trains, so reward-model accuracy is "a proxy for a proxy". <a class="chip" href="#s45" title="Slides lec8-chap10-11-preferences § Aside: The &quot;objective mismatch&quot; lens (L173-L178)">45</a> The best reward model "is not necessarily the one that is the most accurate on your training data". <a class="chip" href="#s46" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:06:48">46</a> <a class="chip" href="#s47" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:07:18">47</a> The over-optimization lecture calls it "just an objective mismatch". <a class="chip" href="#s48" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:12">48</a></p>
+  </section>
+
+  <section id="utility">
+    <h2>Specifying objectives: from the logic of utility to reward functions</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=530s">8:50</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=561s">9:21</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=592s">9:52</a></p>
+    <p>RLHF optimizes only against reward models, so it assumes preferences, rewards and costs converge. <a class="chip" href="#s9" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L106-L108)">9</a> The goal is "preferences as a single number which we can optimize". <a class="chip" href="#s49" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:08:50">49</a> The idea that wants reduce to one measure is old: <a class="chip" href="#s50" title="Slides lec8-chap10-11-preferences § Utility, from logic to a number (L207-L211)">50</a></p>
+    <ul>
+      <li><strong>1662, the <em>Port Royal Logic</em>:</strong> weigh the good or evil of an outcome by "the probability that it happens or does not happen". <a class="chip" href="#s31" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L110-L112)">31</a></li>
+      <li><strong>Bentham's hedonic calculus:</strong> everything in life could be weighed. <a class="chip" href="#s32" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L114-L115)">32</a></li>
+      <li><strong>1931, Ramsey's <em>Truth and Probability</em>:</strong> the first quantitative application, <a class="chip" href="#s32" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L114-L115)">32</a> quantifying preference and belief together. <a class="chip" href="#s50" title="Slides lec8-chap10-11-preferences § Utility, from logic to a number (L207-L211)">50</a></li>
+    </ul>
+    <p>The debates were rarely settled in theory; subfields reached their own consensus instead. <a class="chip" href="#s51" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L117-L118)">51</a> A minority of economists hold that preferences are too hard to measure, because people have preferences over their own and others' preferences. That view "is not reflected in the RLHF process". <a class="chip" href="#s52" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L120-L121)">52</a> Some behavioral economists go further: preferences may not exist, and may be just a methodological tool. <a class="chip" href="#s53" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L122)">53</a></p>
+    <p>The other half of the vocabulary came from elsewhere. "Reward" comes from operant conditioning and the Law of Effect: a scale of how good an action is. <a class="chip" href="#s54" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L125-L126)">54</a> Utility-to-go came from control theory, in analog circuits in 1960, built for systems with clear optimality. <a class="chip" href="#s33" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L128-L130)">33</a> Those assumptions "stand in sharp contrast to reward models that aggregate multimodal preferences". <a class="chip" href="#s55" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L132-L133)">55</a></p>
+    <p>The chapter quotes Singh and colleagues on what a reward is in RL: <a class="chip" href="#s56" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L136-L139)">56</a></p>
+    <blockquote>Rewards in an RL system correspond to primary rewards, i.e., rewards that in animals have been hard-wired by the evolutionary process due to their relevance to reproductive success.</blockquote>
+    <p>Lambert's reading: a value function approximates the true reward of an environment, and the confusion "just reinforces why all of this is so messy". <a class="chip" href="#s57" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:19:44">57</a> RL uses rewards to steer toward clearly defined goals, which "is in conflict when many individual desires are reduced to a single function". <a class="chip" href="#s58" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L141-L143)">58</a></p>
+  </section>
+
+  <section id="rl">
+    <h2>Tools for optimizing utility</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=901s">15:01</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=932s">15:32</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=964s">16:04</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1027s">17:07</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1058s">17:38</a></p>
+    <p>RL grew out of dynamic programming and optimal control: the Bellman equation, solved inside an MDP, before RL existed as a field. <a class="chip" href="#s59" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L147-L149)">59</a> The term "reinforcement learning" came from psychology in the 1960s, and Klopf brought back trial-and-error learning. <a class="chip" href="#s60" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L151-L153)">60</a> TD learning and Q-learning followed, <a class="chip" href="#s61" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L156-L157)">61</a> then deep RL with DQN and AlphaZero. <a class="chip" href="#s36" title="Slides lec8-chap10-11-preferences § The other root: Optimal control &amp; RL (L321-L326)">36</a> The catch: these guarantees "have only been demonstrated for domains cast as MDPs" or tasks with a single closed-form reward. <a class="chip" href="#s11" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L158)">11</a> <a class="chip" href="#s36" title="Slides lec8-chap10-11-preferences § The other root: Optimal control &amp; RL (L321-L326)">36</a> Most reward or cost functions imply an optimal behavior; "models of human preferences cannot". <a class="chip" href="#s62" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L161-L163)">62</a></p>
+    <p>Lambert sums up the pitch behind RLHF: model preferences as one function, and use the tools that solve closed-form functions. "But in reality there are cost functions, reward functions and preference functions and all of these are very different." <a class="chip" href="#s63" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:16:04">63</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th></th><th>Comes from</th><th>Character</th></tr></thead>
+      <tbody>
+        <tr><td>Costs</td><td>Control</td><td>Physical, measurable, given, often with clear optimality or bounds</td></tr>
+        <tr><td>Rewards</td><td>Psychology, and RL convenience</td><td>A scalar signal to maximize</td></tr>
+        <tr><td>Preferences</td><td>People</td><td>Relational and unstable; "not obviously a scalar at all"</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">From the slides: <a class="chip" href="#s10" title="Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L336-L342)">10</a> treating preferences as rewards made the optimization tractable, but is "the root cause" of many of RLHF's unsolvable biases. A learned reward model is "a moving, noisy proxy", not a ground-truth reward, <a class="chip" href="#s64" title="Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L351-L353)">64</a> which is why over-optimization happens. <a class="chip" href="#s65" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:17:07">65</a></p>
+    <p>Inverse RL, learning a reward from behavior, is close to reward modeling but rarely mentioned in RLHF. The chapter puts that down to the engineering path RLHF took, and argues for more comparison with it. <a class="chip" href="#s66" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L167-L169)">66</a> <a class="chip" href="#s64" title="Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L351-L353)">64</a> Lambert's view of IRL has shifted over time; see <a href="#differ">where the sources differ</a>.</p>
+  </section>
+
+  <section id="complex">
+    <h2>The complexity of optimizing preferences</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=622s">10:22</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=652s">10:52</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=684s">11:24</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=714s">11:54</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=744s">12:24</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=775s">12:55</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=805s">13:25</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=870s">14:30</a></p>
+    <p>RL assumes rewards and costs are stable functions: the same state and action, the same return. Human preferences "constantly drift". <a class="chip" href="#s12" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L173-L174)">12</a> The word "value" adds confusion. In RL it is a numerical estimate of future reward; in alignment it is a moral principle. <a class="chip" href="#s67" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L176)">67</a> A reward model maps text to a scalar while missing dynamics like preference shift over a labeling session. At best it compresses "a multi-dimensional reward landscape into a single scalar function". <a class="chip" href="#s13" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L178-L179)">13</a> <a class="chip" href="#s68" title="Slides lec8-chap10-11-preferences § One scalar preference, many features (L258-L264)">68</a></p>
+    <h3>The VNM theorem, and why it does not hold</h3>
+    <p>In theory, the Von Neumann-Morgenstern utility theorem licenses a scalar reward. <a class="chip" href="#s14" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L181)">14</a> It is "the result RLHF leans on". <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a> Lambert calls it the theorem that let optimal control and RL be applied to human preferences, <a class="chip" href="#s69" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:22">69</a> and the economics behind "maximize expected utility" in an intro AI class. <a class="chip" href="#s70" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:52">70</a> Its conditions fail in RLHF: <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a> <a class="chip" href="#s71" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:11:24">71</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>VNM assumes</th><th>RLHF data shows</th></tr></thead>
+      <tbody>
+        <tr><td>Stable preferences</td><td>They drift during and after labeling, with time, mood and experience <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a> <a class="chip" href="#s72" title="Slides lec8-chap10-11-preferences § Preferences are not stable objects over time and context (L305-L308)">72</a></td></tr>
+        <tr><td>Preferences independent of presentation</td><td>Framing and display change them <a class="chip" href="#s73" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L185-L188)">73</a> <a class="chip" href="#s74" title="Slides lec8-chap10-11-preferences § Preferences are not stable objects over time and context (L312)">74</a></td></tr>
+        <tr><td>Transitivity</td><td>At high complexity they can be intransitive <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a> <a class="chip" href="#s75" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L198-L204)">75</a></td></tr>
+        <tr><td>One utility</td><td>Many dimensions squashed into one number <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a> <a class="chip" href="#s68" title="Slides lec8-chap10-11-preferences § One scalar preference, many features (L258-L264)">68</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">"In like one narrow narrow case they might" hold, Lambert says, but not in general. <a class="chip" href="#s76" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:52">76</a> The reduction "is what makes this tractable, but is kind of the source of so many trade-offs". <a class="chip" href="#s77" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:11:24">77</a> The MDP can in theory be adapted to the VNM theorem, but rarely is. <a class="chip" href="#s78" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L182-L183)">78</a></p>
+    <p>Bradley-Terry (1952) is the model that turns comparisons into a single score. <a class="chip" href="#s79" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:11:54">79</a> It became the backbone of reward modeling, and it is "where the imperfections enter". <a class="chip" href="#s80" title="Slides lec8-chap10-11-preferences § Bradley-Terry (1952): Comparisons to scores (L247-L252)">80</a> There are infinitely many ways to teach an annotator to pick between two completions, "so it's impossible to do perfectly". <a class="chip" href="#s81" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:12:24">81</a></p>
+    <h3>Aggregating people</h3>
+    <ul>
+      <li><strong>Choice is not preference.</strong> Sen: revealed preference may recapitulate Hume's guillotine, and "what do I want?" differs from "is X better than Y?". <a class="chip" href="#s82" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L189)">82</a></li>
+      <li><strong>Impossibility.</strong> Social choice theorems show no preference optimization technique meets every fairness criterion at once. <a class="chip" href="#s83" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L191)">83</a> <a class="chip" href="#s35" title="Slides lec8-chap10-11-preferences § Where utility theory breaks down (L271-L275)">35</a> Assuming utilities can be compared between people avoids this, but the result may conflict with corrigibility. <a class="chip" href="#s84" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L192-L194)">84</a></li>
+      <li><strong>Change over time.</strong> Preferences change, and aggregating across people, places and situations is "central to modern RLHF dataset engineering". <a class="chip" href="#s85" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L195-L196)">85</a></li>
+    </ul>
+    <p>Social choice, the field that studies aggregation, is "a natural lens for alignment": whose preferences count, and how do you combine disagreeing labelers? <a class="chip" href="#s86" title="Slides lec8-chap10-11-preferences § Aside: Social choice for AI alignment (L287-L292)">86</a></p>
+    <h3>Try aggregating</h3>
+    <p>This is my illustration of the chapter's points that measured preferences "may not be transitive" <a class="chip" href="#s75" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L198-L204)">75</a> and that a reward model compresses many dimensions into one scalar. <a class="chip" href="#s13" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L178-L179)">13</a> Three groups value different things and rank three poems differently. A Bradley-Terry model, as a reward model would use, fits one score per poem to their pooled comparisons.</p>
+    <div class="wid" id="vote-demo">
+      <p class="label" style="margin:0">Three groups of labelers rank three poems (an illustration, not Lambert's)</p>
+      <p class="grp-pre">Try: <button class="btn btn-sm" type="button" data-w="1,1,1" data-lavish-action>Equal groups</button> <button class="btn btn-sm" type="button" data-w="5,3,2" data-lavish-action>One large group</button> <button class="btn btn-sm" type="button" data-w="1,0,0" data-lavish-action>Only one group</button></p>
+      <label for="vote-w0">Values rhyme: Rhyming &gt; Free verse &gt; Haiku. Size <output id="vote-w0-o">1</output></label>
+      <input id="vote-w0" type="range" min="0" max="10" step="1" value="1" data-lavish-action>
+      <label for="vote-w1">Values imagery: Free verse &gt; Haiku &gt; Rhyming. Size <output id="vote-w1-o">1</output></label>
+      <input id="vote-w1" type="range" min="0" max="10" step="1" value="1" data-lavish-action>
+      <label for="vote-w2">Values brevity: Haiku &gt; Rhyming &gt; Free verse. Size <output id="vote-w2-o">1</output></label>
+      <input id="vote-w2" type="range" min="0" max="10" step="1" value="1" data-lavish-action>
+      <div class="tablewrap" style="margin-top:var(--s2)"><table class="kt" style="min-width:420px">
+        <thead><tr><th>Pair</th><th>Share preferring the first</th><th>Bradley-Terry fit</th></tr></thead>
+        <tbody id="vote-pairs"></tbody>
+      </table></div>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Fitted scalar scores</dt><dd><output id="vote-r"></output></dd>
+        <dt>Majority preferences</dt><dd><output id="vote-cycle"></output></dd>
+      </div>
+      <p id="vote-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">With equal groups, each pairwise majority is 2 to 1, but around a cycle: rhyming beats free verse, free verse beats haiku, and haiku beats rhyming. No scalar can reproduce that. The fitted scores come out equal, and the model predicts 50% for every pair. Make one group larger and the fit follows that group.</p>
+    <h3>Where theory and practice part</h3>
+    <p>The chapter ends with four ways the assumptions fail in practice: <a class="chip" href="#s75" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L198-L204)">75</a></p>
+    <ul>
+      <li>preferences may not be transitive or comparable as the setting gets more complex;</li>
+      <li>proxy signals from implicit data, such as time on page or a repeated question, are used without asking how they interact with training and deployment;</li>
+      <li>the number and presentation of options change the results;</li>
+      <li>low agreement between respondents can hide contextual differences that the reward model averages away.</li>
+    </ul>
+    <p>Lambert adds that static data collection was "always" going to be a limitation, because preferences are not stable. <a class="chip" href="#s87" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:14:30">87</a> <a class="chip" href="#s72" title="Slides lec8-chap10-11-preferences § Preferences are not stable objects over time and context (L305-L308)">72</a></p>
+  </section>
+
+  <section id="open">
+    <h2>Open questions</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1991s">33:11</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2024s">33:44</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2054s">34:14</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2086s">34:46</a></p>
+    <p>The lecture closes Chapters 10 and 11 with questions that apply here:</p>
+    <ul>
+      <li><strong>Who labels, and is disagreement noise or signal?</strong> Paid or volunteer, workplace or end user. <a class="chip" href="#s88" title="Slides lec8-chap10-11-preferences § Higher-level complexities (L625-L628)">88</a> Lambert does not expect AI models to "ever be democratic". <a class="chip" href="#s89" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:33:11">89</a></li>
+      <li><strong>Are the preferences even expressed in the model?</strong> <a class="chip" href="#s90" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:33:44">90</a> RLHF's motivation has drifted from aligning to human preference to making models effective. Because industry RLHF is closed, no one can check whether a model reflects the spec given to annotators. <a class="chip" href="#s91" title="Slides lec8-chap10-11-preferences § The unaudited gap: Spec → data → behavior (L634-L637)">91</a> "This type of audit was never done publicly". <a class="chip" href="#s92" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:34:14">92</a> He asked the same in 2023: "no one knows everyone does it but it's never talked about". <a class="chip" href="#s93" title="15min History of Reinforcement Learning and Human Feedback @ 00:16:07">93</a></li>
+      <li><strong>Should everything be averaged?</strong> "so much of ml is built over averaging". <a class="chip" href="#s94" title="15min History of Reinforcement Learning and Human Feedback @ 00:16:07">94</a></li>
+    </ul>
+    <p>He calls it "a good academic problem": well motivated, with literature to build on, and not crowded. <a class="chip" href="#s95" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:34:46">95</a> <a class="chip" href="#s96" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:04:13">96</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates unless noted. The chapter and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is inverse RL a path for RLHF?</strong></p><ul>
+      <li><strong>Talk (Dec 2023):</strong> language is a tree with no revisited states, so there is "much less hope of Bridging the inverse RL training methods to rhf". <a class="chip" href="#s97" title="DPO Debate: Is RL needed for RLHF? @ 00:21:31">97</a></li>
+      <li><strong>Chapter:</strong> IRL's absence reflects the engineering path, and "motivates further investment and comparison to IRL methods". <a class="chip" href="#s66" title="Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L167-L169)">66</a></li>
+      <li><strong>Lecture 8 (Jul 2026):</strong> IRL "never really made it into RHF", but "started coming back in the on policy distillation literature". <a class="chip" href="#s98" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:17:38">98</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is preference aggregation an active research area?</strong></p><ul>
+      <li><strong>Talk (Dec 2023):</strong> given at "a workshop on social choice for AI". <a class="chip" href="#s99" title="15min History of Reinforcement Learning and Human Feedback @ 00:00:02">99</a></li>
+      <li><strong>CS224N lecture (spring 2024, uploaded Mar 2025):</strong> "literally all the field of social Choice needs to get condensed into these things". <a class="chip" href="#s100" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 01:02:35">100</a></li>
+      <li><strong>Chapter:</strong> pluralistic alignment "continue[s] to be studied". <a class="chip" href="#s27" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L86)">27</a></li>
+      <li><strong>Lecture 8 (Jul 2026):</strong> these are problems "almost nobody is talking about today", <a class="chip" href="#s101" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:00:00">101</a> and with RLVR's rise the area is "very quiet". <a class="chip" href="#s102" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:13:58">102</a> The slides: a rabbit hole "I used to spend more time in". <a class="chip" href="#s86" title="Slides lec8-chap10-11-preferences § Aside: Social choice for AI alignment (L287-L292)">86</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Can preferences be optimized at all?</strong></p><ul>
+      <li><strong>Talk (Dec 2023):</strong> "you might not be able to optimize preferences", and some believe they "don't exist". <a class="chip" href="#s103" title="15min History of Reinforcement Learning and Human Feedback @ 00:09:56">103</a></li>
+      <li><strong>Chapter:</strong> presents both minority views, unmeasurable <a class="chip" href="#s52" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L120-L121)">52</a> or nonexistent preferences, <a class="chip" href="#s53" title="Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L122)">53</a> and notes RLHF does not reflect them.</li>
+      <li><strong>Lecture 8 (Jul 2026):</strong> preference tuning "has been very effective at improving capabilities", making models "clearly smarter". <a class="chip" href="#s25" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:39">25</a></li>
+      <li><span class="badge info">agent note</span> These may not conflict. The capability gains are measured on benchmarks, while the doubt is about whether a preference is a well-defined target. The slides make a related point: practice drifted from preference to effectiveness. <a class="chip" href="#s91" title="Slides lec8-chap10-11-preferences § The unaudited gap: Spec → data → behavior (L634-L637)">91</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does VNM justify a scalar reward?</strong></p><ul>
+      <li><strong>Chapter:</strong> "In theory" it gives the designer license, <a class="chip" href="#s14" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L181)">14</a> then lists the assumptions RLHF breaks. <a class="chip" href="#s73" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L185-L188)">73</a></li>
+      <li><strong>Slides:</strong> it is the result RLHF leans on, yet "essentially none of those <em>ifs</em> hold". <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a></li>
+      <li><strong>Lecture 8:</strong> they might hold "in like one narrow narrow case". <a class="chip" href="#s76" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:52">76</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>The poems on the slide are cut.</strong> The slide drops lines from both: example 1 loses four lines, and example 2 loses one line of its second stanza and three of its third. <a class="chip" href="#s104" title="Slides lec8-chap10-11-preferences § Which poem is better? Which model? (L89-L118)">104</a> Read them in the chapter. <a class="chip" href="#s21" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L35-L50)">21</a> <a class="chip" href="#s22" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L54-L69)">22</a></li>
+      <li><strong>Which model wrote which</strong> is not given in the chapter, <a class="chip" href="#s5" title="Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L71-L73)">5</a> and Lambert says he no longer knows. <a class="chip" href="#s23" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:09">23</a></li>
+      <li><strong>"Value" has two meanings.</strong> An RL estimate of future reward, and a moral principle. <a class="chip" href="#s67" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L176)">67</a></li>
+      <li><strong>Bentham's date.</strong> The chapter gives none; the slides say "early 1800s". <a class="chip" href="#s40" title="Slides lec8-chap10-11-preferences § Utility, from logic to a number (L209-L211)">40</a></li>
+      <li><strong>Captions mishear.</strong> "Arnold" is Arnauld, "vonoyoman Morgans" is Von Neumann-Morgenstern, and the axiom list ends with "dependence" for independence. <a class="chip" href="#s69" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:22">69</a> <a class="chip" href="#s70" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:52">70</a> "RHF" is RLHF. <a class="chip" href="#s49" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:08:50">49</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Why does RLHF ask labelers to compare two answers rather than write the ideal one?</summary>
+      <p>Judging is easier than generating for many tasks, especially without a right answer, like a poem. <a class="chip" href="#s19" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:45">19</a> <a class="chip" href="#s18" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:01:05">18</a></p>
+    </details>
+    <details><summary>What does the VNM theorem promise, and on what condition?</summary>
+      <p>If preferences meet axioms like completeness, transitivity, continuity and independence, a single utility function represents them, and rational choice maximizes expected utility. <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a></p>
+    </details>
+    <details><summary>Name two ways RLHF preference data breaks those conditions.</summary>
+      <p>Any two of: drift over time and while labeling, dependence on framing and display, intransitivity, and many dimensions squashed into one. <a class="chip" href="#s15" title="Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)">15</a> <a class="chip" href="#s73" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L185-L188)">73</a> <a class="chip" href="#s12" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L173-L174)">12</a></p>
+    </details>
+    <details><summary>Why can't a Bradley-Terry reward model represent three equal groups with cyclic rankings?</summary>
+      <p>It gives each answer one score, so its preferences are always transitive. A cycle has no scalar representation, so the fit settles on equal scores. That is the chapter's "may not be transitive" problem. <a class="chip" href="#s75" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L198-L204)">75</a> <a class="chip" href="#s13" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L178-L179)">13</a></p>
+    </details>
+    <details><summary>What is objective mismatch in RLHF?</summary>
+      <p>The reward model is trained for classification accuracy, but what you want is a good policy after training against it. The most accurate reward model need not be the most useful. <a class="chip" href="#s45" title="Slides lec8-chap10-11-preferences § Aside: The &quot;objective mismatch&quot; lens (L173-L178)">45</a> <a class="chip" href="#s46" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:06:48">46</a></p>
+    </details>
+    <details><summary>Costs, rewards and preferences: where does each come from?</summary>
+      <p>Costs from control, rewards from psychology and RL, and preferences from people, relational and unstable. <a class="chip" href="#s10" title="Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L336-L342)">10</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The cycle in the widget is a Condorcet cycle.</strong> Not Lambert. Three voters with rankings $A \succ B \succ C$, $B \succ C \succ A$ and $C \succ A \succ B$ give 2 to 1 majorities for $A$ over $B$, $B$ over $C$ and $C$ over $A$. Bradley-Terry models $P(i \succ j) = \sigma(r_i - r_j)$, so whenever it predicts $i$ over $j$ and $j$ over $k$, it predicts $i$ over $k$. It cannot fit a cycle. The maximum-likelihood fit here sets all three scores equal. The chapter cites the impossibility theorems; <a class="chip" href="#s83" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L191)">83</a> this is the simplest case of the problem, not the theorem.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Pooling hides groups.</strong> Not Lambert. Make one group much larger in the widget and the fitted scores follow it closely. The smaller groups' rankings then show up only as a few points of shortfall in the pairwise fit. That matches the chapter's last point, that low agreement can mask contextual differences the model aggregates "without resolving". <a class="chip" href="#s75" title="Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L198-L204)">75</a></p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the cited papers themselves (Arrow, Sen, Harsanyi, Pettigrew and others), which I describe only as the chapter and slides do</li>
+      <li>the history from Klopf through TD-Gammon in detail</li>
+      <li>the Lecture 8 middle section on data collection interfaces, which belongs to Chapter 11</li>
+    </ul>
+    <p>Chapter 11 turns from what a preference is to how preference data is collected.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 11 (Preference Data) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 11&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 11</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 10 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 10&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 10</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L22-L23">
+      <blockquote style="margin:0">emerged to optimize machine learning models in domains where specifically designing a reward function is hard. The word *preferences*, which was present in early literature, is at the center of the RLHF process -- human preferences are what we are trying to model and what fuels the data for training.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L22-L23">Ch. 10 The Nature of Preferences (L22-L23)</a> · <a href="https://rlhfbook.com/c/10-preferences#the-nature-of-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L24">
+      <blockquote style="margin:0">how multiple fields of economics, psychology, philosophy, and more inform modern RLHF.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L24">Ch. 10 The Nature of Preferences (L24)</a> · <a href="https://rlhfbook.com/c/10-preferences#the-nature-of-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L88">
+      <blockquote style="margin:0">The goal of this chapter is to illustrate how complex motivations result in presumptions about the nature of tools used in RLHF that often do not apply in practice.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L88">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L88)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L643-L646">
+      <blockquote style="margin:0">The nature of preferences is the lasting problem of RLHF … This is one of the least-settled, most human parts of the field. Read widely and go to the primary sources.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L643-L646">Slides lec8-chap10-11-preferences § The nature of preferences is the lasting problem of RLHF (L643-L646)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L71-L73">
+      <blockquote style="margin:0">Which is better? Which came from which model? How would you tell? Particularly, compare this to a question like \"Who is the president of the United States?\" There is a clear right and wrong answer. The motivation for using humans as the reward signals is to obtain an indirect metric for the target reward</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L71-L73">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L71-L73)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="yt:Y2tv5vuaxFs@00:02:39-00:03:11">
+      <blockquote style="margin:0">preferences are the tool we use … to have a learning signal that replaces correctness. So like when there is no right answer we can keep hill climbing and that is actually super crucial.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=159s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L78-L82">
+      <blockquote style="margin:0">modern RLHF is the convergence of three areas of development: … Philosophy, psychology, economics, decision theory, and the nature of human preferences; … Optimal control, reinforcement learning, and maximizing utility; and … Modern deep learning systems.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L78-L82">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L78-L82)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L84-L85">
+      <blockquote style="margin:0">Each of these areas brings specific assumptions about what a preference is and how it can be optimized … In practice, RLHF methods are motivated and studied from the perspective of empirical alignment -- maximizing model performance on specific skills instead of measuring the calibration to specific values.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L84-L85">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L84-L85)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L106-L108">
+      <blockquote style="margin:0">The optimization of RLHF explicitly relies only on reward models. In order to use rewards as an optimization target, RLHF presupposes the convergence of ideas from preferences, rewards, and costs.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L106-L108">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L106-L108)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L336-L342">
+      <blockquote style="margin:0">These three are **ontologically different** … **Costs** come from control: physical, measurable, given, and often have clear optimality/bounds. … **Rewards** are from psychology and an RL convenience: a scalar signal to maximize. … **Preferences** are human, relational, and unstable -- *not* obviously a scalar at all. … Reducing preferences to rewards made the optimization format tractable, but is the root cause of many of the unsolvable \"biases\" in RLHF and preference data.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L336-L342">Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L336-L342)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L158">
+      <blockquote style="margin:0">Crucially, these notions of provable usefulness through utility have only been demonstrated for domains cast as MDPs or addressed in tasks with a single closed-form reward function</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L158">Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L158)</a> · <a href="https://rlhfbook.com/c/10-preferences#tools-for-optimizing-utility">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L173-L174">
+      <blockquote style="margin:0">rewards and costs are assumed to be stable and determinative. … As we move into preferences, this is no longer the case -- human preferences constantly drift throughout their experiences.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L173-L174">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L173-L174)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L178-L179">
+      <blockquote style="margin:0">such as preference shift when labeling many examples sequentially and assuming they are independent. At best, modeling preferences compresses a multi-dimensional reward landscape into a single scalar function.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L178-L179">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L178-L179)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L181">
+      <blockquote style="margin:0">In theory, the Von Neumann-Morgenstern (VNM) utility theorem gives the designer license to construct such functions</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L181">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L181)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L225-L236">
+      <blockquote style="margin:0">if your preferences obey a few axioms (completeness, transitivity, continuity, independence), they can be represented by a single **utility function** … This is the result RLHF leans on to justify fitting a scalar reward. … In RLHF, essentially none of those *ifs* hold: … preferences **drift** during and after labeling … they're **context- and framing-dependent** … at high complexity they can be **intransitive** … and they're **multidimensional**, squashed into one number</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L225-L236">Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L225-L236)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="yt:Y2tv5vuaxFs@00:00:32-00:01:05">
+      <blockquote style="margin:0">how do we hill climb on capabilities we don't really know how to score.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=32s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:00:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L60-L67">
+      <blockquote style="margin:0">How do we hillclimb on capabilities we don't really know how to score? … Is it easier to write a good demonstration or decide between a good and a bad example?</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L60-L67">Slides lec8-chap10-11-preferences § How do we hillclimb on capabilities we don&#x27;t really know how to score? (L60-L67)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:Y2tv5vuaxFs@00:01:05-00:01:35">
+      <blockquote style="margin:0">is it easier to write a good demonstration or decide between a good and bad example and in many cases it should be really clear what the answer is.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=65s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:01:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:Mu_-FWIuhDA@00:05:45-00:06:17">
+      <blockquote style="margin:0">for many tasks we want to solve valuation of outcomes is easier than producing the correct Behavior this essentially means it's easier to compare two things than it is to generate … this is the fundamental assumption to what rhf is built upon now</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=345s">15min History of Reinforcement Learning and Human Feedback @ 00:05:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L28-L31">
+      <blockquote style="margin:0">how do you decide which of these two poems is better? On February 26th, 2025, I asked both Claude 3.7 Sonnet and ChatGPT with GPT-4o the following: … Write me a short poem about an optimistic goldfish.</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L28-L31">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L28-L31)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L35-L50">
+      <blockquote style="margin:0">A little goldfish, bright and bold, Swam in circles, dreams untold.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L35-L50">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L35-L50)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L54-L69">
+      <blockquote style="margin:0">In a bowl of curved glass, Swims a goldfish, bright and bold. Three seconds of memory, they say,</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L54-L69">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L54-L69)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:Y2tv5vuaxFs@00:02:09-00:02:39">
+      <blockquote style="margin:0">I actually don't know which one is which at this point, but it's a subtle question of which poem is better. And if you pull a bunch of people, you will get a distribution of answers</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=129s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L125-L130">
+      <blockquote style="margin:0">Preferences are what we reach for when there is **no right answer**. … *Preferences came to be the core of RLHF, as the alignment community looked to optimize for complicated objectives like \"human values.\"*</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L125-L130">Slides lec8-chap10-11-preferences § When preference replaces correctness (L125-L130)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="yt:Y2tv5vuaxFs@00:02:39-00:03:43">
+      <blockquote style="margin:0">preference tuning whether DPO or FL RHF has been very effective at improving capabilities. So this subtle notion of preference can still make the models clearly smarter on performance benchmarks</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=159s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:02:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:Y2tv5vuaxFs@00:07:48-00:08:19">
+      <blockquote style="margin:0">RHF and modern post training kind of came from a few different branches. I describe them as three things.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=468s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:07:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L86">
+      <blockquote style="margin:0">the origins of value alignment for RLHF methods continue to be studied through research on methods to solve for \"pluralistic alignment\" across populations</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L86">Ch. 10 The Nature of Preferences § When Preference Replaces Correctness (L86)</a> · <a href="https://rlhfbook.com/c/10-preferences#when-preference-replaces-correctness">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:Y2tv5vuaxFs@00:04:44-00:05:14">
+      <blockquote style="margin:0">I wrote this paper with two of my long-term colleagues the history and risks of reinforced learning from human feedback.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=284s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:04:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L160-L164">
+      <blockquote style="margin:0">traces RLHF back through the fields it borrows from -- and asks what breaks in the borrowing. … it quietly treats **costs, rewards, and preferences** as interchangeable when they are not. … we inherit RL's optimizers/setup without inheriting its guarantees for convergence.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L160-L164">Slides lec8-chap10-11-preferences § The paper behind the first half of this lecture (L160-L164)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L102">
+      <blockquote style="margin:0">The timeline of the integration of various subfields into the modern version of RLHF. The direct links are continuous developments of specific technologies, and the arrows indicate motivations and conceptual links.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L102">Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L102)</a> · <a href="https://rlhfbook.com/c/10-preferences#the-origins-of-rlhf-and-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L110-L112">
+      <blockquote style="margin:0">In 1662, *The Port Royal Logic* introduced the notion of decision-making quality … To judge what one must do to obtain a good or avoid an evil, it is necessary to consider not only the good and evil in itself, but also the probability that it happens or does not happen.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L110-L112">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L110-L112)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L114-L115">
+      <blockquote style="margin:0">Bentham's utilitarian *Hedonic Calculus*, arguing that everything in life could be weighed … The first quantitative application of these ideas emerged in 1931 with Ramsey's *Truth and Probability*</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L114-L115">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L114-L115)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L128-L130">
+      <blockquote style="margin:0">utility-to-go was invented in control theory, specifically in the context of analog circuits in 1960 … These methods are designed around systems with clear definitions of optimality</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L128-L130">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L128-L130)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L223-L247">
+      <blockquote style="margin:0">Von Neumann-Morgenstern utility theorem (1947) … Bradley-Terry (1952): Comparisons to scores</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L223-L247">Slides lec8-chap10-11-preferences § Von Neumann-Morgenstern utility theorem (1947) (L223-L247)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L271-L275">
+      <blockquote style="margin:0">**Arrow's impossibility theorem** (1950): no voting rule aggregates individual preferences into a collective one while satisfying a few basic fairness criteria … choice ≠ preference; revealed-preference theory is too thin … people have *preferences over their preferences* -- so preferences may be unmeasurable</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L271-L275">Slides lec8-chap10-11-preferences § Where utility theory breaks down (L271-L275)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L321-L326">
+      <blockquote style="margin:0">**Bellman** (1957): MDPs and dynamic programming … **Sutton** (1988): temporal-difference learning … **Watkins** (1992): Q-learning … **DQN** (2013): deep RL at scale [@mnih2013playing]; **AlphaGo / AlphaZero** (2017) … Note: these guarantees assume a **single, closed-form reward**!</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L321-L326">Slides lec8-chap10-11-preferences § The other root: Optimal control &amp; RL (L321-L326)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:Mu_-FWIuhDA@00:13:00-00:13:32">
+      <blockquote style="margin:0">there's a presumption that we can reduce preferences to par wise preferences the link back in time to the 50s is something called the Bradley Terry model</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=780s">15min History of Reinforcement Learning and Human Feedback @ 00:13:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="yt:Mu_-FWIuhDA@00:05:12-00:05:45">
+      <blockquote style="margin:0">in 2018 a very overlapping group of auth from this Cristiano at all paper proposed scalable agent alignment via reward modeling</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=312s">15min History of Reinforcement Learning and Human Feedback @ 00:05:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="yt:Mu_-FWIuhDA@00:06:48-00:07:21">
+      <blockquote style="margin:0">we're starting to see the impacts of R lhf in 2020</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=408s">15min History of Reinforcement Learning and Human Feedback @ 00:06:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L209-L211">
+      <blockquote style="margin:0">**Bentham's hedonic calculus** (early 1800s)</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L209-L211">Slides lec8-chap10-11-preferences § Utility, from logic to a number (L209-L211)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L100">
+      <blockquote style="margin:0">all of the following operates on the assumption that human preferences exist in any form, which emerged in early philosophical discussions, such as Aristotle's Topics, Book Three.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L100">Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L100)</a> · <a href="https://rlhfbook.com/c/10-preferences#the-origins-of-rlhf-and-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:Mu_-FWIuhDA@00:02:38-00:03:08">
+      <blockquote style="margin:0">the earliest links are for philosophy I've referenced Aristotle's work in works on rlf that's over 2,000 years ago</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=158s">15min History of Reinforcement Learning and Human Feedback @ 00:02:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:Y2tv5vuaxFs@00:08:19-00:08:50">
+      <blockquote style="margin:0">philosophy is definitely the oldest one. And a lot of language models becomes deeply kind of imbued with philosophical thinking.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=499s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:08:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L97-L98">
+      <blockquote style="margin:0">Modern problem specifications have repeatedly stepped away from domains where optimal solutions are possible and deployed under-specified models as approximate solutions.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L97-L98">Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L97-L98)</a> · <a href="https://rlhfbook.com/c/10-preferences#the-origins-of-rlhf-and-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L173-L178">
+      <blockquote style="margin:0">we optimize a **proxy** objective that isn't the one we actually care about. … the reward model is trained for preference-classification accuracy, not downstream policy quality -- the same mismatch, one level up … Reward-model accuracy (RewardBench-style) is a proxy for a proxy!</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L173-L178">Slides lec8-chap10-11-preferences § Aside: The &quot;objective mismatch&quot; lens (L173-L178)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:Y2tv5vuaxFs@00:06:48-00:07:18">
+      <blockquote style="margin:0">the best reward model for making a downstream performance good is not necessarily the one that is the most accurate on your training data. It is the one that makes the downstream model the best.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=408s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:06:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:Y2tv5vuaxFs@00:07:18-00:07:48">
+      <blockquote style="margin:0">I've always known that the reward bench style um reward models are very much a proxy and every proxy is imperfect</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=438s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:07:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="yt:y04JhXpiI4s@00:05:12-00:05:43">
+      <blockquote style="margin:0">when the reward that you're optimizing is a learned model it will always have imperfections that can be captured by RL. This is just an objective mismatch</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=312s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:Y2tv5vuaxFs@00:08:50-00:09:21">
+      <blockquote style="margin:0">preferences as a single number which we can optimize. That's what the reward models in RHF are doing.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=530s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:08:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L207-L211">
+      <blockquote style="margin:0">The common thread: the idea that human wants can be reduced to a single measure: … **Ramsey**, *Truth and Probability* (1931): first to quantify preference *and* belief together</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L207-L211">Slides lec8-chap10-11-preferences § Utility, from logic to a number (L207-L211)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L117-L118">
+      <blockquote style="margin:0">These debates have rarely been settled on a theoretical level; rather, different subfields and branches of social science have reached internal consensus on methods and approaches to preference measurement</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L117-L118">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L117-L118)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L120-L121">
+      <blockquote style="margin:0">A minority of economists posit that preferences, if they do exist, are prohibitively difficult to measure because people have preferences over their own preferences, as well as each other's preferences … In this view, which is not reflected in the RLHF process</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L120-L121">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L120-L121)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L122">
+      <blockquote style="margin:0">Some behavioral economists have even argued that preferences don't exist--they may be less an ontological statement of what people actually value than a methodological tool</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L122">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L122)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L125-L126">
+      <blockquote style="margin:0">The term *reward* emerged from the study of operant conditioning, animal behavior, and the *Law of Effect* [@thorndike1927law; @skinner2019behavior], where a reward is a scale of \"how good an action is\" (higher means better).</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L125-L126">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L125-L126)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L132-L133">
+      <blockquote style="margin:0">These assumptions from optimal control and early reinforcement learning stand in sharp contrast to reward models that aggregate multimodal preferences.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L132-L133">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L132-L133)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L136-L139">
+      <blockquote style="margin:0">Rewards in an RL system correspond to primary rewards, i.e., rewards that in animals have been hard-wired by the evolutionary process due to their relevance to reproductive success.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L136-L139">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L136-L139)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:Y2tv5vuaxFs@00:19:44-00:20:16">
+      <blockquote style="margin:0">this is essentially saying that like a value function is approximating the true reward of an environment. … I think some of this being confusing just reinforces why all of this is so messy.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1184s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:19:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L141-L143">
+      <blockquote style="margin:0">rewards are used in RL systems as a signal to tune behavior towards clearly defined goals. … but is in conflict when many individual desires are reduced to a single function.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L141-L143">Ch. 10 The Nature of Preferences § Specifying Objectives: From Logic of Utility to Reward Functions (L141-L143)</a> · <a href="https://rlhfbook.com/c/10-preferences#specifying-objectives-from-logic-of-utility-to-reward-functions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L147-L149">
+      <blockquote style="margin:0">Modern reinforcement learning methods depend strongly on the Bellman equation … These origins of RL are inspired by dynamic programming methods and were developed solely as optimal control techniques (i.e. RL did not yet exist).</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L147-L149">Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L147-L149)</a> · <a href="https://rlhfbook.com/c/10-preferences#tools-for-optimizing-utility">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L151-L153">
+      <blockquote style="margin:0">The term reinforcement, coming from the psychology literature, became intertwined with modern methods afterwards in the 1960s as *reinforcement learning* … Work from Harry Klopf reintroduced the notion of trial-and-error learning</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L151-L153">Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L151-L153)</a> · <a href="https://rlhfbook.com/c/10-preferences#tools-for-optimizing-utility">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L156-L157">
+      <blockquote style="margin:0">The notion of temporal-difference (TD) learning was developed to aid agents in both the credit assignment and data collection problems … The method Q-learning, the basis for many modern forms of RL</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L156-L157">Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L156-L157)</a> · <a href="https://rlhfbook.com/c/10-preferences#tools-for-optimizing-utility">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L161-L163">
+      <blockquote style="margin:0">most prominent developments before ChatGPT remained motivated within the context of adaptive control, where reward and cost functions have a finite notion of success … Most reward or cost functions can return an explicit optimal behavior, whereas models of human preferences cannot.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L161-L163">Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L161-L163)</a> · <a href="https://rlhfbook.com/c/10-preferences#tools-for-optimizing-utility">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:Y2tv5vuaxFs@00:16:04-00:17:07">
+      <blockquote style="margin:0">the synergy was we can model preferences as a single function and we know how to solve simple closed form functions. Why don't we put them together and create RHF? But in reality there are cost functions, reward functions and preference functions and all of these are very different.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=964s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:16:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L351-L353">
+      <blockquote style="margin:0">A learned reward model is a *moving, noisy proxy*, not a ground-truth reward. … Inverse RL -- learning a reward *from behavior* -- is conceptually close but oddly absent from RLHF practice … So we inherit RL's optimizers without inheriting its guarantees.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L351-L353">Slides lec8-chap10-11-preferences § Costs ≠ rewards ≠ preferences (L351-L353)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="yt:Y2tv5vuaxFs@00:17:07-00:17:38">
+      <blockquote style="margin:0">a learned reward model is obviously not a ground truth reward. So this like doing RL on this is obviously incomplete and this is why we get things like overoptimization</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1027s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:17:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L167-L169">
+      <blockquote style="margin:0">there is little mention of the subfield of inverse reinforcement learning (IRL) in the literature of RLHF. … This primarily reflects the engineering path by which a stable approach to performing RLHF emerged, and motivates further investment and comparison to IRL methods</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L167-L169">Ch. 10 The Nature of Preferences § Tools for Optimizing Utility (L167-L169)</a> · <a href="https://rlhfbook.com/c/10-preferences#tools-for-optimizing-utility">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L176">
+      <blockquote style="margin:0">In RL, a *value* is a numerical estimate of future reward (as in the Bellman equation); in alignment discussions, a *value* refers to a moral or ethical principle.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L176">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L176)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L258-L264">
+      <blockquote style="margin:0">A reward model compresses, into a single number, all of: … helpfulness, honesty, harmlessness, tone, format, length, taste... … We then optimize hard against that number, which is impossible to ever do perfectly!</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L258-L264">Slides lec8-chap10-11-preferences § One scalar preference, many features (L258-L264)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="yt:Y2tv5vuaxFs@00:10:22-00:10:52">
+      <blockquote style="margin:0">that let ideas from optimal control in RL be applied to something like preferences and decision theory for humans</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=622s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="yt:Y2tv5vuaxFs@00:10:52-00:11:24">
+      <blockquote style="margin:0">intro to AI class and they're talking about how AI's are designed to maximize expected utility, the VNM theorem is essentially the philosoph philosophy slash like um behavioral economics literature that supports that idea in AI.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=652s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="yt:Y2tv5vuaxFs@00:11:24-00:11:54">
+      <blockquote style="margin:0">They drift over time. They drift as you see data. They depend on the context of the task. They're very multi-dimensional.</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=684s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:11:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L305-L308">
+      <blockquote style="margin:0">Preferences **drift** -- they change with time, mood, and experience … A problem for \"collect a label, train on it later repeatedly.\"</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L305-L308">Slides lec8-chap10-11-preferences § Preferences are not stable objects over time and context (L305-L308)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L185-L188">
+      <blockquote style="margin:0">the VNM utility theorem also invokes a number of assumptions about the nature of preferences … how choices are displayed visually influences people's preferences</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L185-L188">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L185-L188)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L312">
+      <blockquote style="margin:0">the *same* outcome is valued differently depending on the reference point -- value depends on framing, not a fixed ranking</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L312">Slides lec8-chap10-11-preferences § Preferences are not stable objects over time and context (L312)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L198-L204">
+      <blockquote style="margin:0">measured preferences may not be transitive or comparable with each other as the environment where they are measured is made more complex; … proxy measurements may be derived from implicit data … the number and presentation of input sources may vary the results … relatively low accuracy across respondents in RLHF training data</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L198-L204">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L198-L204)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="yt:Y2tv5vuaxFs@00:10:52-00:11:24">
+      <blockquote style="margin:0">in RHF these assumptions about how preferences work do not last. So in like one narrow narrow case they might</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=652s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:10:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:Y2tv5vuaxFs@00:11:24-00:11:54">
+      <blockquote style="margin:0">the reduction of the VNM utility theory is what makes this tractable, but is kind of the source of so many trade-offs</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=684s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:11:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L182-L183">
+      <blockquote style="margin:0">The MDP formulation used in most RL research has been shown in theory to be modifiable to accommodate the VNM theorem … but this is rarely used in practice.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L182-L183">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L182-L183)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="yt:Y2tv5vuaxFs@00:11:54-00:12:24">
+      <blockquote style="margin:0">this is a way to condense a pair-wise preference into a single score</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=714s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:11:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L247-L252">
+      <blockquote style="margin:0">The statistical model that turns *comparisons* into *scores* -- and became the backbone of reward modeling … This is *why* RLHF needs **preference data** (and where the imperfections enter).</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L247-L252">Slides lec8-chap10-11-preferences § Bradley-Terry (1952): Comparisons to scores (L247-L252)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:Y2tv5vuaxFs@00:12:24-00:13:25">
+      <blockquote style="margin:0">there's a lot of different ways you could toach an annotator to choose if one completion was better than the other. In fact, there is infinite ways when you get into any sort of open-ended response from a model. So it's impossible to do perfectly and there are always trade-offs.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=744s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:12:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L189">
+      <blockquote style="margin:0">theories of revealed preferences may just recapitulate *Hume's guillotine* (you can't extract an \"ought\" from an \"is\"), and in particular the difference between choice (what do I want?) and preference (is X better than Y?)</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L189">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L189)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L191">
+      <blockquote style="margin:0">well-known impossibility theorems in social choice theory show that not all fairness criteria can be simultaneously met via a given preference optimization technique</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L191">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L191)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L192-L194">
+      <blockquote style="margin:0">Theoretical challenges to these theorems exist, for example by assuming that interpersonal comparison of utility is viable … However, the resulting utility functions may come into tension with desiderata for corrigibility</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L192-L194">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L192-L194)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L195-L196">
+      <blockquote style="margin:0">preferences change over time … These conflicts around preference aggregation across people, places, and diverse situations are central to modern RLHF dataset engineering.</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L195-L196">Ch. 10 The Nature of Preferences § Complexity of Optimizing Preferences (L195-L196)</a> · <a href="https://rlhfbook.com/c/10-preferences#complexity-of-optimizing-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L287-L292">
+      <blockquote style="margin:0">If aggregating preferences is the hard part, **social choice theory** is the field that studies it -- and a natural lens for alignment. … Whose preferences count? How do you combine disagreeing labelers? … (One of the rabbit holes I used to spend more time in.)</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L287-L292">Slides lec8-chap10-11-preferences § Aside: Social choice for AI alignment (L287-L292)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="yt:Y2tv5vuaxFs@00:14:30-00:15:01">
+      <blockquote style="margin:0">this is a big reason why the kind of static data collection of RHF from humans going into the models was going to always make it a limitation</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=870s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:14:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L625-L628">
+      <blockquote style="margin:0">**Collection context** -- do workplace labels transfer to end users? Paid vs. volunteer? … **Population &amp; demographics** -- who labels? Is disagreement **noise or signal**? … **Are the preferences even expressed in the models?**</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L625-L628">Slides lec8-chap10-11-preferences § Higher-level complexities (L625-L628)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:Y2tv5vuaxFs@00:33:11-00:33:44">
+      <blockquote style="margin:0">I'm not going to say that we AI models will ever be democratic which is like not going to happen</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1991s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:33:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="yt:Y2tv5vuaxFs@00:33:44-00:34:14">
+      <blockquote style="margin:0">are the preferences even expressed in the model</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2024s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:33:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L634-L637">
+      <blockquote style="margin:0">RLHF's *motivation* (align to human preference) has drifted from its *practice* (make models effective). … we can't check whether the trained model actually reflects the spec given to annotators.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L634-L637">Slides lec8-chap10-11-preferences § The unaudited gap: Spec → data → behavior (L634-L637)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:Y2tv5vuaxFs@00:34:14-00:34:46">
+      <blockquote style="margin:0">This type of audit was never done publicly</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2054s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:34:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="yt:Mu_-FWIuhDA@00:16:07-00:16:38">
+      <blockquote style="margin:0">does the model actually get the priorities that we set out at the beginning of the data collection process no one knows everyone does it but it's never talked about</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=967s">15min History of Reinforcement Learning and Human Feedback @ 00:16:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:Mu_-FWIuhDA@00:16:07-00:16:38">
+      <blockquote style="margin:0">should we just be averaging again so much of ml is built over averaging over batches of large data</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=967s">15min History of Reinforcement Learning and Human Feedback @ 00:16:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="yt:Y2tv5vuaxFs@00:34:46-00:35:17">
+      <blockquote style="margin:0">There are such fundamental problems to collecting preference data to training reward models to integrating it into complex training pipelines that there's a lot more for people to do and it's a good academic problem</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2086s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:34:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="yt:Y2tv5vuaxFs@00:04:13-00:04:44">
+      <blockquote style="margin:0">is a great place for academics to work</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=253s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:04:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:YJMCSVLRUNs@00:21:31-00:22:02">
+      <blockquote style="margin:0">tree so there's no revisiting of States because the states are always growing so in that way there's much less hope of Bridging the inverse RL training methods to rhf</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=1291s">DPO Debate: Is RL needed for RLHF? @ 00:21:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:Y2tv5vuaxFs@00:17:38-00:18:09">
+      <blockquote style="margin:0">the idea of ideas of inverse RL never really made it into RHF. … Inverse RL started coming back in the on policy distillation literature</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1058s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:17:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:Mu_-FWIuhDA@00:00:02-00:00:34">
+      <blockquote style="margin:0">this one was from a workshop on social choice for AI sep ethics and safety</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=2s">15min History of Reinforcement Learning and Human Feedback @ 00:00:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:dnF463_Ar9I@01:02:35-01:03:11">
+      <blockquote style="margin:0">literally all the field of social Choice needs to get condensed into these things</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=3755s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 01:02:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="yt:Y2tv5vuaxFs@00:00:00-00:00:32">
+      <blockquote style="margin:0">they're still kind of unsolvable and interesting problems, but they're problems that almost nobody is talking about today.</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=0s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="yt:Y2tv5vuaxFs@00:13:58-00:14:30">
+      <blockquote style="margin:0">if RLVR did not take off and things like this, this is type of thing that would be at the frontier of AI … And there are still people studying this, but it's very quiet</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=838s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:13:58</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="yt:Mu_-FWIuhDA@00:09:56-00:10:26">
+      <blockquote style="margin:0">you might not be able to optimize preferences they some people believe preferences don't exist</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=596s">15min History of Reinforcement Learning and Human Feedback @ 00:09:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L89-L118">
+      <blockquote style="margin:0">A little goldfish, bright and bold, … For in her heart, the ocean grew. … What adventure awaits beyond this wall?\" The optimist in golden hue.</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L89-L118">Slides lec8-chap10-11-preferences § Which poem is better? Which model? (L89-L118)</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // Three groups, three poems, fixed rankings; pooled pairwise shares and a Bradley-Terry fit by MM iterations.
+  (() => {
+    const POEMS = ['Rhyming', 'Free verse', 'Haiku'];
+    const RANKS = [[0, 1, 2], [1, 2, 0], [2, 0, 1]];  // best first
+    const PAIRS = [[0, 1], [1, 2], [2, 0]];
+    const ws = [0, 1, 2].map(i => document.getElementById('vote-w' + i));
+    const sig = z => 1 / (1 + Math.exp(-z));
+    const show = () => {
+      const w = ws.map(x => Number(x.value));
+      ws.forEach((x, i) => { document.getElementById('vote-w' + i + '-o').textContent = x.value; });
+      const total = w.reduce((a, b) => a + b, 0);
+      const body = document.getElementById('vote-pairs');
+      if (total === 0) { body.innerHTML = '<tr><td colspan="3">No labelers.</td></tr>'; document.getElementById('vote-r').textContent = ''; document.getElementById('vote-cycle').textContent = ''; document.getElementById('vote-msg').textContent = 'Give at least one group a size.'; return; }
+      // share[i][j]: fraction of labelers ranking poem i above poem j
+      const share = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+      RANKS.forEach((rk, g) => { for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) share[rk[a]][rk[b]] += w[g] / total; });
+      // Bradley-Terry MM (Hunter 2004) on fractional counts, one comparison per pair; tiny prior keeps it finite.
+      let p = [1, 1, 1];
+      for (let it = 0; it < 500; it++) {
+        p = p.map((pi, i) => {
+          let wins = 0.001, den = 0;
+          for (let j = 0; j < 3; j++) if (j !== i) { wins += share[i][j]; den += (1 + 0.002) / (pi + p[j]); }
+          return wins / den;
+        });
+        const g = Math.cbrt(p[0] * p[1] * p[2]); p = p.map(x => x / g);
+      }
+      const r = p.map(Math.log);
+      body.innerHTML = PAIRS.map(([i, j]) => '<tr><td>' + POEMS[i] + ' over ' + POEMS[j] + '</td><td>' + (100 * share[i][j]).toFixed(0) + '%</td><td>' + (100 * sig(r[i] - r[j])).toFixed(0) + '%</td></tr>').join('');
+      document.getElementById('vote-r').textContent = POEMS.map((n, i) => n + ' ' + (r[i] >= 0 ? '+' : '') + r[i].toFixed(2)).join(', ');
+      const wins = PAIRS.map(([i, j]) => share[i][j] > 0.5 ? [i, j] : share[i][j] < 0.5 ? [j, i] : null);
+      const cyc = wins.every(x => x) && [0, 1, 2].every(n => wins.filter(x => x[0] === n).length === 1);  // each poem wins exactly one pair
+      document.getElementById('vote-cycle').textContent = wins.map(x => x ? POEMS[x[0]] + ' > ' + POEMS[x[1]] : 'tie').join('; ') + (cyc ? ' (a cycle)' : '');
+      const err = Math.max(...PAIRS.map(([i, j]) => Math.abs(share[i][j] - sig(r[i] - r[j]))));
+      document.getElementById('vote-msg').textContent = cyc
+        ? 'The majorities form a cycle, which no single score per poem can reproduce. The fit is off by up to ' + (100 * err).toFixed(0) + ' points.'
+        : (err < 0.02 ? 'The fit reproduces these preferences well: they behave like one scale.' : 'No cycle, but the fit is still off by up to ' + (100 * err).toFixed(0) + ' points: the smaller groups disagree in ways one score cannot hold.');
+    };
+    document.querySelectorAll('#vote-demo button[data-w]').forEach(btn => btn.addEventListener('click', () => { btn.dataset.w.split(',').forEach((v, i) => { ws[i].value = v; }); show(); }));
+    ws.forEach(x => x.addEventListener('input', show));
+    show();
+  })();
+</script>
+</body>
+</html>
