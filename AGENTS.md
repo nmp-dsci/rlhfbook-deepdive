@@ -51,7 +51,8 @@ This file is the guide for every coding agent. `CLAUDE.md` only imports it.
    - Keep each transcript quote to 60 words (`make check` enforces it). Transcripts carry no licence.
    - The book is CC BY-NC-SA 4.0, so anything adapted from it stays under that licence, with
      attribution and non-commercial.
-10. **Commit only when the owner asks.** Never add `.lavish/` to `.gitignore`.
+10. **Commit only when the owner asks.** Never add `.lavish/` to `.gitignore`. Each chapter gets its own
+    branch off `main` and merges through a PR.
 
 ## Ask a question
 
@@ -125,6 +126,8 @@ npx -y lavish-axi playbook <id>   # explanation, diagram, table, comparison, cod
   on). Status colours are fixed: amber warns, red is an error, blue is information, green is good.
 - Draw diagrams as inline SVG, following the `diagram` playbook. Use Mermaid only if the owner asks for
   an editable whiteboard.
+- A KaTeX formula in a scrolling table can widen the whole page on a phone, because its hidden copy is
+  absolutely positioned. Give the scroller `position:relative`.
 - `.lavish/house.css` and `fonts/` are byte-identical copies from
   `nmp-central-ai/agent/house/`. This project has no hue because none is left, so `project.css` holds
   only a comment. Refresh by copying them, since `make install-house-ui` skips projects with no hue.
