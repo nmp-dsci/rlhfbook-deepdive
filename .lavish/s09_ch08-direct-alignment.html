@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 8: Direct Alignment Algorithms</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid input[type=range]{width:100%;accent-color:var(--accent)}
+  .wid output{font-family:var(--mono)}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .dpo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:var(--s3);align-items:center;margin-top:var(--s3)}
+  @media (max-width:640px){.dpo-row,.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  .pl{width:100%;height:auto;font-family:var(--sans)}
+  .pl text{fill:var(--muted);font-size:11px}
+  .pl .ax{stroke:var(--line-3);stroke-width:1.5}
+  .pl .gd{stroke:var(--line-2);stroke-width:1;stroke-dasharray:3 3}
+  .pl .curve{fill:none;stroke:var(--accent);stroke-width:2}
+  .pl .mk{fill:var(--accent);stroke:var(--panel);stroke-width:2}
+  .dpo-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  table.opt td{vertical-align:middle}
+  /* House table headers are uppercase; math must keep its case. */
+  th .katex{text-transform:none}
+  .bar{display:block;height:8px;margin-top:3px;border-radius:2px;background:var(--accent)}
+  .bar.ref{background:var(--line-3)}
+  #code-excerpt{margin-top:var(--s3)}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite],.kv,.wid label{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s08_ch07-reasoning.html">Chapter 7</a></p>
+  <h1>Chapter 8: Direct Alignment Algorithms</h1>
+  <p class="lede">Direct alignment algorithms (DAAs) solve the same RLHF objective as Chapters 5 and 6, on the same preference data, without training a reward model or running RL. <a class="chip" href="#s1" title="Ch. 8 Direct-Alignment Algorithms (L24)">1</a> <a class="chip" href="#s2" title="Ch. 8 Direct-Alignment Algorithms (L25)">2</a> DPO is the one that mattered. It turns the KL-constrained objective into a single loss on chosen and rejected completions, <a class="chip" href="#s3" title="Ch. 8 Direct-Alignment Algorithms (L29-L32)">3</a> and Lambert's lecture walks through every step of the derivation, because the paper skips some. <a class="chip" href="#s4" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:06:13">4</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>The RLHF objective has a closed-form optimum.</strong> Invert it, and the reward becomes a log-ratio of the policy to the reference. <a class="chip" href="#s5" title="Ch. 8 Direct-Alignment Algorithms § DPO Derivation (L99-L101)">5</a> <a class="chip" href="#s6" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L56-L60)">6</a></li>
+      <li><strong>DPO trains a reward model in disguise.</strong> The paper's subtitle is "Your Language Model is Secretly a Reward Model". <a class="chip" href="#s7" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L84)">7</a></li>
+      <li><strong>The loss is a few lines.</strong> Log-probabilities from the policy and a frozen reference, a difference, and a log-sigmoid. <a class="chip" href="#s8" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L292)">8</a> <a class="chip" href="#s9" title="Code code/direct_alignment/loss.py (L102-L122)">9</a></li>
+      <li><strong>Variants abound, but data matters more.</strong> The choice of algorithm is "far less important than the initial model and the data used". <a class="chip" href="#s10" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L267)">10</a></li>
+      <li><strong>It is offline, and a hair behind RL.</strong> Without fresh completions, DPO trails online RL, yet it stays popular for its simplicity. <a class="chip" href="#s11" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L325-L327)">11</a> <a class="chip" href="#s12" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L329-L330)">12</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Derive the DPO loss from the KL-constrained RLHF objective, and say where $Z(x)$ goes.</li>
+      <li>Read a DPO training log: loss, accuracy, margins and the two implicit rewards.</li>
+      <li>Explain likelihood displacement, and why the loss can fall while the chosen answer gets less likely.</li>
+      <li>Say what IPO, cDPO, ODPO, ORPO and SimPO change, and which drop the reference model.</li>
+      <li>Explain the offline versus online argument, and Lambert's current view of where DPO fits.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/08-direct-alignment">Chapter 8</a></td><td>Medium</td><td>The full derivation, the variants, implementation and the online versus offline debate.</td></tr>
+        <tr><td>Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2526s">42:06</a></td><td>42 min</td><td>Recorded June 2026. Every derivation step, then 12 minutes on DPO in practice from <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1808s">30:08</a>.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L1-L842">Lecture 6 slides</a></td><td>51 slides</td><td>Each derivation step is a slide, with the reason for it beside the equation.</td></tr>
+        <tr><td>Conversation 2: <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=3963s">1:06:03</a></td><td>66 min</td><td>Lambert with Scott Geng on taking delta learning into Olmo 3's DPO stage. The practice the chapter does not have.</td></tr>
+        <tr><td>Talks from Dec 2023, spring 2024 and Jul 2024</td><td>Optional</td><td>How Lambert saw DPO during the DPO versus RL debate. Used below for the dated views.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="why">
+    <h2>Why DPO mattered</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=60s">1:00</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=91s">1:31</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=122s">2:02</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=216s">3:36</a></p>
+    <p>In May 2023 most open "aligned" models were only SFT, and open RLHF pipelines were struggling. <a class="chip" href="#s13" title="Slides lec6-chap8-dpo § Why DPO was -- and is -- such a big deal (L50-L51)">13</a> Lambert says most of them "crashed and burned", and DPO made post-training "far more accessible". <a class="chip" href="#s14" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:01:31">14</a> Its biggest impact was lowering the barrier to entry: less compute, simpler to write, easier to get working. <a class="chip" href="#s15" title="Ch. 8 Direct-Alignment Algorithms (L37)">15</a> <a class="chip" href="#s16" title="Ch. 8 Direct-Alignment Algorithms (L26)">16</a> He still rates it a big deal. <a class="chip" href="#s17" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:01:00">17</a> In December 2023 he called the paper "exceedingly clever", <a class="chip" href="#s18" title="DPO Debate: Is RL needed for RLHF? @ 00:00:35">18</a> and in 2024 he said DPO "is where everyone will start" in alignment research, for good reason. <a class="chip" href="#s19" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:13:35">19</a></p>
+    <p>It did not work at once. The community needed months to find the right data and hyperparameters, notably "surprisingly low learning rates". <a class="chip" href="#s20" title="Ch. 8 Direct-Alignment Algorithms (L34)">20</a> <a class="chip" href="#s21" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:02:02">21</a> Zephyr-β kicked it off in October 2023, and Llama 3 Instruct, Tülu 2 and 3, Nemotron 4 340B and others followed. <a class="chip" href="#s20" title="Ch. 8 Direct-Alignment Algorithms (L34)">20</a> SLiC-HF came first, but never caught on. <a class="chip" href="#s22" title="Ch. 8 Direct-Alignment Algorithms (L35)">22</a> The release set off a long, meme-filled DPO versus RL debate, <a class="chip" href="#s23" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L94)">23</a> which Lambert was asked about at every conference "for like a year straight". His answer is both. <a class="chip" href="#s24" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:04:38">24</a></p>
+    <p>"Direct alignment algorithms" is Lambert's name for the family of methods that train like DPO on static preference data. He admits it "didn't stick much". <a class="chip" href="#s25" title="Slides lec6-chap8-dpo § Why DPO was -- and is -- such a big deal (L53)">25</a> <a class="chip" href="#s26" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:03:36">26</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 250" role="img" aria-label="Two pipelines. Classic RLHF: preference pairs train a reward model, then RL such as PPO samples completions, scores them with the reward model under a KL penalty, and updates the policy. DPO: the same preference pairs go straight into one loss computed on the policy and a frozen reference model, which updates the policy.">
+  <defs><marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <text class="ph" x="10" y="22" style="text-anchor:start">Classic RLHF (Chapters 5 and 6)</text>
+  <rect class="n" x="10" y="36" width="160" height="62" rx="8"/><text class="t" x="90" y="62">Preference pairs</text><text class="l" x="90" y="82" text-anchor="middle">prompt, chosen, rejected</text>
+  <rect class="n" x="215" y="36" width="160" height="62" rx="8"/><text class="t" x="295" y="62">Reward model</text><text class="l" x="295" y="82" text-anchor="middle">trained with Bradley-Terry</text>
+  <rect class="n" x="420" y="36" width="190" height="62" rx="8"/><text class="t" x="515" y="62">RL, e.g. PPO</text><text class="l" x="515" y="82" text-anchor="middle">sample, score, KL penalty</text>
+  <rect class="na" x="655" y="36" width="135" height="62" rx="8"/><text class="t" x="722" y="72">Policy</text>
+  <path class="e" d="M170,67 L211,67" marker-end="url(#pa)"/><path class="e" d="M375,67 L416,67" marker-end="url(#pa)"/><path class="e" d="M610,67 L651,67" marker-end="url(#pa)"/>
+  <text class="ph" x="10" y="146" style="text-anchor:start">DPO and other direct alignment algorithms</text>
+  <rect class="n" x="10" y="160" width="160" height="62" rx="8"/><text class="t" x="90" y="186">Preference pairs</text><text class="l" x="90" y="206" text-anchor="middle">the same data</text>
+  <rect class="n" x="215" y="160" width="395" height="62" rx="8"/><text class="t" x="412" y="186">One loss on the policy and a frozen reference</text><text class="l" x="412" y="206" text-anchor="middle">no reward model, no sampling, no RL loop</text>
+  <rect class="na" x="655" y="160" width="135" height="62" rx="8"/><text class="t" x="722" y="196">Policy</text>
+  <path class="e" d="M170,191 L211,191" marker-end="url(#pa)"/><path class="e" d="M610,191 L651,191" marker-end="url(#pa)"/>
+</svg></div>
+      <figcaption>Figure 1. Mine, from the slides: DPO "collapses steps 2 and 3 into one supervised-style loss". <a class="chip" href="#s27" title="Slides lec6-chap8-dpo § Recall: Where DPO sits in the pipeline (L100-L104)">27</a> In practice it is one tool in a messy post-training recipe. It can replace PPO or sit alongside it. <a class="chip" href="#s28" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:06:45">28</a></figcaption>
+    </figure>
+  </section>
+
+  <section id="how">
+    <h2>How DPO works</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=310s">5:10</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=436s">7:16</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1714s">28:34</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1777s">29:37</a></p>
+    <p>The promise: learn from the data directly, with no RL loop and no separate reward model. <a class="chip" href="#s29" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:05:10">29</a> The loss compares how much the policy has shifted the chosen and rejected completions relative to a reference model:</p>
+    $$\mathcal{L}_{\text{DPO}}(\pi_\theta;\pi_{\text{ref}}) = -\mathbb{E}_{(x,y_c,y_r)\sim\mathcal{D}}\Big[\log\sigma\Big(\beta\log\frac{\pi_\theta(y_c\mid x)}{\pi_{\text{ref}}(y_c\mid x)} - \beta\log\frac{\pi_\theta(y_r\mid x)}{\pi_{\text{ref}}(y_r\mid x)}\Big)\Big]$$
+    <div class="tablewrap"><table class="kt terms" style="min-width:520px">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$x,\ y_c,\ y_r$</td><td>A prompt, its chosen completion and its rejected completion: the pairwise data of Chapter 5. <a class="chip" href="#s2" title="Ch. 8 Direct-Alignment Algorithms (L25)">2</a></td></tr>
+        <tr><td>$\pi_\theta$, $\pi_{\text{ref}}$</td><td>The model being trained, and a frozen copy of where it started.</td></tr>
+        <tr><td>$\beta\log\frac{\pi_\theta(y\mid x)}{\pi_{\text{ref}}(y\mid x)}$</td><td>The implicit reward, a log-ratio that replaces an external reward model. <a class="chip" href="#s6" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L56-L60)">6</a> Each $\log\pi(y\mid x)$ is a sum of token log-probabilities over the completion. <a class="chip" href="#s30" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L65-L67)">30</a></td></tr>
+        <tr><td>$\beta$</td><td>Balances reward against KL distance from the reference, so it controls over-optimization. <a class="chip" href="#s31" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L55)">31</a> Large β keeps the policy close; small β lets it move and over-optimize. <a class="chip" href="#s32" title="Slides lec6-chap8-dpo § The $\beta$ parameter and the static KL (L711-L715)">32</a></td></tr>
+        <tr><td>$\sigma$</td><td>The sigmoid of Bradley-Terry. The loss falls when the chosen shift exceeds the rejected shift. <a class="chip" href="#s33" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L53)">33</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Its gradient shows what each step does:</p>
+    $$\nabla_\theta\mathcal{L}_{\text{DPO}} = -\beta\,\mathbb{E}\Big[\underbrace{\sigma\big(r_\theta(x,y_r) - r_\theta(x,y_c)\big)}_{w,\ \text{how wrong}}\big(\nabla_\theta\log\pi_\theta(y_c\mid x) - \nabla_\theta\log\pi_\theta(y_r\mid x)\big)\Big]$$
+    <p>The weight $w$ runs from 0 to 1 and is larger when the implicit reward ranks the pair wrongly. The bracket raises the chosen completion and lowers the rejected one, and β scales the step. <a class="chip" href="#s34" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L77-L79)">34</a> <a class="chip" href="#s35" title="Slides lec6-chap8-dpo § The DPO gradient (L651-L653)">35</a> You never write this gradient yourself: you implement the loss, and autograd does the rest. <a class="chip" href="#s36" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:25:26">36</a></p>
+    <h3>Try the loss</h3>
+    <p>Set how far the policy has moved each completion from the reference. A log-ratio of $-10$ means the policy gives that completion $e^{-10}$ times its reference probability.</p>
+    <div class="wid" id="dpo-demo">
+      <p class="label" style="margin:0">One preference pair through the DPO loss</p>
+      <p class="grp-pre">Try: <button class="btn btn-sm" type="button" data-c="0" data-r="0" data-lavish-action>Start, policy = reference</button> <button class="btn btn-sm" type="button" data-c="5" data-r="-10" data-lavish-action>Chosen up, rejected down</button> <button class="btn btn-sm" type="button" data-c="-10" data-r="-30" data-lavish-action>Both down</button> <button class="btn btn-sm" type="button" data-c="-5" data-r="5" data-lavish-action>Wrong order</button></p>
+      <label for="dpo-c">Chosen log-ratio $\log \frac{\pi_\theta(y_c\mid x)}{\pi_{\text{ref}}(y_c\mid x)}$, in nats: <output id="dpo-c-o">0</output></label>
+      <input id="dpo-c" type="range" min="-40" max="40" step="0.5" value="0" data-lavish-action>
+      <label for="dpo-r">Rejected log-ratio $\log \frac{\pi_\theta(y_r\mid x)}{\pi_{\text{ref}}(y_r\mid x)}$, in nats: <output id="dpo-r-o">0</output></label>
+      <input id="dpo-r" type="range" min="-40" max="40" step="0.5" value="0" data-lavish-action>
+      <label for="dpo-b">$\beta$: <output id="dpo-b-o">0.10</output></label>
+      <input id="dpo-b" type="range" min="0.01" max="0.5" step="0.01" value="0.1" data-lavish-action>
+      <div class="dpo-row">
+        <div class="kv">
+          <dt>Implicit rewards, chosen and rejected</dt><dd><output id="dpo-rw"></output></dd>
+          <dt>Margin $u$ inside the sigmoid</dt><dd><output id="dpo-u"></output></dd>
+          <dt>Loss $-\log\sigma(u)$</dt><dd><output id="dpo-l"></output></dd>
+          <dt>Gradient weight $w = \sigma(-u)$</dt><dd><output id="dpo-w"></output></dd>
+          <dt>Chosen completion's probability</dt><dd><output id="dpo-p"></output></dd>
+        </div>
+        <svg class="pl" id="dpo-plot" viewBox="0 0 300 190" role="img" aria-label="The DPO loss, minus log sigmoid of the margin u, falling from left to right, with a marker at the current margin.">
+          <line class="ax" x1="36" y1="160" x2="290" y2="160"/><line class="ax" x1="36" y1="10" x2="36" y2="160"/>
+          <line class="gd" x1="163" y1="10" x2="163" y2="160"/>
+          <text x="36" y="176" text-anchor="middle">-6</text><text x="163" y="176" text-anchor="middle">0</text><text x="290" y="176" text-anchor="end">6</text>
+          <text x="163" y="188" text-anchor="middle">margin u</text>
+          <text x="30" y="164" text-anchor="end">0</text><text x="30" y="16" text-anchor="end">6</text>
+          <text x="30" y="90" text-anchor="end">loss</text>
+          <path class="curve" id="dpo-curve"/>
+          <circle class="mk" id="dpo-mk" r="6"><title id="dpo-mk-t"></title></circle>
+        </svg>
+      </div>
+      <p id="dpo-msg" class="dpo-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">Try "Both down". The loss is lower than at the start, yet the chosen completion is far less likely than before. That is <a href="#displace">likelihood displacement</a>, covered below. "Wrong order" pushes $w$ toward 1, the biggest corrective step.</p>
+    <p>Because the loss is directly differentiable, DPO gets an exact gradient instead of estimating one by sampling and scoring. <a class="chip" href="#s37" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L83)">37</a> It solves for the exact policy at a given KL strength, because its data is not generated online. That makes β easier to tune than in online RL, but its best value still depends on the model and data. <a class="chip" href="#s38" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L87-L89)">38</a></p>
+  </section>
+
+  <section id="derive">
+    <h2>The derivation, in four parts</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=468s">7:48</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=812s">13:32</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1060s">17:40</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1155s">19:15</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1279s">21:19</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1464s">24:24</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1558s">25:58</a></p>
+    <p>The chapter takes two steps: find the policy that solves the RLHF objective, then fit it to pairwise preferences. <a class="chip" href="#s5" title="Ch. 8 Direct-Alignment Algorithms § DPO Derivation (L99-L101)">5</a> The slides split that into four. <a class="chip" href="#s39" title="Slides lec6-chap8-dpo § This lecture (L79-L82)">39</a></p>
+
+    <h3>1. Solve the objective for the optimal policy</h3>
+    <p>Start from the objective, write the KL term as an expectation, flip max to min and divide by β:</p>
+    $$\max_\pi\ \mathbb{E}\big[r(x,y)\big] - \beta\,\mathcal{D}_{\text{KL}}\big(\pi\,\|\,\pi_{\text{ref}}\big) \;\;\Longleftrightarrow\;\; \min_\pi\ \mathbb{E}_{x}\,\mathbb{E}_{y\sim\pi}\Big[\log\frac{\pi(y\mid x)}{\pi_{\text{ref}}(y\mid x)} - \frac{1}{\beta}r(x,y)\Big]$$
+    <p>This almost looks like a KL divergence from $\pi_{\text{ref}}\,e^{r/\beta}$, except that target is not a distribution: it does not sum to 1. <a class="chip" href="#s40" title="Slides lec6-chap8-dpo § Introduce the partition function $Z(x)$ (L276)">40</a> Before Gibbs' inequality can be used, a partition function is introduced. <a class="chip" href="#s41" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:13:32">41</a> It normalizes the target: <a class="chip" href="#s42" title="Ch. 8 Direct-Alignment Algorithms § Deriving the Optimal RLHF Solution (L130-L132)">42</a></p>
+    $$Z(x) = \sum_y \pi_{\text{ref}}(y\mid x)\exp\Big(\frac{1}{\beta}r(x,y)\Big)$$
+    <p>Adding and subtracting $\log Z(x)$ turns the objective into a true KL divergence minus $\log Z(x)$, which does not depend on $\pi$. A KL divergence is zero only when the two distributions are equal, by Gibbs' inequality. <a class="chip" href="#s43" title="Ch. 8 Direct-Alignment Algorithms § Deriving the Optimal RLHF Solution (L163-L164)">43</a> So:</p>
+    $$\pi^*(y\mid x) = \frac{1}{Z(x)}\,\pi_{\text{ref}}(y\mid x)\exp\Big(\frac{1}{\beta}r(x,y)\Big)$$
+    <p>Lambert calls this the core of the paper: "You can just go towards the optimal solution", an RL problem solved with a direct gradient. <a class="chip" href="#s44" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:18:44">44</a></p>
+
+    <h3>2. Invert it for the reward</h3>
+    <p>Take logs of both sides and solve for $r$: <a class="chip" href="#s45" title="Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L176-L190)">45</a></p>
+    $$r^*(x,y) = \beta\log\frac{\pi^*(y\mid x)}{\pi_{\text{ref}}(y\mid x)} + \beta\log Z(x)$$
+    <p>This is the title of the paper. DPO does not train a separate reward model; the language model <em>is</em> an implicit one, <a class="chip" href="#s46" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:20:18">46</a> so we can "bypass learning an explicit reward model entirely". <a class="chip" href="#s47" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L62)">47</a></p>
+
+    <h3>3. Plug it into Bradley-Terry</h3>
+    <p>Substitute $r^*$ into $p^*(y_1 \succ y_2\mid x) = \frac{e^{r^*(x,y_1)}}{e^{r^*(x,y_1)} + e^{r^*(x,y_2)}}$. Every term carries the same $e^{\beta\log Z(x)}$, so it cancels, <a class="chip" href="#s48" title="Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L197)">48</a> and the "intractable term is gone". <a class="chip" href="#s49" title="Slides lec6-chap8-dpo § Substitute the reward, then cancel $Z(x)$ (L520)">49</a> Dividing through gives a sigmoid:</p>
+    $$p^*(y_1\succ y_2\mid x) = \sigma\Big(\beta\log\frac{\pi^*(y_1\mid x)}{\pi_{\text{ref}}(y_1\mid x)} - \beta\log\frac{\pi^*(y_2\mid x)}{\pi_{\text{ref}}(y_2\mid x)}\Big)$$
+
+    <h3>4. Read off the loss and gradient</h3>
+    <p>Minimize the negative log-likelihood of the observed preferences, as for a Bradley-Terry reward model, <a class="chip" href="#s50" title="Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L210)">50</a> with the trainable $\pi_\theta$ in place of $\pi^*$. That gives the loss above: "no reward model, no sampling, no RL loop". <a class="chip" href="#s51" title="Slides lec6-chap8-dpo § The DPO loss (L573)">51</a> The gradient follows from $\sigma'(u) = \sigma(u)(1-\sigma(u))$ and $1-\sigma(u) = \sigma(-u)$. <a class="chip" href="#s52" title="Ch. 8 Direct-Alignment Algorithms § Deriving the BT DPO Gradient (L229-L238)">52</a> The slides sum it up: the reward model "was hiding inside the policy the whole time". <a class="chip" href="#s53" title="Slides lec6-chap8-dpo § Recap: The DPO derivation (L673)">53</a> The paper also derives a Plackett-Luce version, which is rarely used. <a class="chip" href="#s54" title="Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L219)">54</a></p>
+
+    <h3>Try the closed form</h3>
+    <p>This is $\pi^*$ for one prompt with four made-up completions. Lower β moves probability toward high reward and away from the reference. The last two columns are always equal. That is step 2: the implicit reward is the true reward shifted by $\beta\log Z$, the same shift for every completion, and step 3 cancels it.</p>
+    <div class="wid" id="opt-demo">
+      <p class="label" style="margin:0">Four possible completions, the closed-form optimal policy</p>
+      <label for="opt-b">$\beta$: <output id="opt-b-o">0.50</output> <span class="sub">(dragged on a log scale, 0.05 to 10)</span></label>
+      <input id="opt-b" type="range" min="-1.3" max="1" step="0.01" value="-0.3" data-lavish-action>
+      <div class="tablewrap" style="margin-top:var(--s2)"><table class="kt opt" style="min-width:560px">
+        <thead><tr><th>Completion</th><th>Reward $r$</th><th>$\pi_{\text{ref}}$</th><th>$\pi^*$</th><th>$\beta\log\frac{\pi^*}{\pi_{\text{ref}}}$</th><th>$r - \beta\log Z$</th></tr></thead>
+        <tbody id="opt-body"></tbody>
+      </table></div>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>$Z(x)$ and $\beta\log Z(x)$</dt><dd><output id="opt-z"></output></dd>
+        <dt>Expected reward, reference then $\pi^*$</dt><dd><output id="opt-er"></output></dd>
+        <dt>$\mathrm{KL}(\pi^*\,\|\,\pi_{\text{ref}})$</dt><dd><output id="opt-kl"></output></dd>
+        <dt>$P(y_1 \succ y_2)$, from $r$ then from implicit rewards</dt><dd><output id="opt-bt"></output></dd>
+      </div>
+    </div>
+  </section>
+
+  <section id="variants">
+    <h2>Weaknesses and variants</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2029s">33:49</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2059s">34:19</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2121s">35:21</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2152s">35:52</a></p>
+    <p>With no reward model rating rollouts, DPO treats every preference pair as equally strong, even though richer labels exist. <a class="chip" href="#s55" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L243)">55</a> Each variant tweaks the loss to fix one limitation, "often a one-line change". <a class="chip" href="#s56" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L722)">56</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:620px">
+      <thead><tr><th>Variant</th><th>What it changes</th><th>Reference model</th><th>In the book's code</th></tr></thead>
+      <tbody>
+        <tr><td>REBEL</td><td>Adds a reward-model margin between chosen and rejected. <a class="chip" href="#s57" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L247)">57</a></td><td>—</td><td>No</td></tr>
+        <tr><td>cDPO</td><td>Assumes a fraction of labels are wrong and softens the target. <a class="chip" href="#s58" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L248)">58</a> <a class="chip" href="#s59" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L732)">59</a> It was in the original DPO paper. <a class="chip" href="#s60" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:33:49">60</a></td><td>Yes</td><td>As label smoothing in the DPO loss <a class="chip" href="#s61" title="Code code/direct_alignment/loss.py (L109-L119)">61</a></td></tr>
+        <tr><td>IPO</td><td>Replaces Bradley-Terry with a softer preference function to curb overfitting. <a class="chip" href="#s58" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L248)">58</a> <a class="chip" href="#s62" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L726)">62</a></td><td>Yes</td><td>Squared error to a target margin $1/(2\beta)$ <a class="chip" href="#s63" title="Code code/direct_alignment/loss.py (L172-L175)">63</a></td></tr>
+        <tr><td>ODPO</td><td>The chosen must beat the rejected by an offset. <a class="chip" href="#s64" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L249)">64</a> <a class="chip" href="#s65" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L736)">65</a></td><td>Yes</td><td>Listed, not implemented <a class="chip" href="#s66" title="Code code/direct_alignment/README.md (L274-L276)">66</a></td></tr>
+        <tr><td>ORPO</td><td>SFT on the chosen plus a small odds-ratio penalty on the rejected. "DPO inspired, rather than a DPO derivative". <a class="chip" href="#s67" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L253)">67</a> <a class="chip" href="#s68" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L747)">68</a></td><td>No</td><td>Yes, still noisy <a class="chip" href="#s69" title="Code code/direct_alignment/README.md (L6)">69</a></td></tr>
+        <tr><td>SimPO</td><td>Averages log-probabilities instead of summing, with a target margin. <a class="chip" href="#s70" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L254)">70</a> <a class="chip" href="#s71" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L753)">71</a></td><td>No</td><td>Yes, still noisy <a class="chip" href="#s69" title="Code code/direct_alignment/README.md (L6)">69</a></td></tr>
+        <tr><td>Online DPO, D2PO</td><td>Generate new completions or relabel with a reward model during training. <a class="chip" href="#s72" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L264-L265)">72</a></td><td>—</td><td>No</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Of the reference-free ones, Lambert says ORPO "didn't take off", while SimPO "worked a little bit better". <a class="chip" href="#s73" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:35:21">73</a> He could make "eight slides" of variants, but "most of what matters ends up being the data". <a class="chip" href="#s74" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:35:52">74</a> <a class="chip" href="#s75" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L759)">75</a> Scott Geng, in Conversation 2, agrees that data matters more than the objective, <a class="chip" href="#s76" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:09:50">76</a> and finds the original DPO loss "still performs very well" if tuned. <a class="chip" href="#s77" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:13:27">77</a> Back in December 2023 he said the same of IPO and cDPO: they do not answer the fundamental questions. <a class="chip" href="#s78" title="DPO Debate: Is RL needed for RLHF? @ 00:09:57">78</a></p>
+
+    <h3 id="displace">Likelihood displacement</h3>
+    <p>Lambert calls it "one of the most interesting things in DPO": the loss only pushes up the margin. <a class="chip" href="#s79" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:30:08">79</a> So the model can lower it by pushing the rejected probability down faster than the chosen, while the chosen probability also falls. <a class="chip" href="#s80" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L258-L259)">80</a> <a class="chip" href="#s81" title="Slides lec6-chap8-dpo § A subtle risk: The chosen probability can fall (L687-L693)">81</a> The chapter cites work suggesting this raises the probability of behaviors outside the training data, and methods such as Cal-DPO and AlphaPO that mitigate it. Its exact impact is "not well known". <a class="chip" href="#s82" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L260-L262)">82</a> Lambert's worry in the lecture is the side effects "when it's out of distribution". <a class="chip" href="#s83" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:31:12">83</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/dpo_displacement.png">The chapter's sketch</a> shows it.</p>
+    <p>One common fix is an SFT term on the chosen response. <a class="chip" href="#s81" title="Slides lec6-chap8-dpo § A subtle risk: The chosen probability can fall (L687-L693)">81</a> <a class="chip" href="#s84" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:52">84</a> How much displacement matters in practice is one of the <a href="#differ">open questions</a>.</p>
+
+    <h3>Offline data</h3>
+    <p>The other reason DPO may have a lower ceiling is that its training signal comes from completions by older or other models. Online variants generate fresh completions during training. <a class="chip" href="#s72" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L264-L265)">72</a> This is the core of the <a href="#vsrl">DPO versus RL</a> question.</p>
+  </section>
+
+  <section id="impl">
+    <h2>Implementation</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1936s">32:16</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2059s">34:19</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2183s">36:23</a></p>
+    <p>The DPO loss fits into a standard training stack, because the log-probabilities it needs come from a normal forward pass, plus a reference model. <a class="chip" href="#s8" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L292)">8</a> Here it is in the book's code. Summed log-probabilities for DPO, averaged ones for SimPO and DPO-Norm, <a class="chip" href="#s85" title="Code code/direct_alignment/loss.py (L49-L54)">85</a> then the loss, with label smoothing for cDPO: <a class="chip" href="#s9" title="Code code/direct_alignment/loss.py (L102-L122)">9</a></p>
+    <div id="code-excerpt"><pre><code>        # Compute log ratios (implicit rewards)
+        chosen_logratios = policy_chosen_logps - ref_chosen_logps
+        rejected_logratios = policy_rejected_logps - ref_rejected_logps
+
+        # DPO logits: difference in log ratios
+        logits = chosen_logratios - rejected_logratios
+
+        # cDPO: label smoothing for noisy preferences
+        if self.label_smoothing &gt; 0:
+            # Soft labels: [1-eps, eps] instead of [1, 0]
+            # This translates to: (1-eps) * log(sigmoid(x)) + eps * log(sigmoid(-x))
+            # = (1-2*eps) * log(sigmoid(x)) + eps * log(sigmoid(x)) + eps * log(sigmoid(-x))
+            # = (1-2*eps) * log(sigmoid(x)) + eps * log(1)  (since sigmoid(x) + sigmoid(-x) = 1)
+            # Simplified: just use soft cross-entropy
+            losses = (
+                -F.logsigmoid(self.beta * logits) * (1 - self.label_smoothing)
+                - F.logsigmoid(-self.beta * logits) * self.label_smoothing
+            )
+        else:
+            # Standard DPO
+            losses = -F.logsigmoid(self.beta * logits)
+
+        # Compute implicit rewards for logging
+        chosen_rewards = self.beta * chosen_logratios.detach()
+        rejected_rewards = self.beta * rejected_logratios.detach()
+
+        metrics = {
+            "chosen_rewards": chosen_rewards.mean().item(),
+            "rejected_rewards": rejected_rewards.mean().item(),
+            "margins": (chosen_rewards - rejected_rewards).mean().item(),
+            "accuracy": (chosen_rewards &gt; rejected_rewards).float().mean().item(),
+        }
+
+        return losses.mean(), metrics
+</code></pre></div>
+    <p style="margin-top:var(--s3)">The logged "rewards" are β times the detached log-ratios, and "accuracy" is the share of pairs where the chosen implicit reward is higher. <a class="chip" href="#s86" title="Code code/direct_alignment/loss.py (L124-L133)">86</a> Two points from the chapter:</p>
+    <ul>
+      <li><strong>The KL is static.</strong> DPO steps toward the optimal solution for the data at a fixed β, while RL steps based on the current batch. <a class="chip" href="#s87" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L296)">87</a> The lecture: the optimal gradient has "a targeted KL distance built into it", <a class="chip" href="#s88" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:32:16">88</a> and dynamic KL controllers from RL "aren't really suited or possible" in DPO. <a class="chip" href="#s89" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:32:46">89</a></li>
+      <li><strong>Cache the reference.</strong> Running policy and reference together doubles memory. Precompute the reference log-probabilities instead, for 50% less peak memory. <a class="chip" href="#s90" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L297)">90</a> <a class="chip" href="#s91" title="Slides lec6-chap8-dpo § Implementation is genuinely simple (L777)">91</a> Otherwise the reference model is a fixed cost: memory at training time, or a precomputation. <a class="chip" href="#s92" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:34:19">92</a></li>
+    </ul>
+    <p>The book's code does not cache: it runs the frozen reference on every batch, <a class="chip" href="#s93" title="Code code/direct_alignment/train.py (L215-L230)">93</a> and lists caching as a to-do. <a class="chip" href="#s94" title="Code code/direct_alignment/README.md (L345-L346)">94</a> SimPO and ORPO skip the reference model. <a class="chip" href="#s95" title="Code code/direct_alignment/train.py (L527-L530)">95</a></p>
+    <p>Scale brings its own problems. In Conversation 2, Scott Geng describes the Olmo 3 32B DPO run. Running chosen and rejected as two separate forward passes, instead of one concatenated pass, "would like just break the model for some reason". <a class="chip" href="#s96" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:55:36">96</a></p>
+  </section>
+
+  <section id="synthetic">
+    <h2>DAAs with synthetic preference data</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2215s">36:55</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2246s">37:26</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2278s">37:58</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2341s">39:01</a></p>
+    <p>Most popular DAA datasets are synthetic: a frontier model judges which of two completions wins, <a class="chip" href="#s97" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L301-L302)">97</a> since these methods need feedback data, not necessarily human feedback. <a class="chip" href="#s98" title="Slides lec6-chap8-dpo § DAAs work with synthetic preference data (L784)">98</a> UltraFeedback came first. The lecture describes it as about 10,000 prompts, <a class="chip" href="#s99" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:36:55">99</a> and Tülu 3 scaled the method to 100,000 and 200,000. <a class="chip" href="#s100" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:37:58">100</a> The chapter recommends this setup as the place most practitioners should start. <a class="chip" href="#s101" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L310)">101</a></p>
+    <p>Which completions go into the pairs has been argued two ways:</p>
+    <ul>
+      <li><strong>On-policy (Tülu 3, 2024).</strong> Include completions from the model you are tuning, mixed into a larger pool, so the contrastive loss works on the tokens the model actually generates. <a class="chip" href="#s102" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L305-L306)">102</a> <a class="chip" href="#s103" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:37:58">103</a></li>
+      <li><strong>Delta learning (Olmo 3 and SmolLM 3, 2025).</strong> The gap between chosen and rejected matters more than which models wrote them. Both teams paired Qwen 3 32B chosen against Qwen 3 0.6B rejected. <a class="chip" href="#s104" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L307-L308)">104</a> <a class="chip" href="#s105" title="Slides lec6-chap8-dpo § DAAs work with synthetic preference data (L788)">105</a> If all the answers are too similar, the models learn less. <a class="chip" href="#s106" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:39:01">106</a></li>
+    </ul>
+    <p>Conversation 2 has the story behind delta learning. Scott Geng found that SFT on UltraFeedback's chosen responses would "obliterate" a newer model, while preference tuning on the same responses helped. <a class="chip" href="#s107" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:22:49">107</a> A weak chosen response still teaches "if you contrast it with something that's even worse". <a class="chip" href="#s108" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:24:55">108</a> The paper pushed this to two models weaker than the one being trained, 3B against 1.5B. <a class="chip" href="#s109" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:30:37">109</a> Back in December 2023, Lambert had asked what happens when the chosen and rejected are "both good or both bad". <a class="chip" href="#s110" title="DPO Debate: Is RL needed for RLHF? @ 00:16:16">110</a></p>
+    <p>For Olmo 3's reasoning model the recipe barely changed: generate the pairs with Qwen 3 with thinking switched on. <a class="chip" href="#s111" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:34:12">111</a> The data has quirks. In one pair the 32B model wrote a crude creative-writing request and the 0.6B model refused, so the refusal became the rejected answer. <a class="chip" href="#s112" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:44:38">112</a> Mixing prompts was "random": Geng suspects offline DPO can overfit and reward-hack in ways SFT does not. <a class="chip" href="#s113" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:40:30">113</a> The chapter adds another bias: LLM judges favor long outputs and their own style. <a class="chip" href="#s114" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L312)">114</a></p>
+    <p>The chapter's last point: tokens get different gradients according to how much they contributed to the margin. <a class="chip" href="#s115" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L317)">115</a></p>
+  </section>
+
+  <section id="vsrl">
+    <h2>DAAs versus RL: offline versus online</h2>
+    <p class="tag">In Lecture 6: <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2404s">40:04</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2434s">40:34</a> · <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2496s">41:36</a></p>
+    <p>The chapter calls "do we need RL?" overly simple. <a class="chip" href="#s116" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L321-L322)">116</a> Controlled studies found DPO "a hair behind" RL, <a class="chip" href="#s11" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L325-L327)">11</a> but DAAs stay in leading models, because they let data be iterated on quickly, and data matters more than algorithms. <a class="chip" href="#s12" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L329-L330)">12</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th></th><th>DPO and DAAs</th><th>PPO and policy gradient</th></tr></thead>
+      <tbody>
+        <tr><td>Data</td><td>A fixed dataset collected in advance, limited by its coverage <a class="chip" href="#s117" title="Slides lec6-chap8-dpo § DPO vs. RL: Offline vs. online (L797-L807)">117</a></td><td>Fresh completions from the current policy, scored during training <a class="chip" href="#s118" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:47:55">118</a></td></tr>
+        <tr><td>Peak</td><td>"a slightly lower performance ceiling" <a class="chip" href="#s117" title="Slides lec6-chap8-dpo § DPO vs. RL: Offline vs. online (L797-L807)">117</a></td><td>Can explore, "often higher peak performance" <a class="chip" href="#s117" title="Slides lec6-chap8-dpo § DPO vs. RL: Offline vs. online (L797-L807)">117</a> <a class="chip" href="#s119" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:40:04">119</a></td></tr>
+        <tr><td>Cost</td><td>Simpler, stable, fast to iterate on data <a class="chip" href="#s117" title="Slides lec6-chap8-dpo § DPO vs. RL: Offline vs. online (L797-L807)">117</a></td><td>Four models in memory and more engineering <a class="chip" href="#s117" title="Slides lec6-chap8-dpo § DPO vs. RL: Offline vs. online (L797-L807)">117</a>; "at least" three checkpoints, in Geng's count <a class="chip" href="#s120" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:06:45">120</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The slides then ask why DPO comes up so rarely at the frontier. <a class="chip" href="#s121" title="Slides lec6-chap8-dpo § Where does this leave us today? (L813)">121</a> Lambert's answer: it works in "wonky, distillation-heavy recipes like Olmo"; most labs can afford methods with a higher ceiling. "DPO is a path to a good/solid model, but not to the best model." <a class="chip" href="#s122" title="Slides lec6-chap8-dpo § Hypotheses for DPO&#x27;s role today (L839-L841)">122</a> He lists Olmo 3, SmolLM 3, Nemotron 3 and LFM2 as recent users, <a class="chip" href="#s123" title="Slides lec6-chap8-dpo § Hypotheses for DPO&#x27;s role today (L831-L833)">123</a> mostly non-frontier models after solid performance. <a class="chip" href="#s124" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:40:34">124</a> He will keep using it for experiments. <a class="chip" href="#s125" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:41:36">125</a></p>
+    <p>In Q&amp;A 3 he adds that DPO is "very close to SFT in some ways, just like RL". <a class="chip" href="#s126" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">126</a></p>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>The chapter calls this the most accessible place to start, because it is offline: no reward model server, no rollout loop. <a class="chip" href="#s127" title="Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L336-L337)">127</a> Q&amp;A 2 says the same. <a class="chip" href="#s128" title="Slides qa-02 § &quot;Can we get programming &amp; math assignments?&quot; (L215)">128</a> The default config fine-tunes OLMo 2 1B SFT on UltraFeedback with β = 0.1. <a class="chip" href="#s129" title="Code code/direct_alignment/configs/dpo.yaml (L9-L22)">129</a> <strong>I did not run it.</strong></p>
+    <ol>
+      <li><strong>A small DPO run:</strong> <code>uv run python -m direct_alignment.train --loss dpo --max_samples 1000</code> from <code>code/</code>. The sanity check: the implicit reward margin moves the right way and the sample generations do not collapse. <a class="chip" href="#s130" title="Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L346-L347)">130</a> In the widget above, the loss starts at $\log 2 \approx 0.69$; the README expects early DPO loss of about 0.5 to 0.7. <a class="chip" href="#s131" title="Code code/direct_alignment/README.md (L145)">131</a></li>
+      <li><strong>Compare DPO, IPO and DPO-Norm</strong> with their configs. IPO's loss is on a different scale, so compare accuracy and margins. <a class="chip" href="#s132" title="Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L358-L359)">132</a></li>
+      <li><strong>Try SimPO and ORPO</strong>, which the README still marks as being retuned. <a class="chip" href="#s69" title="Code code/direct_alignment/README.md (L6)">69</a></li>
+      <li><strong>Change the data before the loss.</strong> If results move more than when you switch objectives, data dominates. <a class="chip" href="#s133" title="Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L371-L373)">133</a></li>
+    </ol>
+    <p><strong>On your Mac:</strong> the trainer accepts only <code>auto</code>, <code>cuda</code> or <code>cpu</code>, so on Apple silicon it falls back to the CPU. <a class="chip" href="#s134" title="Code code/direct_alignment/train.py (L47-L56)">134</a> MPS was left out on purpose. <a class="chip" href="#s135" title="Code code/CHANGELOG.md (L17)">135</a> The reference model defaults to a second copy of the policy, <a class="chip" href="#s136" title="Code code/direct_alignment/config.py (L18)">136</a> and a 1B model needs about 8 to 10 GB with gradient checkpointing. <a class="chip" href="#s137" title="Code code/direct_alignment/README.md (L202-L203)">137</a> <span class="badge info">agent note</span> So a 1,000-sample run should fit on a 32 GB Mac, slowly on CPU. That is my estimate, and I have not tested it.</p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates unless noted. The chapter and slides are dated by the pinned commit, November 2026. Conversation 2 has two speakers and no labels. I attribute a quote to Lambert only when context makes it clear, and otherwise name Scott Geng, who presents the slides.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How far behind RL is DPO?</strong></p><ul>
+      <li><strong>Talk (Dec 2023):</strong> the open community is limited more by "data and tooling and research and evaluation" than by optimizer choice. <a class="chip" href="#s138" title="DPO Debate: Is RL needed for RLHF? @ 00:25:42">138</a></li>
+      <li><strong>Talk (Stanford CS25, uploaded May 2024):</strong> "I'm also seeing PPO to be stronger". <a class="chip" href="#s139" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:50:08">139</a></li>
+      <li><strong>Lecture (CS224N, spring 2024, uploaded Mar 2025):</strong> PPO gave "0 to 2% Improvement" but DPO "doesn't have this this sort of mess". <a class="chip" href="#s140" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:43:43">140</a></li>
+      <li><strong>Talk (Jul 2024):</strong> PPO models were "always doing like half a point to one point better", <a class="chip" href="#s141" title="An update on DPO vs PPO for LLM alignment @ 00:10:21">141</a> yet "in recent experiments on OLMo and Llama 3, we haven't actually shown that PPO is better". <a class="chip" href="#s142" title="An update on DPO vs PPO for LLM alignment @ 00:08:48">142</a></li>
+      <li><strong>Chapter:</strong> "a hair behind", <a class="chip" href="#s11" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L325-L327)">11</a> and investment will return to RL and "cement this margin". <a class="chip" href="#s143" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L332)">143</a></li>
+      <li><strong>Lecture 6 (Jun 2026):</strong> RL "really does have a higher peak performance"; DPO "might have a lower ceiling". <a class="chip" href="#s119" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:40:04">119</a> <a class="chip" href="#s125" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:41:36">125</a></li>
+      <li><strong>Conversation 2 (Jul 2026):</strong> Lambert, introducing it: "the ridiculous gains that we have gotten for DPO". <a class="chip" href="#s144" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:01:02">144</a> Geng: Olmo 3's DPO gains on AIME beat "the entire like summer's worth" of RLVR work. <a class="chip" href="#s145" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:02:06">145</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does likelihood displacement matter?</strong></p><ul>
+      <li><strong>Chapter:</strong> it may raise unaddressed behaviors; its exact impact is "not well known", and it may explain why online methods win. <a class="chip" href="#s82" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L260-L262)">82</a></li>
+      <li><strong>Lecture 6 (Jun 2026):</strong> a source of concern, because "you don't know the side effects" out of distribution. <a class="chip" href="#s83" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:31:12">83</a></li>
+      <li><strong>Conversation 2 (Jul 2026):</strong> Geng calls it something "you and I both feel is a bit overemphasized", <a class="chip" href="#s146" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:22">146</a> since evals don't suffer. <a class="chip" href="#s147" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:11:24">147</a> Lambert asks whether it is "such a small slice of the probability space that it just doesn't matter". <a class="chip" href="#s148" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:52">148</a></li>
+      <li><strong>The book's own run:</strong> the lecture describes chosen rewards as "kind of flat" while rejected fall. <a class="chip" href="#s149" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:31:44">149</a> The slide on the same run says the chosen log-prob "can still drift down". <a class="chip" href="#s150" title="Slides lec6-chap8-dpo § A subtle risk: The chosen probability can fall (L702)">150</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is DPO a reward model method or a policy method?</strong></p><ul>
+      <li><strong>Talk (Dec 2023):</strong> "not a policy Training Method it's a reward model Training Method". <a class="chip" href="#s151" title="DPO Debate: Is RL needed for RLHF? @ 00:02:42">151</a></li>
+      <li><strong>Chapter:</strong> "DPO is learning a reward model at its core". <a class="chip" href="#s7" title="Ch. 8 Direct-Alignment Algorithms § How DPO Works (L84)">7</a></li>
+      <li><strong>Lecture 6 (Jun 2026):</strong> "DPO is not training a reward model. It's that you can use your language model as an implicit reward model." <a class="chip" href="#s46" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:20:18">46</a></li>
+      <li><span class="badge info">agent note</span> I read these as one idea in different words: the trained policy defines a reward through its log-ratio. The 2023 and 2026 wordings still point opposite ways.</li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Should β, or the KL, change during training?</strong></p><ul>
+      <li><strong>Talk (Dec 2023):</strong> there are probably "huge benefits" from a learning rate and β scheduler, <a class="chip" href="#s152" title="DPO Debate: Is RL needed for RLHF? @ 00:23:04">152</a> and β "likely should be on a schedule". <a class="chip" href="#s153" title="DPO Debate: Is RL needed for RLHF? @ 00:23:36">153</a></li>
+      <li><strong>Chapter and Lecture 6:</strong> the KL is static, set by β. <a class="chip" href="#s87" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L296)">87</a> Dynamic KL controllers "aren't really suited or possible in DPO frameworks". <a class="chip" href="#s89" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:32:46">89</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How low a learning rate?</strong></p><ul>
+      <li><strong>Talks (spring 2024):</strong> getting DPO to work for Zephyr needed "really low learning rates like 5e minus 7". <a class="chip" href="#s154" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:47:00">154</a> <a class="chip" href="#s155" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:21:20">155</a></li>
+      <li><strong>Chapter:</strong> "surprisingly low learning rates". <a class="chip" href="#s20" title="Ch. 8 Direct-Alignment Algorithms (L34)">20</a></li>
+      <li><strong>Code:</strong> the DPO config uses 5e-6, ten times higher, noting "Higher LR works better for this model", OLMo 2 1B. <a class="chip" href="#s129" title="Code code/direct_alignment/configs/dpo.yaml (L9-L22)">129</a> The README gives 1e-7 to 5e-6. <a class="chip" href="#s156" title="Code code/direct_alignment/README.md (L143)">156</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Will preference tuning return to RL, or come back on its own?</strong></p><ul>
+      <li><strong>Chapter:</strong> reasoning models mean "further investment will return to using RL for preference-tuning". <a class="chip" href="#s143" title="Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L332)">143</a></li>
+      <li><strong>Conversation 2 (Jul 2026):</strong> Lambert is "always surprised that fewer labs are using" DPO, <a class="chip" href="#s157" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:00:32">157</a> and thinks preference tuning will matter again "as rubrics become more popular". <a class="chip" href="#s158" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:59:15">158</a> Geng suggests a handoff cost: DPO is "an additional like handoff point" between teams. <a class="chip" href="#s159" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:49:18">159</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>When Zephyr landed.</strong> The chapter says October 2023, <a class="chip" href="#s20" title="Ch. 8 Direct-Alignment Algorithms (L34)">20</a> the CS224N lecture says September, "four months" after the paper. <a class="chip" href="#s160" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:20:50">160</a> Lecture 6 says "about a fivemon gap". <a class="chip" href="#s21" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:02:02">21</a></li>
+      <li><strong>SmolLM 2 or 3.</strong> The chapter credits SmolLM 3's data, <a class="chip" href="#s97" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L301-L302)">97</a> and one slide says SmolLM 2. <a class="chip" href="#s161" title="Slides lec6-chap8-dpo § DAAs work with synthetic preference data (L786)">161</a> Another slide says SmolLM 3 "used DPO", <a class="chip" href="#s123" title="Slides lec6-chap8-dpo § Hypotheses for DPO&#x27;s role today (L831-L833)">123</a> while the code README says SmolLM 3 used APO "in place of DPO". <a class="chip" href="#s162" title="Code code/direct_alignment/README.md (L262-L266)">162</a></li>
+      <li><strong>How big UltraFeedback is.</strong> The lecture says "about 10,000 prompts". <a class="chip" href="#s99" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:36:55">99</a> The code's cleaned copy has about 60k pairs. <a class="chip" href="#s163" title="Code code/direct_alignment/README.md (L128-L129)">163</a> I have not checked the dataset itself.</li>
+      <li><strong>Reference caching.</strong> The chapter and slides recommend it for 50% less memory, <a class="chip" href="#s90" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L297)">90</a> <a class="chip" href="#s91" title="Slides lec6-chap8-dpo § Implementation is genuinely simple (L777)">91</a> and the book's code has not implemented it. <a class="chip" href="#s94" title="Code code/direct_alignment/README.md (L345-L346)">94</a></li>
+      <li><strong>ODPO's paper.</strong> The chapter cites ODPO as "Direct preference optimization with an offset". <a class="chip" href="#s64" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L249)">64</a> The code README's ODPO entry links a paper titled "Provably Robust DPO: Aligning Language Models with Noisy Feedback". <a class="chip" href="#s66" title="Code code/direct_alignment/README.md (L274-L276)">66</a></li>
+      <li><strong>"Two betas".</strong> During the lecture Lambert wondered whether the gradient's two βs were an error. <a class="chip" href="#s164" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:28:04">164</a> See the agent note below: both are correct.</li>
+      <li><strong>Captions mishear.</strong> "RHF" is RLHF, "Zephr" is Zephyr, "Sympio" is SimPO, "PO" is PPO, <a class="chip" href="#s28" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:06:45">28</a> <a class="chip" href="#s73" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:35:21">73</a> "Quen" is Qwen, and "Amy" is AIME. <a class="chip" href="#s111" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:34:12">111</a> <a class="chip" href="#s145" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:02:06">145</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>The policy equals the reference. What are the DPO loss and the weight $w$?</summary>
+      <p>Both log-ratios are 0, so $u = 0$, the loss is $\log 2 \approx 0.693$ and $w = 0.5$. Try "Start" in the widget. This is why early DPO loss sits near 0.69. <a class="chip" href="#s131" title="Code code/direct_alignment/README.md (L145)">131</a></p>
+    </details>
+    <details><summary>Why does the partition function $Z(x)$, a sum over all possible completions, never need computing?</summary>
+      <p>It depends only on the prompt, so it adds the same $\beta\log Z(x)$ to the reward of every completion, and cancels in the Bradley-Terry ratio. <a class="chip" href="#s48" title="Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L197)">48</a> <a class="chip" href="#s49" title="Slides lec6-chap8-dpo § Substitute the reward, then cancel $Z(x)$ (L520)">49</a></p>
+    </details>
+    <details><summary>The loss fell, and the chosen completion's log-probability also fell. Is something broken?</summary>
+      <p>Not necessarily. The loss rewards only the margin, so both can fall as long as the rejected falls further. That is likelihood displacement. <a class="chip" href="#s80" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L258-L259)">80</a> Whether it matters is debated. <a class="chip" href="#s146" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:22">146</a> <a class="chip" href="#s82" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L260-L262)">82</a></p>
+    </details>
+    <details><summary>What does β do, and why is DPO's KL called static?</summary>
+      <p>β trades reward against distance from the reference: large β stays close, small β can over-optimize. <a class="chip" href="#s32" title="Slides lec6-chap8-dpo § The $\beta$ parameter and the static KL (L711-L715)">32</a> DPO steps to the optimum for that β on fixed data, while RL steps on fresh batches. <a class="chip" href="#s87" title="Ch. 8 Direct-Alignment Algorithms § Implementation Details (L296)">87</a></p>
+    </details>
+    <details><summary>Which variants drop the reference model, and what do they lose?</summary>
+      <p>ORPO and SimPO. <a class="chip" href="#s68" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L747)">68</a> <a class="chip" href="#s71" title="Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L753)">71</a> <a class="chip" href="#s95" title="Code code/direct_alignment/train.py (L527-L530)">95</a> Both are more sensitive to log-probability scaling and learning rate, <a class="chip" href="#s165" title="Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L361-L363)">165</a> and the code marks both as still being retuned. <a class="chip" href="#s69" title="Code code/direct_alignment/README.md (L6)">69</a></p>
+    </details>
+    <details><summary>Why is SFT on a weak chosen response harmful, while DPO on the same pair helps?</summary>
+      <p>SFT imitates the chosen response. DPO learns from the gap between chosen and rejected, which can teach even when both are weak. <a class="chip" href="#s108" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:24:55">108</a> <a class="chip" href="#s104" title="Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L307-L308)">104</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The two βs in the gradient are both right.</strong> Not Lambert: inside the sigmoid, β is part of each implicit reward. Outside, a second β comes from the chain rule: $\nabla_\theta u = \beta(\nabla_\theta\log\pi_\theta(y_c\mid x) - \nabla_\theta\log\pi_\theta(y_r\mid x))$. The chapter's equation and the slide both have this form. <a class="chip" href="#s52" title="Ch. 8 Direct-Alignment Algorithms § Deriving the BT DPO Gradient (L229-L238)">52</a> <a class="chip" href="#s35" title="Slides lec6-chap8-dpo § The DPO gradient (L651-L653)">35</a> So the lecture's worry <a class="chip" href="#s164" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:28:04">164</a> seems unfounded.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Why $\pi^*$ is not something you can compute.</strong> Not Lambert: $Z(x)$ sums over every possible completion, which is intractable for a language model. That is why the derivation must cancel it <a class="chip" href="#s49" title="Slides lec6-chap8-dpo § Substitute the reward, then cancel $Z(x)$ (L520)">49</a> rather than evaluate it. The four-completion widget can compute $Z$ only because its space is tiny.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>On "mediated through the partition function".</strong> The slide ties displacement to $Z(x)$, <a class="chip" href="#s81" title="Slides lec6-chap8-dpo § A subtle risk: The chosen probability can fall (L687-L693)">81</a> and the lecture says it "comes down to this partition function". <a class="chip" href="#s166" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:30:41">166</a> The chapter does not make that link. <a class="chip" href="#s80" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L258-L259)">80</a> My reading, not Lambert's: the loss, with $Z$ cancelled, constrains only the gap between two completions, so probability mass is free to move to completions outside the data. I have not read the cited papers.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Summed log-probabilities favor short answers.</strong> Not Lambert: a sum over tokens is more negative for longer completions, which is what the averaging in SimPO and DPO-Norm addresses. <a class="chip" href="#s85" title="Code code/direct_alignment/loss.py (L49-L54)">85</a> <a class="chip" href="#s70" title="Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L254)">70</a> With summed log-ratios, a shift of tens of nats across a long completion is ordinary, which is why the widget's sliders reach ±40.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the full line-by-line algebra, which the chapter and slides show in full</li>
+      <li>the KTO and APO losses in the code</li>
+      <li>most of Conversation 2 on academic research and team organization</li>
+      <li>the papers cited for displacement and online DPO, which I describe only through Lambert</li>
+    </ul>
+    <p>I read the Dec 2023 and Jul 2024 talks in full, and only searched the two Stanford talks. Rejection sampling, the other simple baseline, is Chapter 9. <a class="chip" href="#s22" title="Ch. 8 Direct-Alignment Algorithms (L35)">22</a></p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 9 (Rejection Sampling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 9&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 9</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 8 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 8&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 8</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L24">
+      <blockquote style="margin:0">Direct Alignment Algorithms (DAAs) allow one to update models to solve the same RLHF objective without ever training an intermediate reward model or using reinforcement learning optimizers.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L24">Ch. 8 Direct-Alignment Algorithms (L24)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L25">
+      <blockquote style="margin:0">DAAs solve the same preference learning problem we've been studying (with literally the same data!)</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L25">Ch. 8 Direct-Alignment Algorithms (L25)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L29-L32">
+      <blockquote style="margin:0">At its core, DPO uses gradient ascent to solve the same constrained RLHF objective</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L29-L32">Ch. 8 Direct-Alignment Algorithms (L29-L32)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="yt:6g6b4gvO-y0@00:06:13-00:06:45">
+      <blockquote style="margin:0">I tried to do literally every single step in the derivation because if you look at the paper, there are steps that are not explained.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=373s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:06:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L99-L101">
+      <blockquote style="margin:0">First, the authors show the form of the policy that optimally solved the RLHF objective used throughout this book. Next, they show how to arrive at that solution from pairwise preference data</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L99-L101">Ch. 8 Direct-Alignment Algorithms § DPO Derivation (L99-L101)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#dpo-derivation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L56-L60">
+      <blockquote style="margin:0">This relies on the implicit reward for DPO training that replaces using an external reward model, which is a log-ratio of probabilities</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L56-L60">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L56-L60)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L84">
+      <blockquote style="margin:0">What is often misunderstood is that DPO is learning a reward model at its core, hence the subtitle of the paper *Your Language Model is Secretly a Reward Model.*</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L84">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L84)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L292">
+      <blockquote style="margin:0">This can be used in standard language model training stacks as this information is already collated during the forward pass of a model (with the addition of a reference model).</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L292">Ch. 8 Direct-Alignment Algorithms § Implementation Details (L292)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/loss.py#L102-L122">
+      <blockquote style="margin:0">logits = chosen_logratios - rejected_logratios … losses = -F.logsigmoid(self.beta * logits)</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/loss.py#L102-L122">Code code/direct_alignment/loss.py (L102-L122)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L267">
+      <blockquote style="margin:0">the choice of algorithm is far less important than the initial model and the data used</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L267">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L267)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L325-L327">
+      <blockquote style="margin:0">Multiple reports have concluded that policy-gradient based and RL methods outperform DPO and its variants. … In all of these cases, DPO algorithms are a hair behind.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L325-L327">Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L325-L327)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-vs-rl-online-vs-offline-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L329-L330">
+      <blockquote style="margin:0">Even with this performance delta, DAAs are still used extensively in leading models due to their simplicity. … given that data is often far more important than algorithms, using DPO can be fine.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L329-L330">Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L329-L330)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-vs-rl-online-vs-offline-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L50-L51">
+      <blockquote style="margin:0">DPO paper was released in May of 2023, when many groups were struggling to get open-source replications of RLHF pipelines going. Most \"aligned\" models were just SFT. … It took until about the fall of 2023 for people to figure out the right data and settings for DPO to work</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L50-L51">Slides lec6-chap8-dpo § Why DPO was -- and is -- such a big deal (L50-L51)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="yt:6g6b4gvO-y0@00:01:31-00:02:02">
+      <blockquote style="margin:0">most of them just kind of crashed and burned. … DPO was the catalyst for making post-raining far more accessible.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=91s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:01:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L37">
+      <blockquote style="margin:0">The most impactful part of DPO and DAAs is lowering the barrier to entry to experimenting with language model post-training</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L37">Ch. 8 Direct-Alignment Algorithms (L37)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L26">
+      <blockquote style="margin:0">The lack of a reward model and online optimization makes DAAs far simpler to implement, reducing compute spent during training and making experimentation easier.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L26">Ch. 8 Direct-Alignment Algorithms (L26)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="yt:6g6b4gvO-y0@00:01:00-00:01:31">
+      <blockquote style="margin:0">recap why DPO was a big deal and why I still rate it to be a big deal.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=60s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:01:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:YJMCSVLRUNs@00:00:35-00:01:08">
+      <blockquote style="margin:0">this is one of the most interesting papers I've read in the year it's exceedingly clever</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=35s">DPO Debate: Is RL needed for RLHF? @ 00:00:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:dnF463_Ar9I@00:13:35-00:14:05">
+      <blockquote style="margin:0">DPO is where everyone will start with if they want to do alignment research and it's for good reason</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=815s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:13:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L34">
+      <blockquote style="margin:0">Since its release in May of 2023, after a brief delay where the community figured out the right data and hyperparameters to use DPO with (specifically, surprisingly low learning rates), many popular models have used DPO or its variants … kickstarting it in October of 2023 [@tunstall2023zephyr], Llama 3 Instruct [@dubey2024llama], Tülu 2 [@ivison2023camels] and 3 [@lambert2024t], Nemotron 4 340B</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L34">Ch. 8 Direct-Alignment Algorithms (L34)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:6g6b4gvO-y0@00:02:02-00:02:33">
+      <blockquote style="margin:0">it took a while for people to actually apply DPO in the open to real models. And that is about a fivemon gap where even with such a simple method, it still took a long time to find the right settings, the right data</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=122s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:02:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L35">
+      <blockquote style="margin:0">Technically, Sequence Likelihood Calibration (SLiC-HF) was the first modern direct alignment algorithm released [@zhao2023slic], but it did not catch on</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L35">Ch. 8 Direct-Alignment Algorithms (L35)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#direct-alignment-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L94">
+      <blockquote style="margin:0">the debate often felt forced and over the top, but many people both getting started and in top labs were getting immense benefit out of DPO.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L94">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L94)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="yt:6g6b4gvO-y0@00:04:38-00:05:10">
+      <blockquote style="margin:0">Only thing I would get at a conference is DPO versus RL for like a year straight and it was crazy and I'm very happy to move on to greener pastures. I think the answer is both</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=278s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:04:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L53">
+      <blockquote style="margin:0">I call the class of algorithms that operate like DPO on static preference data Direct Alignment Algorithms (DAAs). The name didn't stick much</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L53">Slides lec6-chap8-dpo § Why DPO was -- and is -- such a big deal (L53)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:6g6b4gvO-y0@00:03:36-00:04:07">
+      <blockquote style="margin:0">I call the collection of algorithms that train directly on pair wise preference data direct alignment algorithms. Um I was trying to get this name to stick. It didn't stick that much</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=216s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:03:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L100-L104">
+      <blockquote style="margin:0">DPO collapses steps 2 and 3 into **one supervised-style loss**. … The optimal RLHF policy and the reward model are two views of the *same* object. If we know one, we know the other in closed form.</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L100-L104">Slides lec6-chap8-dpo § Recall: Where DPO sits in the pipeline (L100-L104)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:6g6b4gvO-y0@00:06:45-00:07:16">
+      <blockquote style="margin:0">DPO is just one of these tools where it can replace PO it can complement it and so on</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=405s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:06:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:6g6b4gvO-y0@00:05:10-00:06:13">
+      <blockquote style="margin:0">the promise of DPO is that you just learn directly from the data. You do not need an RL loop. You do not need a separate reward model. You just directly differentiate on the data.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=310s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:05:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L65-L67">
+      <blockquote style="margin:0">In practice, this is a sum of log-probabilities of the model across the sequence of tokens in the data presented. Hence, DPO is increasing the gap in relative log-probabilities between the chosen and rejected responses.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L65-L67">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L65-L67)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L55">
+      <blockquote style="margin:0">is a hyperparameter balancing the reward optimization to the KL divergence between the final model and the initial reference (i.e. balancing over-optimization, a crucial hyperparameter when using DPO correctly).</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L55">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L55)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L711-L715">
+      <blockquote style="margin:0">policy stays close to … it barely moves. … policy is free to deviate; it can **over-optimize**. … Some RL runs even include dynamically adjusted KL controllers.</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L711-L715">Slides lec6-chap8-dpo § The $\beta$ parameter and the static KL (L711-L715)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L53">
+      <blockquote style="margin:0">The loss decreases when the chosen shift exceeds the rejected shift -- i.e. when the policy learns to prefer the right response.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L53">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L53)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L77-L79">
+      <blockquote style="margin:0">creates a weight of the parameter update from 0 to 1 that is higher when the reward estimate is incorrect. … increase the likelihood of the chosen response … These terms are weighted by</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L77-L79">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L77-L79)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L651-L653">
+      <blockquote style="margin:0">is larger when the model is *more wrong* … scales the step, trading correct ordering against drift from</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L651-L653">Slides lec6-chap8-dpo § The DPO gradient (L651-L653)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="yt:6g6b4gvO-y0@00:25:26-00:25:58">
+      <blockquote style="margin:0">what you actually implement is the loss and then the automatic differentiation packages of PyTorch etc. they implement said gradient when you call backwards.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1526s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:25:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L83">
+      <blockquote style="margin:0">Because the DPO loss is directly differentiable, it is straightforward to compute the exact gradient, rather than needing to estimate it by training a reward model and sampling completions to score.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L83">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L83)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L87-L89">
+      <blockquote style="margin:0">DPO solves for the exact policy given a specific KL divergence because the generations are not online as in policy gradient algorithms … the optimal value depends on the model being trained and the data training it.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L87-L89">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L87-L89)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L79-L82">
+      <blockquote style="margin:0">Solve the RLHF objective for its **optimal policy** … Invert that to write the **reward in terms of the policy** … Plug it into the **Bradley-Terry** preference model … Read off the **DPO loss** and its **gradient**</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L79-L82">Slides lec6-chap8-dpo § This lecture (L79-L82)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L276">
+      <blockquote style="margin:0">The catch: our denominator $\pi_{\text{ref}}\,e^{r/\beta}$ is **not a distribution** — summed over $y$ it does not equal $1$.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L276">Slides lec6-chap8-dpo § Introduce the partition function $Z(x)$ (L276)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="yt:6g6b4gvO-y0@00:13:32-00:14:03">
+      <blockquote style="margin:0">So we cannot yet invoke Gibbs inequality. What we do is that you introduce something called a partition function</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=812s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:13:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L130-L132">
+      <blockquote style="margin:0">The partition function acts as a normalization factor for the unnormalized density</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L130-L132">Ch. 8 Direct-Alignment Algorithms § Deriving the Optimal RLHF Solution (L130-L132)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-the-optimal-rlhf-solution">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L163-L164">
+      <blockquote style="margin:0">(the policy we are optimizing), we can ignore it. … Gibbs' inequality tells us this is minimized at a distance of 0, only when the two quantities are equal!</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L163-L164">Ch. 8 Direct-Alignment Algorithms § Deriving the Optimal RLHF Solution (L163-L164)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-the-optimal-rlhf-solution">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:6g6b4gvO-y0@00:18:44-00:19:15">
+      <blockquote style="margin:0">you can just do this. You can just go towards the optimal solution. … It is just solving an RL problem with a direct gradient.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1124s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:18:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L176-L190">
+      <blockquote style="margin:0">By manipulating @eq:dpo_opt_policy, we can solve for the optimal reward.</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L176-L190">Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L176-L190)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-dpo-objectives-for-bt-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:6g6b4gvO-y0@00:20:18-00:20:49">
+      <blockquote style="margin:0">DPO is not training a reward model. It's that you can use your language model as an implicit reward model.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1218s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:20:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L62">
+      <blockquote style="margin:0">meaning we can bypass learning an explicit reward model entirely.</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L62">Ch. 8 Direct-Alignment Algorithms § How DPO Works (L62)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#how-dpo-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L197">
+      <blockquote style="margin:0">and then cancelling out the terms</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L197">Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L197)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-dpo-objectives-for-bt-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L520">
+      <blockquote style="margin:0">the **intractable term is gone**.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L520">Slides lec6-chap8-dpo § Substitute the reward, then cancel $Z(x)$ (L520)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L210">
+      <blockquote style="margin:0">we derived the Bradley-Terry objective as maximizing the likelihood, or equivalently minimizing the negative log-likelihood</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L210">Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L210)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-dpo-objectives-for-bt-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L573">
+      <blockquote style="margin:0">This is directly differentiable — **no reward model, no sampling, no RL loop.**</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L573">Slides lec6-chap8-dpo § The DPO loss (L573)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L229-L238">
+      <blockquote style="margin:0">We know that the derivative of a sigmoid function</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L229-L238">Ch. 8 Direct-Alignment Algorithms § Deriving the BT DPO Gradient (L229-L238)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-the-bt-dpo-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L673">
+      <blockquote style="margin:0">The reward model never had to be built — it was hiding inside the policy the whole time.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L673">Slides lec6-chap8-dpo § Recap: The DPO derivation (L673)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L219">
+      <blockquote style="margin:0">The DPO paper has an additional derivation for the objective under a Plackett-Luce Model, which is far less used in practice</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L219">Ch. 8 Direct-Alignment Algorithms § Deriving DPO Objectives for BT Models (L219)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#deriving-dpo-objectives-for-bt-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L243">
+      <blockquote style="margin:0">without rollouts where a reward model can rate generations, DPO treats every pair of preference data with equal weight.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L243">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L243)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L722">
+      <blockquote style="margin:0">Each variant tweaks the loss to fix a limitation — often a one-line change.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L722">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L722)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L247">
+      <blockquote style="margin:0">adds signal from a reward model, as a margin between chosen and rejected responses</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L247">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L247)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L248">
+      <blockquote style="margin:0">address overfitting by assuming noise in the preference data. cDPO assumes N percent of the data is incorrectly labeled … IPO changes the optimization to soften the probability of preference rather than optimize directly from a label</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L248">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L248)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L732">
+      <blockquote style="margin:0">assumes the preference labels are noisy (flipped with probability $\varepsilon$) and softens the loss target accordingly.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L732">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L732)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="yt:6g6b4gvO-y0@00:33:49-00:34:19">
+      <blockquote style="margin:0">The DPO authors claim that they already discussed this in their paper, which is something they called conservative DPO.</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2029s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:33:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/loss.py#L109-L119">
+      <blockquote style="margin:0">cDPO: label smoothing for noisy preferences</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/loss.py#L109-L119">Code code/direct_alignment/loss.py (L109-L119)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L726">
+      <blockquote style="margin:0">softens the preference probability away from Bradley-Terry to curb overfitting.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L726">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L726)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/loss.py#L172-L175">
+      <blockquote style="margin:0">target_margin = 1.0 / (2.0 * self.beta) losses = (logits - target_margin) ** 2</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/loss.py#L172-L175">Code code/direct_alignment/loss.py (L172-L175)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L249">
+      <blockquote style="margin:0">requires the difference between the likelihood of the preferred and dispreferred response to be greater than an offset value</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L249">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L249)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L736">
+      <blockquote style="margin:0">requires the chosen to beat the rejected by a margin offset, scaled by how strong the preference is.</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L736">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L736)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L274-L276">
+      <blockquote style="margin:0">ODPO (DPO with Offset) … **Paper:** [Provably Robust DPO: Aligning Language Models with Noisy Feedback]</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L274-L276">Code code/direct_alignment/README.md (L274-L276)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L253">
+      <blockquote style="margin:0">directly updates the policy model with a pull towards the chosen response, similar to the instruction fine-tuning loss, with a small penalty on the rejected response … The best way to view ORPO is as DPO inspired, rather than a DPO derivative.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L253">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L253)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L747">
+      <blockquote style="margin:0">The odds ratio uses only $\pi_\theta$, which allows dropping the reference model.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L747">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L747)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L6">
+      <blockquote style="margin:0">DPO/IPO/KTO/APO validated. SimPO and ORPO are implemented and actively being retuned.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L6">Code code/direct_alignment/README.md (L6)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L254">
+      <blockquote style="margin:0">makes a minor change to the DPO optimization, by averaging the log-probabilities rather than summing them or adding length normalization, to improve performance</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L254">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L254)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L753">
+      <blockquote style="margin:0">length-normalizes the reward into an average log-prob, with a target margin $\gamma$.</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L753">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L753)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L264-L265">
+      <blockquote style="margin:0">the training signal comes from completions from previous or other models. Online variants of DPO alleviate these limitations by generating new completions and incorporating a preference signal at training time.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L264-L265">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L264-L265)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="yt:6g6b4gvO-y0@00:35:21-00:35:52">
+      <blockquote style="margin:0">This didn't take off. There were a few models trained with it but never that many. Another one was Sympio, simple preference optimization, which added length normalization … And this actually worked a little bit better.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2121s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:35:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="yt:6g6b4gvO-y0@00:35:52-00:36:23">
+      <blockquote style="margin:0">it's worth understanding how much went is out there because in practice most of what matters ends up being the data.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2152s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:35:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L759">
+      <blockquote style="margin:0">The algorithm matters **far less** than the base model and the data.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L759">Slides lec6-chap8-dpo § A zoo of direct alignment algorithms (L759)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="yt:rhA7pLVt4E0@00:09:50-00:10:22">
+      <blockquote style="margin:0">I feel like the data matters a lot more than sort of the exact objective you choose.</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=590s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:09:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:rhA7pLVt4E0@00:13:27-00:13:59">
+      <blockquote style="margin:0">the at least in our experience the sort of original objective still performs very well if you just try to if you tune it correctly</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=807s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:13:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="yt:YJMCSVLRUNs@00:09:57-00:10:29">
+      <blockquote style="margin:0">the question is does this really matter um no uh cdpo and IPO are parts of this new tree that have been formed on DPO like methods</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=597s">DPO Debate: Is RL needed for RLHF? @ 00:09:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="yt:6g6b4gvO-y0@00:30:08-00:30:41">
+      <blockquote style="margin:0">one of the most interesting things in DPO is something called likelihood displacement. When you look at the loss function, all it is doing is pushing to increase the margin</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1808s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:30:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L258-L259">
+      <blockquote style="margin:0">the optimization drives only to increase the margin between the probability of the chosen and rejected responses. Numerically, the model reduces the probability of both the chosen and rejected responses, but the *rejected response is reduced by a greater extent*</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L258-L259">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L258-L259)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L687-L693">
+      <blockquote style="margin:0">So the model can lower the loss by pushing the *rejected* probability down **faster** than the chosen, even while the **chosen probability also falls**. … Mediated through the partition function $Z(x)$ in the derivation. … A reason some practitioners add an SFT term on the chosen response</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L687-L693">Slides lec6-chap8-dpo § A subtle risk: The chosen probability can fall (L687-L693)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L260-L262">
+      <blockquote style="margin:0">it increases the probability of unaddressed behaviors … mitigate this **preference displacement**. In practice, the exact impact of this is not well known, but points to a potential reason why online methods can outperform vanilla DPO.</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L260-L262">Ch. 8 Direct-Alignment Algorithms § Numerical Concerns, Weaknesses, and Alternatives (L260-L262)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#numerical-concerns-weaknesses-and-alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="yt:6g6b4gvO-y0@00:31:12-00:31:44">
+      <blockquote style="margin:0">you don't know the side effects when it's out of distribution because the optimization itself really does have this kind of open-ended feature of like potentially moving out of distribution tokens.</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1872s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:31:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="yt:rhA7pLVt4E0@00:10:52-00:11:24">
+      <blockquote style="margin:0">there's people who like try to add things like like uh like a log likelihood like regular regularization on the chosen responses to prevent that from happening.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=652s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/loss.py#L49-L54">
+      <blockquote style="margin:0">SimPO or DPO-Norm: average over valid tokens to avoid length bias … DPO: sum over all tokens</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/loss.py#L49-L54">Code code/direct_alignment/loss.py (L49-L54)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/loss.py#L124-L133">
+      <blockquote style="margin:0">chosen_rewards = self.beta * chosen_logratios.detach() … \"accuracy\": (chosen_rewards &gt; rejected_rewards).float().mean().item(),</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/loss.py#L124-L133">Code code/direct_alignment/loss.py (L124-L133)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L296">
+      <blockquote style="margin:0">This is due to the fact that DPO takes gradient steps towards the *optimal* solution to the RLHF objective given the data … On the other hand, RL based optimizers take steps based on the batch and recent data.</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L296">Ch. 8 Direct-Alignment Algorithms § Implementation Details (L296)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:6g6b4gvO-y0@00:32:16-00:32:46">
+      <blockquote style="margin:0">because DPO is taking the optimal gradient on every data point, KL is handled a bit differently where the optimal gradient has a targeted KL distance built into it</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1936s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:32:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:6g6b4gvO-y0@00:32:46-00:33:49">
+      <blockquote style="margin:0">in some RL implementations you either even have like dynamic KL constraints to change the penalty throughout the optimization and some of these sorts of things aren't really suited or possible in DPO frameworks</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1966s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:32:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L297">
+      <blockquote style="margin:0">one can compute the log-probabilities of the reference model over the training dataset first, then reuse those cached reference log-probabilities when computing the loss and updating the parameters per batch, reducing the peak memory usage by 50%.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L297">Ch. 8 Direct-Alignment Algorithms § Implementation Details (L297)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L777">
+      <blockquote style="margin:0">is frozen, so precompute and cache its log-probs to cut peak memory ~50%.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L777">Slides lec6-chap8-dpo § Implementation is genuinely simple (L777)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:6g6b4gvO-y0@00:34:19-00:35:21">
+      <blockquote style="margin:0">Essentially the reference model is just a fixed cost on compute. You either need more um more memory when doing optimization or you need to cache the log probabilities from the reference model before doing training</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2059s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:34:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/train.py#L215-L230">
+      <blockquote style="margin:0">Forward pass through reference model (if needed) if ref_model is not None: with torch.no_grad():</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/train.py#L215-L230">Code code/direct_alignment/train.py (L215-L230)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L345-L346">
+      <blockquote style="margin:0">**Reference logprob caching**: Cache reference model log-probs to avoid recomputing each batch</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L345-L346">Code code/direct_alignment/README.md (L345-L346)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/train.py#L527-L530">
+      <blockquote style="margin:0">Reference model (not needed for SimPO and ORPO)</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/train.py#L527-L530">Code code/direct_alignment/train.py (L527-L530)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="yt:rhA7pLVt4E0@00:55:36-00:56:08">
+      <blockquote style="margin:0">on the 32B we turn it off initially because the 32B model was too big for that like sort of concatenated forward pass to fit in memory. But it turns out that doing two separate single forward passes would like just break the model for some reason</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=3336s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:55:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L301-L302">
+      <blockquote style="margin:0">Most of the popular datasets for performing preference fine-tuning with DAAs these days are synthetic preferences where a frontier model rates outputs from other models as the winner or the loser. … SmolLM 3's data</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L301-L302">Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L301-L302)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-with-synthetic-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L784">
+      <blockquote style="margin:0">These algorithms need *feedback* data, not necessarily *human* feedback data — AI feedback works just as well.</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L784">Slides lec6-chap8-dpo § DAAs work with synthetic preference data (L784)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:6g6b4gvO-y0@00:36:55-00:37:26">
+      <blockquote style="margin:0">So ultra feedback was this data set of about 10,000 prompts with chosen and rejected pairs.</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2215s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:36:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:6g6b4gvO-y0@00:37:58-00:38:30">
+      <blockquote style="margin:0">make sure this works at 100,000 and 200,000 prompts where everybody's using ultra feedback at 10,000 prompts.</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2278s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:37:58</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L310">
+      <blockquote style="margin:0">training models on synthetic preference data with DAAs is the place most practitioners should start</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L310">Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L310)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-with-synthetic-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L305-L306">
+      <blockquote style="margin:0">synthetic, pairwise preference data needs to be \"on-policy\" in a sense that some completions are generated from the model you're fine-tuning (while being mixed in a bigger model pool).</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L305-L306">Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L305-L306)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-with-synthetic-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="yt:6g6b4gvO-y0@00:37:58-00:38:30">
+      <blockquote style="margin:0">when trying to push the limits of DPO, it's really important to have completions from your SFT model inside the um pair wise data.</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2278s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:37:58</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L307-L308">
+      <blockquote style="margin:0">Delta Learning, which argues that the difference between the chosen and rejected completions is more important to learning than exactly which models are used for the completions … the chosen responses are from Qwen 3 32B and the rejected responses are from Qwen 3 0.6B</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L307-L308">Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L307-L308)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-with-synthetic-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L788">
+      <blockquote style="margin:0">later work argues the *gap* between chosen and rejected matters more than which models produced them (e.g. Qwen3-32B chosen vs Qwen3-0.6B rejected). Used this in Olmo 3!</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L788">Slides lec6-chap8-dpo § DAAs work with synthetic preference data (L788)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="yt:6g6b4gvO-y0@00:39:01-00:40:04">
+      <blockquote style="margin:0">it's very important to get the shape of your chosen and rejected data correctly and there needs to be meaningful signal in your chosen response being better than a rejected response and if all the answers are too similar the models don't learn as well.</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2341s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:39:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="yt:rhA7pLVt4E0@00:22:49-00:23:20">
+      <blockquote style="margin:0">if I train on this chosen response I would get like I would completely like obliterate my model … somehow if I ran like preference tuning on the same exact data with the same exact chosen response the sort of performance started getting way better.</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=1369s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:22:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="yt:rhA7pLVt4E0@00:24:55-00:25:28">
+      <blockquote style="margin:0">even if your chosen response is kind of bad such that training directly on it with like supervised fine tuning like learning to mimic it would hurt your model you can still get some signal out of it if you contrast it with something that's even worse.</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=1495s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:24:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="yt:rhA7pLVt4E0@00:30:37-00:31:08">
+      <blockquote style="margin:0">we're going to use just like two weak models. We'll use like a 3B model and a 1.5B model. And in fact these models are even worse than the model we're training</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=1837s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:30:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="yt:YJMCSVLRUNs@00:16:16-00:16:47">
+      <blockquote style="margin:0">an example to my intuition is what happens if the Chosen and rejected are both good or both bad</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=976s">DPO Debate: Is RL needed for RLHF? @ 00:16:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="yt:rhA7pLVt4E0@00:34:12-00:34:44">
+      <blockquote style="margin:0">So we were using like the Quen 3 models to generate the data and they had like sort of you can turn on reasoning or on or off</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=2052s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:34:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="yt:rhA7pLVt4E0@00:44:38-00:45:11">
+      <blockquote style="margin:0">the chosen response comes from like Quen 32V and Quen 6B baby model was like, \"No, I can't do that.\"</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=2678s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:44:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="yt:rhA7pLVt4E0@00:40:30-00:41:02">
+      <blockquote style="margin:0">one problem that perhaps offline DPO suffers from that other post training stages don't say like SFT or mid training is that you can like actually like overfit and like start reward hacking</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=2430s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:40:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L312">
+      <blockquote style="margin:0">it is slightly more likely for a piece of text in the \"chosen\" section of the dataset to be either from an OpenAI model or another strong model that is stylistically similar to it.</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L312">Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L312)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-with-synthetic-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L317">
+      <blockquote style="margin:0">Each token in a sequence receives a different gradient (magnitude and direction) based on how much it contributed to the overall preference margin</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L317">Ch. 8 Direct-Alignment Algorithms § DAAs with Synthetic Preference Data (L317)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-with-synthetic-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L321-L322">
+      <blockquote style="margin:0">Do we need the inner workings of reinforcement learning, with value functions, policy gradients, and all, to align language models with RLHF? This, like most questions phrased this way, is overly simple.</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L321-L322">Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L321-L322)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-vs-rl-online-vs-offline-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L797-L807">
+      <blockquote style="margin:0">Limited by the **coverage** of that dataset — a slightly lower performance ceiling. … Can explore new regions → often higher peak performance … More compute, more moving parts (four models in memory), more engineering complexity.</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L797-L807">Slides lec6-chap8-dpo § DPO vs. RL: Offline vs. online (L797-L807)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:dnF463_Ar9I@00:47:55-00:48:26">
+      <blockquote style="margin:0">what PPO is doing is only generating data from your existing model and kind of changing this distribution over time</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=2875s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:47:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="yt:6g6b4gvO-y0@00:40:04-00:40:34">
+      <blockquote style="margin:0">RL ends up being more expensive but kind of can explores a bit more and I think really does have a higher peak performance. There was a whole series of papers in 2024 that looked at DPO versus RL and most of them found that RL was a bit better</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2404s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:40:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="yt:rhA7pLVt4E0@00:06:45-00:07:16">
+      <blockquote style="margin:0">if you run PO you probably need to have like three separate model checkpoints loaded into your memory at any given point at least</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=405s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:06:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L813">
+      <blockquote style="margin:0">why does it seem like it comes up so infrequently -- especially at the frontier?</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L813">Slides lec6-chap8-dpo § Where does this leave us today? (L813)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L839-L841">
+      <blockquote style="margin:0">DPO works well in wonky, distillation-heavy recipes like Olmo … TLDR: DPO is a path to a good/solid model, but not to the best model. And DPO may do less in *cleaner* training recipes.</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L839-L841">Slides lec6-chap8-dpo § Hypotheses for DPO&#x27;s role today (L839-L841)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L831-L833">
+      <blockquote style="margin:0">**Olmo 3** (Nov 2025) / **SmolLM 3** (Jul 2025) -- used DPO over reasoning traces after SFT to boost performance in a simple pipeline. … *Mixed Preference Optimization*: DPO + Binary Classifier Optimization in one offline stage … length-normalized DPO on semi-online data, before a final RLVR pass.</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L831-L833">Slides lec6-chap8-dpo § Hypotheses for DPO&#x27;s role today (L831-L833)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:6g6b4gvO-y0@00:40:34-00:41:06">
+      <blockquote style="margin:0">realistically we can classify these as like nonfrontier models and they use DPO as a way to get solid performance</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2434s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:40:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="yt:6g6b4gvO-y0@00:41:36-00:42:06">
+      <blockquote style="margin:0">yes DPO is a path to a good and solid model and often really good for getting it across off the ground and I will keep using it for experimenting with new types of models and but it like DPO might have a lower ceiling</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=2496s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:41:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="yt:6StK9ttLNbQ@00:10:28-00:11:01">
+      <blockquote style="margin:0">you could show that like DPO is very close to SFT in some ways, just like RL.</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=628s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L336-L337">
+      <blockquote style="margin:0">This is the most accessible place to start experimenting with preference tuning because the setup is offline: no reward model server or rollout loop is required.</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L336-L337">Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L336-L337)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-02.md#L215">
+      <blockquote style="margin:0">Start with **Ch 8 (DPO)** or **Ch 4 (SFT)** — both run offline, no reward-model server or rollout loop.</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-02.md?plain=1#L215">Slides qa-02 § &quot;Can we get programming &amp; math assignments?&quot; (L215)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s129" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/configs/dpo.yaml#L9-L22">
+      <blockquote style="margin:0">model_name: allenai/OLMo-2-0425-1B-SFT … beta: 0.1 … learning_rate: 5.0e-6  # Higher LR works better for this model</blockquote>
+      <figcaption><span class="chip">129</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/configs/dpo.yaml#L9-L22">Code code/direct_alignment/configs/dpo.yaml (L9-L22)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s130" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L346-L347">
+      <blockquote style="margin:0">The main sanity check is that the implicit reward margin should move in the desired direction without the model's sample generations collapsing.</blockquote>
+      <figcaption><span class="chip">130</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L346-L347">Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L346-L347)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s131" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L145">
+      <blockquote style="margin:0">early loss values (~10-25) are much higher than DPO (~0.5-0.7).</blockquote>
+      <figcaption><span class="chip">131</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L145">Code code/direct_alignment/README.md (L145)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s132" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L358-L359">
+      <blockquote style="margin:0">IPO's loss is not on the same numeric scale as DPO, so read it through `accuracy` and margin behavior rather than raw loss alone.</blockquote>
+      <figcaption><span class="chip">132</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L358-L359">Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L358-L359)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s133" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L371-L373">
+      <blockquote style="margin:0">Change the data before changing the loss. … data usually dominates small algorithmic differences.</blockquote>
+      <figcaption><span class="chip">133</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L371-L373">Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L371-L373)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s134" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/train.py#L47-L56">
+      <blockquote style="margin:0">Resolve 'auto' to CUDA if available, otherwise CPU. … Expected 'auto', 'cuda', or 'cpu'.</blockquote>
+      <figcaption><span class="chip">134</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/train.py#L47-L56">Code code/direct_alignment/train.py (L47-L56)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s135" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/CHANGELOG.md#L17">
+      <blockquote style="margin:0">MPS is intentionally omitted (unstable / bf16 gaps).</blockquote>
+      <figcaption><span class="chip">135</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/CHANGELOG.md?plain=1#L17">Code code/CHANGELOG.md (L17)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s136" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/config.py#L18">
+      <blockquote style="margin:0">ref_model_name: str | None = None  # Defaults to model_name if None</blockquote>
+      <figcaption><span class="chip">136</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/config.py#L18">Code code/direct_alignment/config.py (L18)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s137" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L202-L203">
+      <blockquote style="margin:0">For smaller GPUs with gradient checkpointing: … 1B model: ~8-10GB</blockquote>
+      <figcaption><span class="chip">137</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L202-L203">Code code/direct_alignment/README.md (L202-L203)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s138" data-cite="yt:YJMCSVLRUNs@00:25:42-00:26:44">
+      <blockquote style="margin:0">the tldr is that we have more limitations with data and tooling and research and evaluation in open source then Optimizer Choice</blockquote>
+      <figcaption><span class="chip">138</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=1542s">DPO Debate: Is RL needed for RLHF? @ 00:25:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s139" data-cite="yt:AdLgPmcrXwQ@00:50:08-00:50:39">
+      <blockquote style="margin:0">I will say that in the experiments that I'm seeing at allna AI I'm also seeing po to be stronger</blockquote>
+      <figcaption><span class="chip">139</span> <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=3008s">Stanford CS25: V4 I Aligning Open Language Models @ 00:50:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s140" data-cite="yt:dnF463_Ar9I@00:43:43-00:44:13">
+      <blockquote style="margin:0">we're getting the 0 to 2% Improvement out of Po but DPO doesn't have this this sort of mess</blockquote>
+      <figcaption><span class="chip">140</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=2623s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:43:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s141" data-cite="yt:rDF7eFPeVto@00:10:21-00:10:52">
+      <blockquote style="margin:0">these PPO models are always doing like half a point to one point better</blockquote>
+      <figcaption><span class="chip">141</span> <a href="https://www.youtube.com/watch?v=rDF7eFPeVto&amp;t=621s">An update on DPO vs PPO for LLM alignment @ 00:10:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s142" data-cite="yt:rDF7eFPeVto@00:08:48-00:09:20">
+      <blockquote style="margin:0">in recent experiments on OLMo and Llama 3, we haven't actually shown that PPO is better.</blockquote>
+      <figcaption><span class="chip">142</span> <a href="https://www.youtube.com/watch?v=rDF7eFPeVto&amp;t=528s">An update on DPO vs PPO for LLM alignment @ 00:08:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s143" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L332">
+      <blockquote style="margin:0">further investment will return to using RL for preference-tuning, which in the long-term will improve the robustness of RL infrastructure and cement this margin between DAAs and RL</blockquote>
+      <figcaption><span class="chip">143</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L332">Ch. 8 Direct-Alignment Algorithms § DAAs vs. RL: Online vs. Offline Data (L332)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#daas-vs-rl-online-vs-offline-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s144" data-cite="yt:rhA7pLVt4E0@00:01:02-00:01:34">
+      <blockquote style="margin:0">it's surprising that fewer people have using this given the ridiculous gains that we have gotten for DPO.</blockquote>
+      <figcaption><span class="chip">144</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=62s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:01:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s145" data-cite="yt:rhA7pLVt4E0@00:02:06-00:02:39">
+      <blockquote style="margin:0">the gains on Amy are like more than the entire like summer's worth of like RL RLVR efforts we've been we've been pushing for.</blockquote>
+      <figcaption><span class="chip">145</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=126s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:02:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s146" data-cite="yt:rhA7pLVt4E0@00:10:22-00:11:24">
+      <blockquote style="margin:0">one example that I think you and I both feel is a bit overemphasized as a problem is the fact that like if you're optimizing the DPO laws like your the probability of chosen responses and the probability rejected responses can decrease</blockquote>
+      <figcaption><span class="chip">146</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=622s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s147" data-cite="yt:rhA7pLVt4E0@00:11:24-00:11:55">
+      <blockquote style="margin:0">empirically you can say that yeah, it doesn't really matter for performance on the EV vals you have chosen that the chosen response likelihood is going down.</blockquote>
+      <figcaption><span class="chip">147</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=684s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:11:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s148" data-cite="yt:rhA7pLVt4E0@00:10:52-00:11:55">
+      <blockquote style="margin:0">How do you think this plays out in practice? Like it does seem bad that the chosen responses go down, but is it just such a small slice of the probability space that it just doesn't matter</blockquote>
+      <figcaption><span class="chip">148</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=652s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:10:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s149" data-cite="yt:6g6b4gvO-y0@00:31:44-00:32:16">
+      <blockquote style="margin:0">this is in the RHFbook code. And what you can see here is that rejected rewards going down and chosen rewards are kind of flat and the margin is increasing.</blockquote>
+      <figcaption><span class="chip">149</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1904s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:31:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s150" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L702">
+      <blockquote style="margin:0">the chosen/rejected reward margin widens, yet the *chosen* log-prob itself can still drift down.</blockquote>
+      <figcaption><span class="chip">150</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L702">Slides lec6-chap8-dpo § A subtle risk: The chosen probability can fall (L702)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s151" data-cite="yt:YJMCSVLRUNs@00:02:42-00:03:12">
+      <blockquote style="margin:0">not a policy Training Method it's a reward model Training Method and it learns the reward model directly</blockquote>
+      <figcaption><span class="chip">151</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=162s">DPO Debate: Is RL needed for RLHF? @ 00:02:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s152" data-cite="yt:YJMCSVLRUNs@00:23:04-00:23:36">
+      <blockquote style="margin:0">it's seen that low learning rates are needed there's probably huge benefits of a learning rate and a beta Schuler</blockquote>
+      <figcaption><span class="chip">152</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=1384s">DPO Debate: Is RL needed for RLHF? @ 00:23:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s153" data-cite="yt:YJMCSVLRUNs@00:23:36-00:24:08">
+      <blockquote style="margin:0">DPO controls this in a really specific Manner and it likely should be on a schedule so that the model slowly changes its KL distribution over time</blockquote>
+      <figcaption><span class="chip">153</span> <a href="https://www.youtube.com/watch?v=YJMCSVLRUNs&amp;t=1416s">DPO Debate: Is RL needed for RLHF? @ 00:23:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s154" data-cite="yt:AdLgPmcrXwQ@00:47:00-00:47:31">
+      <blockquote style="margin:0">one of the core things to getting DPO to work was using really low learning rates like 5e minus 7</blockquote>
+      <figcaption><span class="chip">154</span> <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=2820s">Stanford CS25: V4 I Aligning Open Language Models @ 00:47:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s155" data-cite="yt:dnF463_Ar9I@00:21:20-00:21:51">
+      <blockquote style="margin:0">There's a weird really low learning rate that was needed to make this kind of chat model work with DPO which is like 5e minus 7</blockquote>
+      <figcaption><span class="chip">155</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=1280s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:21:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s156" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L143">
+      <blockquote style="margin:0">DPO requires very low learning rates (1e-7 to 5e-6). Higher rates cause divergence.</blockquote>
+      <figcaption><span class="chip">156</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L143">Code code/direct_alignment/README.md (L143)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s157" data-cite="yt:rhA7pLVt4E0@00:00:32-00:01:02">
+      <blockquote style="margin:0">we we've got a disproportionate value return out of DPO. And we're always surprised that fewer labs are using it.</blockquote>
+      <figcaption><span class="chip">157</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=32s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:00:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s158" data-cite="yt:rhA7pLVt4E0@00:59:15-01:00:19">
+      <blockquote style="margin:0">I've long since thought that a lot of like preference tuning stuff is underststudied because preference turn tuning is kind of unsolvable and we're kind of returning to similar problems as rubrics become more popular.</blockquote>
+      <figcaption><span class="chip">158</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=3555s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:59:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s159" data-cite="yt:rhA7pLVt4E0@00:49:18-00:49:50">
+      <blockquote style="margin:0">maybe this is one other contributing factor for why like DPO is not adopted more in in like labs … it is still an additional like handoff point</blockquote>
+      <figcaption><span class="chip">159</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=2958s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:49:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s160" data-cite="yt:dnF463_Ar9I@00:20:50-00:21:20">
+      <blockquote style="margin:0">it took until this time which was in September after the May release of the paper for people to really be like o DPO is the real deal like it took four months</blockquote>
+      <figcaption><span class="chip">160</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=1250s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:20:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s161" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec6-chap8-dpo.md#L786">
+      <blockquote style="margin:0">Tülu 3 [@lambert2024t], SmolLM 2 [@allal2025smollm2], and others followed with larger synthetic-feedback recipes.</blockquote>
+      <figcaption><span class="chip">161</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L786">Slides lec6-chap8-dpo § DAAs work with synthetic preference data (L786)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s162" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L262-L266">
+      <blockquote style="margin:0">**APO-Down**: both likelihoods down, rejected falls further … Used in Hugging Face's [SmolLM3 post-training recipe](https://huggingface.co/blog/smollm3) in place of DPO.</blockquote>
+      <figcaption><span class="chip">162</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L262-L266">Code code/direct_alignment/README.md (L262-L266)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s163" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/README.md#L128-L129">
+      <blockquote style="margin:0">a cleaned version of UltraFeedback with ~60k preference pairs.</blockquote>
+      <figcaption><span class="chip">163</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/README.md?plain=1#L128-L129">Code code/direct_alignment/README.md (L128-L129)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s164" data-cite="yt:6g6b4gvO-y0@00:28:04-00:28:34">
+      <blockquote style="margin:0">What I'm not sure about essentially is I see two betas here which is kind of throwing me off and that might be an error and if it is I will fix it in the source slides</blockquote>
+      <figcaption><span class="chip">164</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1684s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:28:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s165" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/08-direct-alignment.md#L361-L363">
+      <blockquote style="margin:0">These losses are more sensitive to log-probability scaling and learning rate</blockquote>
+      <figcaption><span class="chip">165</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L361-L363">Ch. 8 Direct-Alignment Algorithms § Suggested Experiments (L361-L363)</a> · <a href="https://rlhfbook.com/c/08-direct-alignment#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s166" data-cite="yt:6g6b4gvO-y0@00:30:41-00:31:12">
+      <blockquote style="margin:0">it comes down to this partition function that we're using where DPO can move probability space around in the partition function domain</blockquote>
+      <figcaption><span class="chip">166</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=1841s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:30:41</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // DPO loss for one pair: u = beta * (chosen log-ratio - rejected log-ratio); loss = -log sigmoid(u); w = sigmoid(-u).
+  (() => {
+    const [c, r, b] = ['dpo-c', 'dpo-r', 'dpo-b'].map(id => document.getElementById(id));
+    const sig = z => 1 / (1 + Math.exp(-z));
+    const softplus = z => (z > 30 ? z : Math.log1p(Math.exp(z)));
+    const X = u => 36 + (u + 6) * (254 / 12), Y = l => 160 - Math.min(l, 6) * 25;
+    let d = '';
+    for (let i = 0; i <= 120; i++) { const u = -6 + i * 0.1; d += (i ? 'L' : 'M') + X(u).toFixed(1) + ',' + Y(softplus(-u)).toFixed(1); }
+    document.getElementById('dpo-curve').setAttribute('d', d);
+    const fmt = (v, n = 3) => (Math.abs(v) < 1e-12 ? 0 : v).toFixed(n);
+    const prob = x => (x >= 0 ? '×' + (Math.exp(x) < 1e4 ? Math.exp(x).toFixed(2) : Math.exp(x).toExponential(1)) : '×' + (Math.exp(x) > 1e-3 ? Math.exp(x).toFixed(3) : Math.exp(x).toExponential(1)));
+    const show = () => {
+      const C = Number(c.value), R = Number(r.value), B = Number(b.value);
+      const u = B * (C - R), loss = softplus(-u), w = sig(-u);
+      document.getElementById('dpo-c-o').textContent = C;
+      document.getElementById('dpo-r-o').textContent = R;
+      document.getElementById('dpo-b-o').textContent = B.toFixed(2);
+      document.getElementById('dpo-rw').textContent = fmt(B * C) + ' and ' + fmt(B * R);
+      document.getElementById('dpo-u').textContent = fmt(u);
+      document.getElementById('dpo-l').textContent = fmt(loss) + (u === 0 ? ' (= log 2)' : '');
+      document.getElementById('dpo-w').textContent = fmt(w);
+      document.getElementById('dpo-p').textContent = prob(C) + ' its reference probability';
+      const mk = document.getElementById('dpo-mk');
+      const uc = Math.max(-6, Math.min(6, u));
+      mk.setAttribute('cx', X(uc).toFixed(1)); mk.setAttribute('cy', Y(softplus(-uc)).toFixed(1));
+      document.getElementById('dpo-mk-t').textContent = 'u = ' + fmt(u) + ', loss = ' + fmt(loss) + (Math.abs(u) > 6 ? ' (off the plot; marker at the edge)' : '');
+      let msg;
+      if (C < 0 && u > 0) msg = 'The loss is below log 2 = 0.693, yet the chosen completion became less likely than under the reference: the rejected one fell further. This is likelihood displacement.';
+      else if (u < 0) msg = 'The policy has moved toward the rejected completion relative to the reference. The weight w is above 0.5, so this pair gets a large corrective step.';
+      else if (u === 0) msg = 'No margin yet: loss = log 2 = 0.693 and w = 0.5. At the start of training every pair looks like this.';
+      else msg = 'The chosen completion has gained on the rejected one. The weight w shrinks as the margin grows, so well-ranked pairs contribute less.';
+      document.getElementById('dpo-msg').textContent = msg;
+    };
+    document.querySelectorAll('#dpo-demo button[data-c]').forEach(btn => btn.addEventListener('click', () => { c.value = btn.dataset.c; r.value = btn.dataset.r; show(); }));
+    [c, r, b].forEach(i => i.addEventListener('input', show));
+    show();
+  })();
+
+  // Closed-form optimal policy over four made-up completions: pi* = pi_ref * exp(r / beta) / Z.
+  (() => {
+    const Y = [['y1, correct and concise', 1.0, 0.30], ['y2, correct but rambling', 0.6, 0.40], ['y3, partly wrong', -0.2, 0.20], ['y4, unsafe', -1.5, 0.10]];
+    const slider = document.getElementById('opt-b');
+    const body = document.getElementById('opt-body');
+    const sig = z => 1 / (1 + Math.exp(-z));
+    const show = () => {
+      const B = Math.pow(10, Number(slider.value));
+      document.getElementById('opt-b-o').textContent = B < 1 ? B.toFixed(2) : B.toFixed(1);
+      const un = Y.map(([, r, p]) => p * Math.exp(r / B));
+      const Z = un.reduce((a, x) => a + x, 0);
+      const ps = un.map(x => x / Z);
+      const logZ = Math.log(Z);
+      const imp = Y.map(([, , p], i) => B * Math.log(ps[i] / p));
+      body.innerHTML = Y.map(([name, r, p], i) =>
+        '<tr><td>' + name + '</td><td>' + r.toFixed(1) + '</td>' +
+        '<td>' + p.toFixed(2) + '<span class="bar ref" style="width:' + (p * 100).toFixed(1) + '%"></span></td>' +
+        '<td>' + ps[i].toFixed(3) + '<span class="bar" style="width:' + (ps[i] * 100).toFixed(1) + '%"></span></td>' +
+        '<td>' + imp[i].toFixed(3) + '</td><td>' + (r - B * logZ).toFixed(3) + '</td></tr>').join('');
+      const eref = Y.reduce((a, [, r, p]) => a + r * p, 0), estar = Y.reduce((a, [, r], i) => a + r * ps[i], 0);
+      const kl = Y.reduce((a, [, , p], i) => a + ps[i] * Math.log(ps[i] / p), 0);
+      document.getElementById('opt-z').textContent = Z.toPrecision(4) + ' and ' + (B * logZ).toFixed(3);
+      document.getElementById('opt-er').textContent = eref.toFixed(3) + ' then ' + estar.toFixed(3);
+      document.getElementById('opt-kl').textContent = kl.toFixed(3) + ' nats';
+      document.getElementById('opt-bt').textContent = sig(Y[0][1] - Y[1][1]).toFixed(3) + ' and ' + sig(imp[0] - imp[1]).toFixed(3);
+    };
+    slider.addEventListener('input', show);
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/direct_alignment/loss.py (L102-L135)", contents: "        # Compute log ratios (implicit rewards)\n        chosen_logratios = policy_chosen_logps - ref_chosen_logps\n        rejected_logratios = policy_rejected_logps - ref_rejected_logps\n\n        # DPO logits: difference in log ratios\n        logits = chosen_logratios - rejected_logratios\n\n        # cDPO: label smoothing for noisy preferences\n        if self.label_smoothing > 0:\n            # Soft labels: [1-eps, eps] instead of [1, 0]\n            # This translates to: (1-eps) * log(sigmoid(x)) + eps * log(sigmoid(-x))\n            # = (1-2*eps) * log(sigmoid(x)) + eps * log(sigmoid(x)) + eps * log(sigmoid(-x))\n            # = (1-2*eps) * log(sigmoid(x)) + eps * log(1)  (since sigmoid(x) + sigmoid(-x) = 1)\n            # Simplified: just use soft cross-entropy\n            losses = (\n                -F.logsigmoid(self.beta * logits) * (1 - self.label_smoothing)\n                - F.logsigmoid(-self.beta * logits) * self.label_smoothing\n            )\n        else:\n            # Standard DPO\n            losses = -F.logsigmoid(self.beta * logits)\n\n        # Compute implicit rewards for logging\n        chosen_rewards = self.beta * chosen_logratios.detach()\n        rejected_rewards = self.beta * rejected_logratios.detach()\n\n        metrics = {\n            \"chosen_rewards\": chosen_rewards.mean().item(),\n            \"rejected_rewards\": rejected_rewards.mean().item(),\n            \"margins\": (chosen_rewards - rejected_rewards).mean().item(),\n            \"accuracy\": (chosen_rewards > rejected_rewards).float().mean().item(),\n        }\n\n        return losses.mean(), metrics\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
