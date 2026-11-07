@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 9: Rejection Sampling</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid input[type=range]{width:100%;accent-color:var(--accent)}
+  .wid output{font-family:var(--mono)}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .tog[aria-pressed=false]{background:transparent;color:var(--ink-2);border:1px solid var(--line-3)}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  table.rmat td{font-family:var(--mono);text-align:center}
+  table.rmat td:first-child,table.rmat td:last-child{font-family:var(--sans);text-align:left}
+  table.rmat td.pick{background:var(--accent-soft);outline:2px solid var(--accent);outline-offset:-2px;font-weight:700}
+  .dg .dash{stroke-dasharray:5 4}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  th .katex{text-transform:none}
+  #code-excerpt{margin-top:var(--s3)}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite],.kv,.wid label,ol li{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s09_ch08-direct-alignment.html">Chapter 8</a></p>
+  <h1>Chapter 9: Rejection Sampling</h1>
+  <p class="lede">Rejection sampling generates many completions, keeps the ones a reward model scores highest, and fine-tunes on them with the ordinary SFT loss. <a class="chip" href="#s1" title="Ch. 9 Rejection Sampling (L27)">1</a> It is one of the most used and least documented methods in preference fine-tuning. <a class="chip" href="#s2" title="Ch. 9 Rejection Sampling (L22-L23)">2</a> Lambert is candid: "I do not have good intuitions for what makes or breaks a good rejection sampling run". <a class="chip" href="#s3" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:39">3</a> So this chapter is short, and the open questions matter as much as the method.</p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Generate, score, select, fine-tune.</strong> Sample from the current model, filter with a reward model, and run SFT on what survives. <a class="chip" href="#s1" title="Ch. 9 Rejection Sampling (L27)">1</a> <a class="chip" href="#s4" title="Ch. 9 Rejection Sampling (L29-L31)">4</a></li>
+      <li><strong>Two ways to select.</strong> The best completion for each prompt, or the top $K$ across all prompts. <a class="chip" href="#s5" title="Ch. 9 Rejection Sampling § Top Per Prompt (L95-L99)">5</a> <a class="chip" href="#s6" title="Ch. 9 Rejection Sampling § Top Overall Pairs (L106-L117)">6</a></li>
+      <li><strong>The settings are simple but matter.</strong> Temperature 0.7 to 1.0, 10 to 30 or more completions per prompt, and a good reward model. <a class="chip" href="#s7" title="Ch. 9 Rejection Sampling § Implementation Details (L216)">7</a> <a class="chip" href="#s8" title="Ch. 9 Rejection Sampling § Implementation Details (L217)">8</a> <a class="chip" href="#s9" title="Ch. 9 Rejection Sampling § Implementation Details (L220)">9</a></li>
+      <li><strong>Best-of-N is the same without training.</strong> Pick the best completion at inference time; the model does not change. <a class="chip" href="#s10" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L227-L228)">10</a> <a class="chip" href="#s11" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L230-L233)">11</a></li>
+      <li><strong>Widely used, poorly understood.</strong> WebGPT, Anthropic's HH agent and Llama 2 used it, <a class="chip" href="#s12" title="Ch. 9 Rejection Sampling (L33)">12</a> yet which prompts, which reward model and when to apply it are "not well documented". <a class="chip" href="#s13" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L50-L51)">13</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Lay out the four stages and the $M \times N$ reward matrix.</li>
+      <li>Apply both selection rules to a reward matrix by hand, and say what each one biases toward.</li>
+      <li>Explain why the code compares every selection rule against a random control.</li>
+      <li>Say how best-of-N differs from rejection sampling, and why it still has a KL distance.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/09-rejection-sampling">Chapter 9</a></td><td>Short</td><td>The stages, the selection math with a worked example, hyperparameters and best-of-N.</td></tr>
+        <tr><td>Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2619s">43:39</a> to <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2960s">49:20</a></td><td>6 min</td><td>The last part of a lecture shared with Chapters 4 and 5. Recorded April 2026.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1103-L1246">Lecture 2 slides, Part 3</a></td><td>8 slides</td><td>The same worked example, plus open questions the chapter does not list.</td></tr>
+        <tr><td>Talk, Jan 2025: <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=3019s">50:19</a></td><td>1 min</td><td>Why Tülu 3 shelved it.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="what">
+    <h2>What it is, and why it is last</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=61s">1:01</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=93s">1:33</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2619s">43:39</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2650s">44:10</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2683s">44:43</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2714s">45:14</a></p>
+    <p>Rejection sampling is the simplest thing you can do with a reward model for downstream training, popular "especially in labs and people building serious models more so than academic work". <a class="chip" href="#s14" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:44:10">14</a> He said the same in 2024: "the simplest Training Method". <a class="chip" href="#s15" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:55:11">15</a> The slides call it "filtered supervised learning": no policy gradients and no online RL, <a class="chip" href="#s16" title="Slides lec2-chap4-5-9 § The simplest thing you can do with a reward model (L1118)">16</a> just offline data curation, which can be done in batches. <a class="chip" href="#s17" title="Slides lec2-chap4-5-9 § Rejection sampling overview (L1134)">17</a> <a class="chip" href="#s18" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:14">18</a> Lecture 2 groups it with Chapters 4 and 5, because SFT plus a reward model is all it needs. <a class="chip" href="#s19" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:02:04">19</a> Together they make "the simplest complete path" to a preference-tuned model, with RS as the optimizer that RL will replace. <a class="chip" href="#s20" title="Slides lec2-chap4-5-9 § Why these three chapters together? (L134-L139)">20</a></p>
+    <p>The name comes from computational statistics. You draw samples from a distribution that is easy to sample from, and accept or reject each one with a check. Here the easy distribution is the current model, the check is a reward model, and the target is high-quality completions. <a class="chip" href="#s4" title="Ch. 9 Rejection Sampling (L29-L31)">4</a> Lambert admits he does not really understand the underlying term. <a class="chip" href="#s21" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:44:43">21</a></p>
+    <p>WebGPT, Anthropic's Helpful and Harmless agent, OpenAI's process reward model paper and Llama 2 Chat all used it. <a class="chip" href="#s12" title="Ch. 9 Rejection Sampling (L33)">12</a> RAFT and RSO formalized it. <a class="chip" href="#s22" title="Ch. 9 Rejection Sampling (L33)">22</a> Llama 3 used it too, alongside DPO, over several rounds. <a class="chip" href="#s23" title="How language model post-training is done today @ 00:06:16">23</a> It can sit after SFT, after RL or after RLVR, which makes it hard to place. Together with how little is written about it, that is why the chapter comes last among the optimization methods. <a class="chip" href="#s24" title="Ch. 9 Rejection Sampling (L24-L25)">24</a> DeepSeek R1, for example, applies it to an RL checkpoint to build about 800K SFT samples. <a class="chip" href="#s25" title="Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L229)">25</a></p>
+    <p>Lambert includes it because it is widely used and under-researched. <a class="chip" href="#s26" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:01:01">26</a> It has never been replicated as a minimal script with a dataset you could download. <a class="chip" href="#s27" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:14">27</a> He says much the same in his course introduction ("zero documentation on the web") <a class="chip" href="#s28" title="Welcome to the Post-Training Course for The RLHF Book @ 00:00:30">28</a> and in Lecture 1. <a class="chip" href="#s29" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:29:08">29</a></p>
+  </section>
+
+  <section id="steps">
+    <h2>The process, step by step</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2744s">45:44</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2774s">46:14</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 236" role="img" aria-label="Rejection sampling pipeline: M prompts, generate N completions each from the current model, score all M times N with a reward model, select the top completions, then fine-tune the starting checkpoint with SFT. Best-of-N follows the same steps but stops after selection and returns the answer, with no fine-tuning.">
+  <defs><marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <g><rect class="n" x="6" y="30" width="130" height="70" rx="8"/><text class="st" x="71" y="58">0. Prompts</text><text class="sd" x="71" y="78">M of them, often</text><text class="sd" x="71" y="93">the SFT prompts</text></g>
+  <g><rect class="n" x="166" y="30" width="140" height="70" rx="8"/><text class="st" x="236" y="58">1. Generate</text><text class="sd" x="236" y="78">N each, current</text><text class="sd" x="236" y="93">model, T 0.7 to 1.0</text></g>
+  <g><rect class="n" x="336" y="30" width="140" height="70" rx="8"/><text class="st" x="406" y="58">2. Score</text><text class="sd" x="406" y="78">reward model,</text><text class="sd" x="406" y="93">M × N rewards</text></g>
+  <g><rect class="na" x="506" y="30" width="130" height="70" rx="8"/><text class="st" x="571" y="58">Select</text><text class="sd" x="571" y="78">per prompt,</text><text class="sd" x="571" y="93">or top K overall</text></g>
+  <g><rect class="n" x="666" y="30" width="128" height="70" rx="8"/><text class="st" x="730" y="58">3. SFT</text><text class="sd" x="730" y="78">starting checkpoint,</text><text class="sd" x="730" y="93">same loss as IFT</text></g>
+  <path class="e" d="M136,65 L162,65" marker-end="url(#pa)"/><path class="e" d="M306,65 L332,65" marker-end="url(#pa)"/><path class="e" d="M476,65 L502,65" marker-end="url(#pa)"/><path class="e" d="M636,65 L662,65" marker-end="url(#pa)"/>
+  <path class="e dash" d="M571,100 L571,160" marker-end="url(#pa)"/>
+  <g><rect class="n" x="456" y="164" width="230" height="56" rx="8"/><text class="st" x="571" y="188">Best-of-N stops here</text><text class="sd" x="571" y="207">return the answer, no fine-tuning</text></g>
+  <text class="l" x="6" y="18">Rejection sampling, stages numbered as in the chapter</text>
+</svg></div>
+      <figcaption>Figure 1. Mine, from the chapter's stages <a class="chip" href="#s30" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L41)">30</a> <a class="chip" href="#s31" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L44)">31</a> and the definition of best-of-N. <a class="chip" href="#s10" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L227-L228)">10</a> The slides number the same stages 1 to 4. <a class="chip" href="#s32" title="Slides lec2-chap4-5-9 § Rejection sampling overview (L1127-L1130)">32</a></figcaption>
+    </figure>
+    <ol start="0">
+      <li><strong>Choose prompts and a reward model.</strong> The simplest choice is to reuse every SFT prompt, though that "can cause some overfitting". You need a trained reward model first. <a class="chip" href="#s30" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L41)">30</a></li>
+      <li><strong>Generate.</strong> Sample completions from the model you want to improve, choosing temperature, top-p, length and how many per prompt. <a class="chip" href="#s33" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L42)">33</a></li>
+      <li><strong>Score and select.</strong> Rank every completion with the reward model, perhaps deduplicating to one per prompt. Many such choices "come down to empirical ablation studies". <a class="chip" href="#s34" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L43)">34</a></li>
+      <li><strong>Fine-tune.</strong> Run SFT on the selected completions, starting from the same checkpoint. <a class="chip" href="#s31" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L44)">31</a> <a class="chip" href="#s35" title="Ch. 9 Rejection Sampling § Fine-Tuning (L209)">35</a></li>
+    </ol>
+    <h3>The reward matrix</h3>
+    <p>With $M$ prompts, which usually come from the instruction training set, <a class="chip" href="#s36" title="Ch. 9 Rejection Sampling § Generating Completions (L59)">36</a> and $N$ completions for each, you get an $M\times N$ matrix of completions $Y$. Scoring each one gives a matching matrix of rewards: <a class="chip" href="#s37" title="Ch. 9 Rejection Sampling § Scoring Completions (L85-L87)">37</a></p>
+    $$R = \begin{bmatrix} r_{1,1} & \cdots & r_{1,N} \\ \vdots & \ddots & \vdots \\ r_{M,1} & \cdots & r_{M,N}\end{bmatrix}, \qquad r_{i,j} = \mathcal{R}(y_{i,j}\mid x_i)$$
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Rule</th><th>Definition</th><th>What it keeps</th></tr></thead>
+      <tbody>
+        <tr><td>Top per prompt</td><td>$S(R) = [\arg\max_j r_{1,j}, \ldots, \arg\max_j r_{M,j}]$ <a class="chip" href="#s5" title="Ch. 9 Rejection Sampling § Top Per Prompt (L95-L99)">5</a></td><td>One completion per prompt, so every prompt is represented. <a class="chip" href="#s38" title="Slides lec2-chap4-5-9 § Selection method 1: Top per prompt (L1179)">38</a></td></tr>
+        <tr><td>Top $K$ overall</td><td>Flatten $R$ to $R_{flat}$ of length $MN$, then $S_K = \text{argsort}(R_{flat})[-K{:}]$ <a class="chip" href="#s6" title="Ch. 9 Rejection Sampling § Top Overall Pairs (L106-L117)">6</a></td><td>The $K$ best pairs anywhere. Map flat index $k$ back with $i = \lfloor k/N\rfloor + 1$, $j = (k \bmod N) + 1$. <a class="chip" href="#s39" title="Ch. 9 Rejection Sampling § Top Overall Pairs (L120)">39</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">In the chapter's example, per prompt gives $S(R) = [1, 2, 1, 3, 4]$, <a class="chip" href="#s40" title="Ch. 9 Rejection Sampling § Selection Example (L148-L156)">40</a> and the top 5 overall are flat indices $[8, 5, 14, 0, 11]$. <a class="chip" href="#s41" title="Ch. 9 Rejection Sampling § Selection Example (L175-L183)">41</a> Top overall gives prompt 3 two completions and prompt 5 none. It "can bias toward easy prompts". <a class="chip" href="#s42" title="Slides lec2-chap4-5-9 § Selection method 2: Top overall pairs (L1201)">42</a> Lambert calls per prompt "the most careful method", because it keeps your prompt distribution. <a class="chip" href="#s43" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:44">43</a> He is unsure whether choices like this "make or break doing this at scale". <a class="chip" href="#s44" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:14">44</a></p>
+    <h3>Try selecting</h3>
+    <div class="wid" id="sel-demo">
+      <p class="label" style="margin:0">Select from a reward matrix: 5 prompts, 4 completions each</p>
+      <p class="grp-pre">Rewards: <button class="btn btn-sm" type="button" data-m="chapter" data-lavish-action>Chapter's example</button> <button class="btn btn-sm" type="button" data-m="easy" data-lavish-action>One easy prompt</button> <button class="btn btn-sm" type="button" data-m="random" data-lavish-action>Random</button></p>
+      <p class="grp-pre">Strategy: <button class="btn btn-sm tog" type="button" data-s="top_per_prompt" aria-pressed="true" data-lavish-action>Top per prompt</button> <button class="btn btn-sm tog" type="button" data-s="top_k_overall" aria-pressed="false" data-lavish-action>Top K overall</button> <button class="btn btn-sm tog" type="button" data-s="random_per_prompt" aria-pressed="false" data-lavish-action>Random per prompt</button> <button class="btn btn-sm tog" type="button" data-s="random_k_overall" aria-pressed="false" data-lavish-action>Random K overall</button></p>
+      <label for="sel-k">$K$ for the overall strategies: <output id="sel-k-o">5</output></label>
+      <input id="sel-k" type="range" min="1" max="20" step="1" value="5" data-lavish-action>
+      <div class="tablewrap" style="margin-top:var(--s2)"><table class="kt rmat" style="min-width:360px">
+        <thead><tr><th>Prompt</th><th>$y_{\cdot,1}$</th><th>$y_{\cdot,2}$</th><th>$y_{\cdot,3}$</th><th>$y_{\cdot,4}$</th><th>Kept</th></tr></thead>
+        <tbody id="sel-body"></tbody>
+      </table></div>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Pairs kept, prompts covered</dt><dd><output id="sel-n"></output></dd>
+        <dt>Mean reward of what is kept</dt><dd><output id="sel-mean"></output></dd>
+        <dt>Flat indices, 0-indexed, best first</dt><dd><output id="sel-idx"></output></dd>
+      </div>
+      <p id="sel-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">Try "One easy prompt" with top K overall: one prompt can take most of the budget. The random strategies are not in the chapter; they are the controls the book's code compares against. <a class="chip" href="#s45" title="Code code/rejection_sampling/README.md (L16-L22)">45</a> Ties use the code's rule, which keeps the earlier flat index. <a class="chip" href="#s46" title="Code code/rejection_sampling/selection.py (L27-L35)">46</a> The chapter's own snippet uses <code>np.argsort</code> <a class="chip" href="#s47" title="Ch. 9 Rejection Sampling § Implementation Example (L187-L205)">47</a>, which can break ties the other way; see the <a href="#notes">agent notes</a>.</p>
+  </section>
+
+  <section id="impl">
+    <h2>Implementation details</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2805s">46:45</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2836s">47:16</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2867s">47:47</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Setting</th><th>The chapter</th><th>The book's code</th></tr></thead>
+      <tbody>
+        <tr><td>Sampling</td><td>Temperature 0.7 to 1.0, plus top-p or top-k changes <a class="chip" href="#s7" title="Ch. 9 Rejection Sampling § Implementation Details (L216)">7</a></td><td>Temperature 0.8, top-p 0.95, top-k 20 <a class="chip" href="#s48" title="Code code/rejection_sampling/configs/top_per_prompt.yaml (L12-L24)">48</a></td></tr>
+        <tr><td>Completions per prompt</td><td>10 to 30 or more; too few makes training "biased and/or noisy" <a class="chip" href="#s8" title="Ch. 9 Rejection Sampling § Implementation Details (L217)">8</a></td><td>8 <a class="chip" href="#s48" title="Code code/rejection_sampling/configs/top_per_prompt.yaml (L12-L24)">48</a></td></tr>
+        <tr><td>Fine-tuning</td><td>No clear details released; probably slightly different from the first SFT <a class="chip" href="#s49" title="Ch. 9 Rejection Sampling § Implementation Details (L218)">49</a></td><td>LR 5e-6, 2 epochs, <a class="chip" href="#s50" title="Code code/rejection_sampling/configs/top_per_prompt.yaml (L35-L36)">50</a> loss on the completion only <a class="chip" href="#s51" title="Code code/rejection_sampling/train.py (L79-L80)">51</a></td></tr>
+        <tr><td>Which models generate</td><td>Sometimes several models, not just the one being trained; no established practice <a class="chip" href="#s52" title="Ch. 9 Rejection Sampling § Implementation Details (L219)">52</a></td><td>Only the policy, Qwen3-1.7B <a class="chip" href="#s53" title="Code code/rejection_sampling/README.md (L10-L14)">53</a></td></tr>
+        <tr><td>Reward model</td><td>"will heavily impact the final result" <a class="chip" href="#s9" title="Ch. 9 Rejection Sampling § Implementation Details (L220)">9</a></td><td>AceMath-7B-RM <a class="chip" href="#s53" title="Code code/rejection_sampling/README.md (L10-L14)">53</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">From Lambert's own attempts: be careful with sampling settings, get enough diversity, and spend enough inference to tell which completion is best. <a class="chip" href="#s54" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:45">54</a> Projects like Olmo and Tülu spend "millions of dollars in compute" on generation. <a class="chip" href="#s55" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:45">55</a> The SFT step showed no clear differences from standard SFT, though different hyperparameters might help. <a class="chip" href="#s56" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:16">56</a></p>
+    <p>One throughput tip: sort completions by length before batch reward-model inference, to cut padding. <a class="chip" href="#s57" title="Ch. 9 Rejection Sampling § Implementation Details (L222-L223)">57</a> Good inference tools do this automatically, but "a lot of reward model inference tools aren't that great". <a class="chip" href="#s58" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:47">58</a></p>
+    <p>The selection code is short. Here are the two chapter rules and their random controls:</p>
+    <div id="code-excerpt"><pre><code>def select_top_per_prompt(records: list[Record]) -&gt; list[TrainingPair]:
+    """Argmax completion per prompt."""
+    pairs: list[TrainingPair] = []
+    for rec in records:
+        if not rec["completions"]:
+            continue
+        best_idx = max(range(len(rec["rewards"])), key=lambda j: rec["rewards"][j])
+        pairs.append((rec["question"], rec["completions"][best_idx]))
+    return pairs
+
+
+def select_top_k_overall(records: list[Record], k: int) -&gt; list[TrainingPair]:
+    """Top-k completions across the full M x N reward matrix."""
+    flat = [
+        (float(reward), rec["question"], completion)
+        for rec in records
+        for completion, reward in zip(rec["completions"], rec["rewards"], strict=True)
+    ]
+    flat.sort(key=lambda item: item[0], reverse=True)
+    return [(q, c) for _, q, c in flat[:k]]
+
+
+def select_random_per_prompt(records: list[Record], seed: int) -&gt; list[TrainingPair]:
+    """Random baseline for top_per_prompt: pick one completion per prompt uniformly."""
+    rng = random.Random(seed)
+    pairs: list[TrainingPair] = []
+    for rec in records:
+        if not rec["completions"]:
+            continue
+        pick = rng.randrange(len(rec["completions"]))
+        pairs.append((rec["question"], rec["completions"][pick]))
+    return pairs
+
+
+def select_random_k_overall(records: list[Record], k: int, seed: int) -&gt; list[TrainingPair]:
+    """Random baseline for top_k_overall: sample k pairs from the flat M x N pool."""
+    rng = random.Random(seed)
+    flat = [(rec["question"], c) for rec in records for c in rec["completions"]]
+    return rng.sample(flat, min(k, len(flat)))
+</code></pre></div>
+  </section>
+
+  <section id="bon">
+    <h2>Related: best-of-N sampling</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2867s">47:47</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2897s">48:17</a></p>
+    <p>Best-of-N (BoN) generates and scores the same way, but does <strong>not</strong> fine-tune. It picks the best completion at inference time, and similar techniques power "Pro" tiers of chat products. <a class="chip" href="#s10" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L227-L228)">10</a> <a class="chip" href="#s59" title="Slides lec2-chap4-5-9 § Best-of-N sampling: Rejection sampling without fine-tuning (L1227-L1231)">59</a> Lambert calls it "essentially an inference trick". <a class="chip" href="#s60" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:47">60</a> It is "a simple way to do inference time scaling", and a standard baseline for PPO, as in the scaling laws for over-optimization. <a class="chip" href="#s61" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:48:17">61</a> That over-optimization paper compares BoN with RL as two ways to optimize against a reward model. <a class="chip" href="#s62" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17">62</a> Unlike RL, it changes no parameters. <a class="chip" href="#s63" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:57">63</a></p>
+    <p>Because BoN changes which outputs you see, it still has a KL distance from the original policy, and comparisons with PPO stay meaningful. <a class="chip" href="#s11" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L230-L233)">11</a> That KL is much smaller than what online RL spends. <a class="chip" href="#s64" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143)">64</a> With one prompt, top per prompt and top $K$ with $K=1$ are the same thing. <a class="chip" href="#s65" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L247)">65</a> The slides add that the scorer can be a verifier or an LLM judge instead of a reward model. <a class="chip" href="#s59" title="Slides lec2-chap4-5-9 § Best-of-N sampling: Rejection sampling without fine-tuning (L1227-L1231)">59</a></p>
+    <p>BoN is also a quick test of a reward model. In 2024 Lambert's team saw "a five to eight point bump, five to 10 point bump" from BoN with their reward models, even though that signal did not necessarily carry over to downstream training. <a class="chip" href="#s66" title="An update on DPO vs PPO for LLM alignment @ 00:07:15">66</a> <a class="chip" href="#s67" title="An update on DPO vs PPO for LLM alignment @ 00:06:44">67</a></p>
+    <h3>Try best-of-N</h3>
+    <p>This is my simulation, not Lambert's. It shows the chapter's point that the reward model "will heavily impact the final result". <a class="chip" href="#s9" title="Ch. 9 Rejection Sampling § Implementation Details (L220)">9</a> It also shows the code's caution that more completions help "only if the reward model can separate good and bad answers". <a class="chip" href="#s68" title="Ch. 9 Rejection Sampling § Suggested Experiments (L284)">68</a></p>
+    <div class="wid" id="bon-demo">
+      <p class="label" style="margin:0">Best-of-N with an imperfect reward model (a simulation, not Lambert's)</p>
+      <label for="bon-n">Completions per prompt, $N$: <output id="bon-n-o">8</output></label>
+      <input id="bon-n" type="range" min="1" max="64" step="1" value="8" data-lavish-action>
+      <label for="bon-s">Reward model noise, $\sigma$: <output id="bon-s-o">0.50</output></label>
+      <input id="bon-s" type="range" min="0" max="2" step="0.05" value="0.5" data-lavish-action>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Reward model score of the pick</dt><dd><output id="bon-score"></output></dd>
+        <dt>True quality of the pick</dt><dd><output id="bon-q"></output></dd>
+        <dt>Picked the truly best of the $N$</dt><dd><output id="bon-best"></output></dd>
+        <dt>$\mathrm{KL}$ from the sampler, $\log N - \frac{N-1}{N}$</dt><dd><output id="bon-kl"></output></dd>
+      </div>
+      <p class="w-msg sub">Each completion has a true quality drawn from a standard normal. The reward model sees quality plus noise of size $\sigma$. 4,000 simulated prompts, fixed seed. Quality is in standard deviations of the sampler.</p>
+    </div>
+    <p style="margin-top:var(--s3)">Raise the noise and watch the score of the pick pull away from its true quality: the reward model is choosing completions that look good to it. That gap is the seed of over-optimization in Chapter 14. With no noise, $N = 8$ already buys about 1.4 standard deviations of quality. Going from 8 to 64 adds less than going from 1 to 8.</p>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>The book's code runs the whole pipeline on GSM8K: generate, score, select, fine-tune, evaluate. Its four configs come as matched pairs, so you can ask whether the reward model helps at all. <a class="chip" href="#s69" title="Ch. 9 Rejection Sampling § Suggested Experiments (L251-L252)">69</a> Q&amp;A 2 recommends it as a starter project. <a class="chip" href="#s70" title="Slides qa-02 § &quot;Can we get programming &amp; math assignments?&quot; (L213)">70</a> Each reward-selected config has a random control with the same number and shape of training pairs; "the only difference is whether selection uses the reward or a coin flip". <a class="chip" href="#s45" title="Code code/rejection_sampling/README.md (L16-L22)">45</a> For top-K overall, $K$ is 1,000, the same budget as one per prompt over 1,000 prompts. <a class="chip" href="#s71" title="Code code/rejection_sampling/configs/top_k_overall.yaml (L32-L33)">71</a> <a class="chip" href="#s48" title="Code code/rejection_sampling/configs/top_per_prompt.yaml (L12-L24)">48</a> <strong>I did not run it.</strong></p>
+    <ol>
+      <li><strong>Check the worked example:</strong> <code>uv run python -m rejection_sampling.selection</code> asserts the chapter's selections. <a class="chip" href="#s72" title="Code code/rejection_sampling/README.md (L61)">72</a></li>
+      <li><strong>Build the rollout cache once</strong> with <code>rejection_sampling.preprocess</code>. Later configs reuse it while generation and scoring stay the same. <a class="chip" href="#s73" title="Ch. 9 Rejection Sampling § Suggested Experiments (L262-L263)">73</a></li>
+      <li><strong>Train the four configs and compare in pairs.</strong> If a reward-selected run does not beat its random control, the reward model or completions give no useful signal on that slice. <a class="chip" href="#s74" title="Ch. 9 Rejection Sampling § Suggested Experiments (L279-L280)">74</a></li>
+      <li><strong>Vary N, temperature, top-p and K,</strong> <a class="chip" href="#s68" title="Ch. 9 Rejection Sampling § Suggested Experiments (L284)">68</a> or try a smaller policy to see whether RS rescues weak generations or just picks among good ones. <a class="chip" href="#s75" title="Ch. 9 Rejection Sampling § Suggested Experiments (L288)">75</a></li>
+    </ol>
+    <p><strong>The reference results:</strong> on the 1k-train, 200-test slice, top K overall beat its random control, while top per prompt and its random control "were effectively tied". The README warns to treat those gaps as noise. <a class="chip" href="#s76" title="Code code/rejection_sampling/README.md (L47-L50)">76</a> The diagnostics script explains one reason. Per-prompt selection only matters on prompts with both correct and incorrect completions. When most prompts are all right or all wrong, its signal shrinks "even if the RM is well-calibrated". <a class="chip" href="#s77" title="Code code/rejection_sampling/diagnostics.py (L16-L20)">77</a></p>
+    <p><strong>On your Mac:</strong> the trainer resolves to CUDA or CPU only. <a class="chip" href="#s78" title="Code code/rejection_sampling/utils.py (L63-L71)">78</a> <span class="badge info">agent note</span> Generating 8,000 completions with a 1.7B model and scoring them with a 7B reward model on CPU would be very slow, and the 7B model alone needs about 15 GB in 16-bit. That is my estimate, and I have not tested it.</p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates unless noted. The chapter and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does rejection sampling work well?</strong></p><ul>
+      <li><strong>Talk (Jul 2024):</strong> rejection sampling was "the kind of surprising star of the show in Llama 2", and the open community lacked even that baseline. <a class="chip" href="#s79" title="An update on DPO vs PPO for LLM alignment @ 00:11:53">79</a></li>
+      <li><strong>Talk (Jan 2025):</strong> "we tried it in Tülu 3 and just couldn't get good signals so we tabled it to future work". <a class="chip" href="#s80" title="How language model post-training is done today @ 00:50:19">80</a></li>
+      <li><strong>Chapter:</strong> no explanation exists of "why it works so well". <a class="chip" href="#s2" title="Ch. 9 Rejection Sampling (L22-L23)">2</a></li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> "I don't know why it doesn't work." <a class="chip" href="#s58" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:47">58</a> In concept it "should be a very strong baseline". <a class="chip" href="#s81" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:48:49">81</a> The slides: "This is a strong baseline." <a class="chip" href="#s82" title="Slides lec2-chap4-5-9 § The full pipeline so far (L1244)">82</a> The slides suspect "training a reward model has some subtle tricks". <a class="chip" href="#s83" title="Slides lec2-chap4-5-9 § Implementation details (L1215)">83</a></li>
+      <li><strong>The book's code:</strong> one rule beat its random control and the other tied, on a small slice. <a class="chip" href="#s76" title="Code code/rejection_sampling/README.md (L47-L50)">76</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Which selection rule?</strong></p><ul>
+      <li><strong>Lecture 2:</strong> top per prompt is "the most careful method", because it keeps the prompt distribution. <a class="chip" href="#s43" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:44">43</a></li>
+      <li><strong>Slides:</strong> top overall "can bias toward easy prompts". <a class="chip" href="#s42" title="Slides lec2-chap4-5-9 § Selection method 2: Top overall pairs (L1201)">42</a> The code README says it concentrates data on "the easiest-to-score prompts". <a class="chip" href="#s84" title="Code code/rejection_sampling/README.md (L30)">84</a></li>
+      <li><strong>The book's code results:</strong> top overall was the one that beat its control, though possibly by noise. <a class="chip" href="#s76" title="Code code/rejection_sampling/README.md (L47-L50)">76</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How many completions per prompt?</strong></p><ul>
+      <li><strong>Chapter and slides:</strong> 10 to 30 or more; too few is biased or noisy. <a class="chip" href="#s8" title="Ch. 9 Rejection Sampling § Implementation Details (L217)">8</a> <a class="chip" href="#s85" title="Slides lec2-chap4-5-9 § Implementation details (L1209-L1211)">85</a></li>
+      <li><strong>The book's code:</strong> 8. <a class="chip" href="#s48" title="Code code/rejection_sampling/configs/top_per_prompt.yaml (L12-L24)">48</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does it need a trained reward model?</strong></p><ul>
+      <li><strong>Chapter:</strong> you "must also have trained a reward model", <a class="chip" href="#s30" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L41)">30</a> and Chapter 3 describes RS as filtering by "a reward model imitating human preferences". <a class="chip" href="#s86" title="Ch. 3 Training Overview § Optimization Tools (L155)">86</a></li>
+      <li><strong>Slides:</strong> best-of-N "can also be done with verification / LLM-as-a-judge". <a class="chip" href="#s59" title="Slides lec2-chap4-5-9 § Best-of-N sampling: Rejection sampling without fine-tuning (L1227-L1231)">59</a></li>
+      <li><strong>The book's code:</strong> scores GSM8K, whose answers can be checked, with a learned reward model, <a class="chip" href="#s53" title="Code code/rejection_sampling/README.md (L10-L14)">53</a> and uses exact correctness only to diagnose that model. <a class="chip" href="#s77" title="Code code/rejection_sampling/diagnostics.py (L16-L20)">77</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Should the SFT step differ from ordinary SFT?</strong></p><ul>
+      <li><strong>Chapter:</strong> probably "slightly different settings than the initial instruction tuning". <a class="chip" href="#s49" title="Ch. 9 Rejection Sampling § Implementation Details (L218)">49</a> The slides: learning rate "may differ". <a class="chip" href="#s85" title="Slides lec2-chap4-5-9 § Implementation details (L1209-L1211)">85</a></li>
+      <li><strong>Lecture 2:</strong> his team "didn't find any clear differences" from standard SFT, but maybe different hyperparameters are needed. <a class="chip" href="#s56" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:16">56</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>Stage numbers.</strong> The chapter counts 0 to 3, <a class="chip" href="#s30" title="Ch. 9 Rejection Sampling § Training Process, Step by Step (L41)">30</a> the slides 1 to 4. <a class="chip" href="#s32" title="Slides lec2-chap4-5-9 § Rejection sampling overview (L1127-L1130)">32</a></li>
+      <li><strong>Two index conventions.</strong> $S(R)$ is 1-indexed, $[1, 2, 1, 3, 4]$, <a class="chip" href="#s40" title="Ch. 9 Rejection Sampling § Selection Example (L148-L156)">40</a> while the flat indices are 0-indexed, $[8, 5, 14, 0, 11]$. <a class="chip" href="#s41" title="Ch. 9 Rejection Sampling § Selection Example (L175-L183)">41</a> The mapping formula adds 1 to convert. <a class="chip" href="#s39" title="Ch. 9 Rejection Sampling § Top Overall Pairs (L120)">39</a></li>
+      <li><strong>Order.</strong> <code>argsort(...)[-K:]</code> returns indices in ascending order of reward, <a class="chip" href="#s6" title="Ch. 9 Rejection Sampling § Top Overall Pairs (L106-L117)">6</a> but the chapter lists them best first. <a class="chip" href="#s41" title="Ch. 9 Rejection Sampling § Selection Example (L175-L183)">41</a></li>
+      <li><strong>Captions mishear.</strong> "best event sampling" is best-of-N, <a class="chip" href="#s63" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:57">63</a> "projection sampling" is rejection sampling, <a class="chip" href="#s79" title="An update on DPO vs PPO for LLM alignment @ 00:11:53">79</a> "two3" is Tülu 3 and "SF" is SFT. <a class="chip" href="#s80" title="How language model post-training is done today @ 00:50:19">80</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>What separates rejection sampling from best-of-N?</summary>
+      <p>Only the last step. Rejection sampling fine-tunes on the selected completions. Best-of-N returns the best one at inference and leaves the model unchanged. <a class="chip" href="#s10" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L227-L228)">10</a></p>
+    </details>
+    <details><summary>In the chapter's matrix, which prompt gets nothing under top 5 overall, and why might that matter?</summary>
+      <p>Prompt 5, whose best reward is only 0.6. Top overall favors prompts with high rewards, which can mean easy prompts, so the training data drifts away from the original prompt mix. <a class="chip" href="#s42" title="Slides lec2-chap4-5-9 § Selection method 2: Top overall pairs (L1201)">42</a> <a class="chip" href="#s43" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:44">43</a></p>
+    </details>
+    <details><summary>Why compare against a random selection of the same size?</summary>
+      <p>Because SFT on the model's own completions may help by itself. The random control isolates whether choosing by reward adds anything. <a class="chip" href="#s45" title="Code code/rejection_sampling/README.md (L16-L22)">45</a> <a class="chip" href="#s74" title="Ch. 9 Rejection Sampling § Suggested Experiments (L279-L280)">74</a></p>
+    </details>
+    <details><summary>Your policy solves 95% of prompts every time. Why might top per prompt barely beat random?</summary>
+      <p>On a prompt where every completion is correct, any pick is as good as the best. Selection only matters on prompts with mixed results. <a class="chip" href="#s77" title="Code code/rejection_sampling/diagnostics.py (L16-L20)">77</a></p>
+    </details>
+    <details><summary>Why use temperature above zero, and many completions?</summary>
+      <p>Selection needs diversity to choose from, and enough samples to find a clearly better one. Too few makes training biased or noisy. <a class="chip" href="#s7" title="Ch. 9 Rejection Sampling § Implementation Details (L216)">7</a> <a class="chip" href="#s8" title="Ch. 9 Rejection Sampling § Implementation Details (L217)">8</a> <a class="chip" href="#s54" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:45">54</a></p>
+    </details>
+    <details><summary>Best-of-N never changes the weights. How can it have a KL distance?</summary>
+      <p>The distribution of what you receive changes, because you only see the winner of $N$ samples. That distribution can be compared with the original policy, <a class="chip" href="#s11" title="Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L230-L233)">11</a> and its KL is far smaller than online RL's. <a class="chip" href="#s64" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143)">64</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Ties at the cut.</strong> Not Lambert. In the chapter's matrix the 4th and 5th best rewards are both 0.7, at flat indices 0 and 11. <a class="chip" href="#s41" title="Ch. 9 Rejection Sampling § Selection Example (L175-L183)">41</a> With $K = 4$, the code's stable descending sort keeps index 0. <a class="chip" href="#s46" title="Code code/rejection_sampling/selection.py (L27-L35)">46</a> <code>np.argsort(R)[-4:]</code>, as in the chapter's snippet, <a class="chip" href="#s47" title="Ch. 9 Rejection Sampling § Implementation Example (L187-L205)">47</a> kept index 0 in my run with numpy's default sort, but index 11 with <code>kind="stable"</code>. With $K = 5$ all three agree. Real rewards are rarely exactly tied, but rounded or binary scores often are.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The KL of best-of-N.</strong> My derivation, not Lambert's. If every completion has a distinct reward, the winner of $N$ samples has probability $N F^{N-1}$ times its original density, where $F$ is the share of samples with lower reward. The KL from the original policy is then $\log N - \frac{N-1}{N}$: 0 at $N=1$, 1.20 nats at $N=8$, 3.17 at $N=64$. Ties can only lower it. It grows like $\log N$, which fits the chapter's claim that BoN's KL is far smaller than RL's. <a class="chip" href="#s64" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143)">64</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>What the simulation assumes.</strong> Not Lambert. Quality is normal, the reward model's error is normal and independent of quality, and the pick is the highest score. Real reward models have systematic biases, such as for length, which this does not model. It shows the direction of the effect, not its size.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the chapter's NumPy demo of inverting <code>argsort</code></li>
+      <li>the RAFT and RSO papers, which I describe only through Lambert</li>
+      <li>the Lecture 2 parts on instruction tuning and reward models, covered on the Chapter 4 and 5 pages</li>
+    </ul>
+    <p>The open questions the slides list are how to sequence RS, whether to mix models' generations, and which prompts to use. <a class="chip" href="#s87" title="Slides lec2-chap4-5-9 § Implementation details (L1215)">87</a> Chapter 10 turns to the nature of preferences.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 10 (The Nature of Preferences) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 10&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 10</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 9 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 9&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 9</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L27">
+      <blockquote style="margin:0">Rejection sampling operates by curating new candidate completions, filtering them based on a trained reward model, and then fine-tuning the original model only on the top completions (the same loss function as instruction tuning).</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L27">Ch. 9 Rejection Sampling (L27)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#rejection-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L22-L23">
+      <blockquote style="margin:0">Rejection Sampling (RS) is one of the most widely used yet least documented methods in preference fine-tuning. Many prominent RLHF papers use it as a core component of their training pipeline, yet no canonical implementation or explanation of why it works so well exists.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L22-L23">Ch. 9 Rejection Sampling (L22-L23)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#rejection-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="yt:4gIwiSPmQkU@00:43:39-00:44:10">
+      <blockquote style="margin:0">it's been used in popular models, but I do not have good intuitions for what makes or breaks a good rejection sampling run.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2619s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:43:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L29-L31">
+      <blockquote style="margin:0">one samples from a distribution that is simpler to model and uses a heuristic to check if the sample is permissible. With language models, the target distribution is high-quality completions to prompts, the filter is a reward model, and the sampling distribution is the current model.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L29-L31">Ch. 9 Rejection Sampling (L29-L31)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#rejection-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L95-L99">
+      <blockquote style="margin:0">The first potential selection function takes the max reward per prompt. … This function $S$ returns a vector of indices, where each index corresponds to the column with the maximum reward for each row in $R$.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L95-L99">Ch. 9 Rejection Sampling § Top Per Prompt (L95-L99)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#top-per-prompt">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L106-L117">
+      <blockquote style="margin:0">Alternatively, we can select the top $K$ prompt-completion pairs from the entire set. … returns the indices that would sort the array in ascending order, and we take the last $K$ indices to get the $K$ highest values.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L106-L117">Ch. 9 Rejection Sampling § Top Overall Pairs (L106-L117)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#top-overall-pairs">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L216">
+      <blockquote style="margin:0">Common settings for rejection sampling include temperatures above zero, e.g. between 0.7 and 1.0, with other modifications to parameters such as top-p or top-k sampling.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L216">Ch. 9 Rejection Sampling § Implementation Details (L216)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L217">
+      <blockquote style="margin:0">Successful implementations of rejection sampling have included 10 to 30 or more completions for each prompt. Using too few completions will make training biased and/or noisy.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L217">Ch. 9 Rejection Sampling § Implementation Details (L217)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L220">
+      <blockquote style="margin:0">The reward model used will heavily impact the final result.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L220">Ch. 9 Rejection Sampling § Implementation Details (L220)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L227-L228">
+      <blockquote style="margin:0">Best-of-N (BoN) is a close relative of rejection sampling, where the same generate-and-score procedure is followed, but you do **not** fine-tune the model on the selected completions. Instead, BoN computes the best possible completion to a static prompt (or set of prompts) at inference time, and related techniques are often used in \"Pro\" tiers of chat models</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L227-L228">Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L227-L228)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#related-best-of-n-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L230-L233">
+      <blockquote style="margin:0">Best-of-N sampling is often included as a baseline relative to RLHF training methods. It is important to remember that BoN *does not* modify the underlying model, but is a sampling technique. … you can still measure the KL distance when running BoN sampling relative to any other policy.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L230-L233">Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L230-L233)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#related-best-of-n-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L33">
+      <blockquote style="margin:0">WebGPT [@nakano2021webgpt], Anthropic's Helpful and Harmless agent [@bai2022training], OpenAI's popular paper on process reward models [@lightman2023let], Llama 2 Chat models [@touvron2023llama], and other seminal works all use this baseline</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L33">Ch. 9 Rejection Sampling (L33)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#rejection-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L50-L51">
+      <blockquote style="margin:0">The actual details on which prompts to use, how to select a reward model, how to sequence rejection sampling, etc. are not well documented in the literature.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L50-L51">Ch. 9 Rejection Sampling § Training Process, Step by Step (L50-L51)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#training-process-step-by-step">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="yt:4gIwiSPmQkU@00:44:10-00:44:43">
+      <blockquote style="margin:0">the simplest thing you can do with a reward model to do downstream training. It's like a prop It's a popular baseline for preference tuning, but especially in labs and people building serious models more so than academic work.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2650s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:44:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="yt:dnF463_Ar9I@00:55:11-00:55:42">
+      <blockquote style="margin:0">rejection sampling which I didn't cover here is the simplest Training Method you take a reward model you rank some supervised fine tuning outputs and then you use this autor regressive loss function again</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=3311s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:55:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1118">
+      <blockquote style="margin:0">No policy gradients, no online RL — just **filtered supervised learning**.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1118">Slides lec2-chap4-5-9 § The simplest thing you can do with a reward model (L1118)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1134">
+      <blockquote style="margin:0">This is still just **offline data curation**: generate first, then train on the filtered outputs.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1134">Slides lec2-chap4-5-9 § Rejection sampling overview (L1134)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:4gIwiSPmQkU@00:45:14-00:45:44">
+      <blockquote style="margin:0">It's offline data curation, which is nice. You can do this in batches.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2714s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:4gIwiSPmQkU@00:02:04-00:02:35">
+      <blockquote style="margin:0">then if you have an instruction tuning pipeline and a reward model, you could actually do rejection sampling.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=124s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:02:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L134-L139">
+      <blockquote style="margin:0">**the simplest complete path from a pretrained model to a preference-tuned one (with a reward model)**. … **Rejection sampling** uses those scores to curate better training data (the optimization, which will be replaced with RL)</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L134-L139">Slides lec2-chap4-5-9 § Why these three chapters together? (L134-L139)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:4gIwiSPmQkU@00:44:43-00:45:14">
+      <blockquote style="margin:0">I don't really understand the underlying term, but I like all these history nuggets.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2683s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:44:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L33">
+      <blockquote style="margin:0">RAFT [@dong2023raft] for applying it to alignment in multiple modalities and Statistical Rejection Sampling Optimization (RSO) [@liu2023statistical] that gives a principled overview of how rejection sampling relates to other preference learning objectives</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L33">Ch. 9 Rejection Sampling (L33)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#rejection-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:6yIMb0K-aS4@00:06:16-00:06:46">
+      <blockquote style="margin:0">they collect a lot of generations for each prompt and then they use those generations to do training list of rejection sampling … they use DPO and they use this multiple times</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=376s">How language model post-training is done today @ 00:06:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L24-L25">
+      <blockquote style="margin:0">RS can be applied at multiple points in the training pipeline -- after instruction fine-tuning, after RL-based optimization, or even after RLVR -- making it a versatile but hard-to-place tool. Combined with its underdocumented nature, this is why it appears here at the end of the core optimization methods.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L24-L25">Ch. 9 Rejection Sampling (L24-L25)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#rejection-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L229">
+      <blockquote style="margin:0">Near convergence, they apply rejection sampling to the RL checkpoint to build an SFT dataset of ~800K samples</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L229">Ch. 3 Training Overview § DeepSeek R1: Scaling RLVR for Reasoning (L229)</a> · <a href="https://rlhfbook.com/c/03-training-overview#deepseek-r1-scaling-rlvr-for-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:4gIwiSPmQkU@00:01:01-00:01:33">
+      <blockquote style="margin:0">rejection sampling I include because it's used in many methods and models out there, but there isn't still good research on this. So it's one of the things where I want more people to work on.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=61s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:01:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="yt:4gIwiSPmQkU@00:45:14-00:45:44">
+      <blockquote style="margin:0">A lot of people use this, but it's not been replicated in like a a minimal script that you could I could tell you what data set to download and how to improve a model with it.</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2714s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:jQPiH-KB4B0@00:00:30-00:01:02">
+      <blockquote style="margin:0">had zero documentation on the web. Um an example is a training method rejection sampling</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=jQPiH-KB4B0&amp;t=30s">Welcome to the Post-Training Course for The RLHF Book @ 00:00:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:o6l6tJQgUg4@00:29:08-00:29:39">
+      <blockquote style="margin:0">there are methods that are used but aren't well documented. One of these is rejection sampling.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1748s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:29:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L41">
+      <blockquote style="margin:0">The simplest method is to re-use every prompt from the first SFT/IFT stage, but this can cause some overfitting. Before doing rejection sampling, you must also have trained a reward model</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L41">Ch. 9 Rejection Sampling § Training Process, Step by Step (L41)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#training-process-step-by-step">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L44">
+      <blockquote style="margin:0">To finish rejection sampling, one instruction fine-tunes the starting checkpoint on the selected completions.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L44">Ch. 9 Rejection Sampling § Training Process, Step by Step (L44)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#training-process-step-by-step">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1127-L1130">
+      <blockquote style="margin:0">**Select prompts and reward model** (reuse IFT prompts or curate new ones) … **Fine-tune** on the top completions (same SFT loss as instruction tuning)</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1127-L1130">Slides lec2-chap4-5-9 § Rejection sampling overview (L1127-L1130)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L42">
+      <blockquote style="margin:0">This can involve tweaking many settings, such as sampling temperature, top-p, max sequence length, number of completions per prompt, etc.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L42">Ch. 9 Rejection Sampling § Training Process, Step by Step (L42)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#training-process-step-by-step">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L43">
+      <blockquote style="margin:0">This stage may also include deduplication to keep only one completion per prompt, though many such design choices come down to empirical ablation studies.</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L43">Ch. 9 Rejection Sampling § Training Process, Step by Step (L43)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#training-process-step-by-step">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L209">
+      <blockquote style="margin:0">With the selected completions, you then perform standard instruction fine-tuning on the current version of the model.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L209">Ch. 9 Rejection Sampling § Fine-Tuning (L209)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#fine-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L59">
+      <blockquote style="margin:0">most commonly they come from the instruction training set.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L59">Ch. 9 Rejection Sampling § Generating Completions (L59)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#generating-completions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L85-L87">
+      <blockquote style="margin:0">is computed by passing the completion … and its corresponding prompt … through a reward model</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L85-L87">Ch. 9 Rejection Sampling § Scoring Completions (L85-L87)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#scoring-completions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1179">
+      <blockquote style="margin:0">Result: one completion per prompt, every prompt represented.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1179">Slides lec2-chap4-5-9 § Selection method 1: Top per prompt (L1179)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L120">
+      <blockquote style="margin:0">you can map a zero-indexed flattened index $k$ to $(i,j)$ via $i = \lfloor k / N \rfloor + 1$ and $j = (k \bmod N) + 1$.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L120">Ch. 9 Rejection Sampling § Top Overall Pairs (L120)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#top-overall-pairs">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L148-L156">
+      <blockquote style="margin:0">$$S(R) = [1, 2, 1, 3, 4]$$ … For prompt 5: completion 4 (reward 0.6)</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L148-L156">Ch. 9 Rejection Sampling § Selection Example (L148-L156)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#selection-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L175-L183">
+      <blockquote style="margin:0">$$S_5(R_{flat}) = [8, 5, 14, 0, 11]$$ … Index 11 → prompt 3, completion 4 (reward 0.7)</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L175-L183">Ch. 9 Rejection Sampling § Selection Example (L175-L183)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#selection-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1201">
+      <blockquote style="margin:0">Now prompt 3 gets **two** completions (0.9 and 0.7), while prompt 5 gets **none**. This optimizes for absolute quality but can bias toward easy prompts.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1201">Slides lec2-chap4-5-9 § Selection method 2: Top overall pairs (L1201)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:4gIwiSPmQkU@00:45:44-00:46:45">
+      <blockquote style="margin:0">I would say the most careful method is you take the top completion per each prompt. So, you keep your prompt distribution.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2744s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:45:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:4gIwiSPmQkU@00:46:14-00:46:45">
+      <blockquote style="margin:0">you could just take the best overall um rewards across the whole data set and really try to narrow in on this. I'm not sure if these are the type of implementation details that make or break doing this at scale</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2774s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/README.md#L16-L22">
+      <blockquote style="margin:0">the only difference is whether selection uses the reward or a coin flip.</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/README.md?plain=1#L16-L22">Code code/rejection_sampling/README.md (L16-L22)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/selection.py#L27-L35">
+      <blockquote style="margin:0">flat.sort(key=lambda item: item[0], reverse=True) return [(q, c) for _, q, c in flat[:k]]</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/selection.py#L27-L35">Code code/rejection_sampling/selection.py (L27-L35)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L187-L205">
+      <blockquote style="margin:0">Here is a code snippet showing how the selection methods could be implemented. … sorted_indices = np.argsort(x)</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L187-L205">Ch. 9 Rejection Sampling § Implementation Example (L187-L205)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/configs/top_per_prompt.yaml#L12-L24">
+      <blockquote style="margin:0">max_train_samples: 1000 … temperature: 0.8 top_p: 0.95 top_k: 20 … num_completions_per_prompt: 8</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/configs/top_per_prompt.yaml#L12-L24">Code code/rejection_sampling/configs/top_per_prompt.yaml (L12-L24)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L218">
+      <blockquote style="margin:0">No clear training details for the instruction tuning during rejection sampling have been released. It is likely that they use slightly different settings than the initial instruction tuning phase of the model.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L218">Ch. 9 Rejection Sampling § Implementation Details (L218)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/configs/top_per_prompt.yaml#L35-L36">
+      <blockquote style="margin:0">lr: 5.0e-6 num_epochs: 2</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/configs/top_per_prompt.yaml#L35-L36">Code code/rejection_sampling/configs/top_per_prompt.yaml (L35-L36)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/train.py#L79-L80">
+      <blockquote style="margin:0">labels[:prompt_len] = -100  # mask prompt tokens from the loss</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/train.py#L79-L80">Code code/rejection_sampling/train.py (L79-L80)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L219">
+      <blockquote style="margin:0">Some implementations of rejection sampling include generations from multiple models rather than just the current model that is going to be trained. Best practices on how to do this are not established.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L219">Ch. 9 Rejection Sampling § Implementation Details (L219)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/README.md#L10-L14">
+      <blockquote style="margin:0">Generate `N` rollouts per GSM8K training prompt with `Qwen/Qwen3-1.7B`. … Score every rollout with `nvidia/AceMath-7B-RM`. … Evaluate exact-match accuracy on the GSM8K test split.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/README.md?plain=1#L10-L14">Code code/rejection_sampling/README.md (L10-L14)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="yt:4gIwiSPmQkU@00:46:45-00:47:16">
+      <blockquote style="margin:0">you definitely need to be careful with the sampling settings for your model. You need to get enough diversity. You have to spend a good amount of inference on generating completions to get a clear signal of which is the best.</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2805s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:4gIwiSPmQkU@00:46:45-00:47:47">
+      <blockquote style="margin:0">where we don't have a lot of human data budget, we're spending millions of dollars in compute just on generating synthetic data in-house or with OpenAI credits.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2805s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:46:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:4gIwiSPmQkU@00:47:16-00:47:47">
+      <blockquote style="margin:0">the SFT part of instruction of rejection sampling, um we didn't find any clear differences than doing this um in the standard way, but maybe we need to find different fine-tuning hyperparameters to make this best.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2836s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L222-L223">
+      <blockquote style="margin:0">you can sort the tokenized completions by length so that the batches are of similar lengths. This eliminates the need to run inference on as many padding tokens and will improve throughput</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L222-L223">Ch. 9 Rejection Sampling § Implementation Details (L222-L223)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:4gIwiSPmQkU@00:47:47-00:48:17">
+      <blockquote style="margin:0">a lot of reward model inference tools aren't that great. So, please work on rejection sampling. I don't know why it doesn't work.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2867s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1227-L1231">
+      <blockquote style="margin:0">Used at **inference time** to pick the best completion … BoN is the simplest possible reward-guided method: generate more, pick the best. Can also be done with verification / LLM-as-a-judge instead of traditional reward models.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1227-L1231">Slides lec2-chap4-5-9 § Best-of-N sampling: Rejection sampling without fine-tuning (L1227-L1231)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="yt:4gIwiSPmQkU@00:47:47-00:48:17">
+      <blockquote style="margin:0">Related to rejection sampling is best of n sampling. This is often used as baseline in RLHF work, which is essentially an inference trick to sample a bunch of completions and use the reward model to select the best one.</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2867s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:47:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="yt:4gIwiSPmQkU@00:48:17-00:48:49">
+      <blockquote style="margin:0">This is a simple way to do inference time scaling, which is you just you're just sampling more and using a reward model to guide it. It's often used as a baseline for RL methods like PPO such in the seminal um work on like scaling laws for over-optimization.</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2897s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:48:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:y04JhXpiI4s@00:07:17-00:07:47">
+      <blockquote style="margin:0">they're looking at best event sampling which is idea when you generate a bunch of completions you use a reward model to take the best one</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=437s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:y04JhXpiI4s@00:12:57-00:13:27">
+      <blockquote style="margin:0">you can use methods that don't up the par update the parameters like best event sampling.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=777s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L143">
+      <blockquote style="margin:0">the KL distance used by online RL algorithms modifying the model parameters, e.g. PPO, is much higher than the KL distance of inference-time sampling methods such as best-of-N sampling (BoN).</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L143">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L247">
+      <blockquote style="margin:0">Using the top-K method with $K=1$ reduces to the same method, which is common practice.</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L247">Ch. 9 Rejection Sampling § Related: Best-of-N Sampling (L247)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#related-best-of-n-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:rDF7eFPeVto@00:07:15-00:07:46">
+      <blockquote style="margin:0">the best of n column here is pretty clear that you get a five to eight point bump, five to 10 point bump by doing best of n on this reward model.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=rDF7eFPeVto&amp;t=435s">An update on DPO vs PPO for LLM alignment @ 00:07:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="yt:rDF7eFPeVto@00:06:44-00:07:15">
+      <blockquote style="margin:0">there is some general signal in these reward models … but that can't necessarily translate to downstream performance.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://www.youtube.com/watch?v=rDF7eFPeVto&amp;t=404s">An update on DPO vs PPO for LLM alignment @ 00:06:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L284">
+      <blockquote style="margin:0">More completions can improve the best available sample, but only if the reward model can separate good and bad answers.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L284">Ch. 9 Rejection Sampling § Suggested Experiments (L284)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L251-L252">
+      <blockquote style="margin:0">runs a complete GSM8K rejection-sampling pipeline: generate rollouts, score them with a reward model, select a training subset, fine-tune, and evaluate exact-match accuracy. The four configs are arranged as matched treatment/control pairs, so readers can ask whether the reward model is actually helping.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L251-L252">Ch. 9 Rejection Sampling § Suggested Experiments (L251-L252)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-02.md#L213">
+      <blockquote style="margin:0">a full GSM8K generate → score → finetune → eval pipeline.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-02.md?plain=1#L213">Slides qa-02 § &quot;Can we get programming &amp; math assignments?&quot; (L213)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/configs/top_k_overall.yaml#L32-L33">
+      <blockquote style="margin:0">strategy: top_k_overall top_k: 1000</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/configs/top_k_overall.yaml#L32-L33">Code code/rejection_sampling/configs/top_k_overall.yaml (L32-L33)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/README.md#L61">
+      <blockquote style="margin:0">Sanity check: run the worked selection example from Chapter 9.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/README.md?plain=1#L61">Code code/rejection_sampling/README.md (L61)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L262-L263">
+      <blockquote style="margin:0">Subsequent training configs reuse the cache as long as the generation and scoring settings stay unchanged.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L262-L263">Ch. 9 Rejection Sampling § Suggested Experiments (L262-L263)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L279-L280">
+      <blockquote style="margin:0">If the reward-selected run does not beat its random baseline, the reward model or sampled completions are not giving useful signal on that slice.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L279-L280">Ch. 9 Rejection Sampling § Suggested Experiments (L279-L280)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/09-rejection-sampling.md#L288">
+      <blockquote style="margin:0">This makes the experiment cheaper and highlights whether rejection sampling is rescuing weak generations or merely selecting among already-good ones.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L288">Ch. 9 Rejection Sampling § Suggested Experiments (L288)</a> · <a href="https://rlhfbook.com/c/09-rejection-sampling#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/README.md#L47-L50">
+      <blockquote style="margin:0">`top_k_overall` beat its matched random baseline, while `top_per_prompt` and `random_per_prompt` were effectively tied. Treat those small gaps as slice noise rather than a stable ordering.</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/README.md?plain=1#L47-L50">Code code/rejection_sampling/README.md (L47-L50)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/diagnostics.py#L16-L20">
+      <blockquote style="margin:0">the share of prompts where within-row selection can actually matter. When the policy is strong enough that most prompts are all-correct (or the task is hard enough that most are all-wrong), the effective signal for ``top_per_prompt`` shrinks even if the RM is well-calibrated.</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/diagnostics.py#L16-L20">Code code/rejection_sampling/diagnostics.py (L16-L20)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/utils.py#L63-L71">
+      <blockquote style="margin:0">Resolve 'auto' to CUDA if available, otherwise CPU. … Expected 'auto', 'cuda', or 'cpu'.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/utils.py#L63-L71">Code code/rejection_sampling/utils.py (L63-L71)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="yt:rDF7eFPeVto@00:11:53-00:12:24">
+      <blockquote style="margin:0">we don't even have simple baselines like projection sampling, which was the kind of surprising star of the show in Llama 2.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://www.youtube.com/watch?v=rDF7eFPeVto&amp;t=713s">An update on DPO vs PPO for LLM alignment @ 00:11:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:6yIMb0K-aS4@00:50:19-00:50:51">
+      <blockquote style="margin:0">we don't have a clear um replication of how to do this with open research we tried it in two3 and just couldn't get good signals so we tabled it to future work</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=3019s">How language model post-training is done today @ 00:50:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:4gIwiSPmQkU@00:48:49-00:49:20">
+      <blockquote style="margin:0">In concept, this should be a very strong baseline and one that is easier to implement and hill climb on, but as I said, it's very strange that rejection sampling isn't as well documented.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=2929s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:48:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1244">
+      <blockquote style="margin:0">This is a strong baseline.</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1244">Slides lec2-chap4-5-9 § The full pipeline so far (L1244)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1215">
+      <blockquote style="margin:0">There hasn't been a fully open reproduction of this, which is kind of confusing as to why. My hunch is that training a reward model has some subtle tricks.</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1215">Slides lec2-chap4-5-9 § Implementation details (L1215)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/README.md#L30">
+      <blockquote style="margin:0">Lets the reward model concentrate training data on the easiest-to-score prompts. Can pick multiple completions from the same prompt.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/README.md?plain=1#L30">Code code/rejection_sampling/README.md (L30)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1209-L1211">
+      <blockquote style="margin:0">**Temperature**: 0.7-1.0 (need diversity in completions) … **Completions per prompt**: 10-30+ (too few = noisy selection) … details like learning rate may differ from initial IFT</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1209-L1211">Slides lec2-chap4-5-9 § Implementation details (L1209-L1211)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L155">
+      <blockquote style="margin:0">**Rejection sampling** (Chapter 9): The most basic RLHF technique where candidate completions for instruction fine-tuning are filtered by a reward model imitating human preferences.</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L155">Ch. 3 Training Overview § Optimization Tools (L155)</a> · <a href="https://rlhfbook.com/c/03-training-overview#optimization-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L1215">
+      <blockquote style="margin:0">how to sequence RS in a multi-stage pipeline, whether to use generations from multiple models, optimal prompt selection.</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1215">Slides lec2-chap4-5-9 § Implementation details (L1215)</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // Seeded PRNG so "random" selections are reproducible.
+  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+  // Selection playground: the chapter's two rules, plus the code's random controls.
+  (() => {
+    const MATS = {
+      chapter: [[0.7, 0.3, 0.5, 0.2], [0.4, 0.8, 0.6, 0.5], [0.9, 0.3, 0.4, 0.7], [0.2, 0.5, 0.8, 0.6], [0.5, 0.4, 0.3, 0.6]],
+      easy: [[0.4, 0.3, 0.5, 0.2], [0.4, 0.5, 0.6, 0.5], [0.95, 0.9, 0.85, 0.8], [0.2, 0.5, 0.6, 0.3], [0.5, 0.4, 0.3, 0.6]],
+    };
+    let R = MATS.chapter, strategy = 'top_per_prompt', draws = 1;
+    const k = document.getElementById('sel-k');
+    const pick = () => {
+      const K = Number(k.value), M = R.length, N = R[0].length;
+      const flat = R.flatMap((row, i) => row.map((r, j) => ({ r, i, j, f: i * N + j })));
+      if (strategy === 'top_per_prompt') return R.map((row, i) => { let b = 0; row.forEach((r, j) => { if (r > row[b]) b = j; }); return flat[i * N + b]; });
+      if (strategy === 'top_k_overall') return [...flat].sort((a, b) => b.r - a.r).slice(0, K);  // stable: earlier index wins ties
+      const rand = rng(42 + draws);
+      if (strategy === 'random_per_prompt') return R.map((row, i) => flat[i * N + Math.floor(rand() * N)]);
+      const pool = [...flat];
+      for (let a = pool.length - 1; a > 0; a--) { const c = Math.floor(rand() * (a + 1)); [pool[a], pool[c]] = [pool[c], pool[a]]; }
+      return pool.slice(0, K);
+    };
+    const show = () => {
+      document.getElementById('sel-k-o').textContent = k.value;
+      const kept = pick(), set = new Set(kept.map(p => p.f)), N = R[0].length;
+      document.getElementById('sel-body').innerHTML = R.map((row, i) =>
+        '<tr><td>' + (i + 1) + '</td>' + row.map((r, j) => '<td class="' + (set.has(i * N + j) ? 'pick' : '') + '">' + r.toFixed(2) + '</td>').join('') +
+        '<td>' + kept.filter(p => p.i === i).length + '</td></tr>').join('');
+      const covered = new Set(kept.map(p => p.i)).size;
+      document.getElementById('sel-n').textContent = kept.length + ' pairs, ' + covered + ' of ' + R.length + ' prompts';
+      document.getElementById('sel-mean').textContent = (kept.reduce((a, p) => a + p.r, 0) / kept.length).toFixed(3);
+      const ordered = strategy.startsWith('random') ? kept : [...kept].sort((a, b) => b.r - a.r || a.f - b.f);
+      document.getElementById('sel-idx').textContent = '[' + ordered.map(p => p.f).join(', ') + ']';
+      let msg = '';
+      if (strategy === 'top_k_overall') {
+        const sorted = R.flat().sort((a, b) => b - a), K = Number(k.value);
+        if (covered < R.length) msg = (R.length - covered) + ' prompt' + (R.length - covered > 1 ? 's get' : ' gets') + ' no training data at all. ';
+        if (K < sorted.length && sorted[K - 1] === sorted[K]) msg += 'Tie at the cut: the ' + K + 'th and ' + (K + 1) + 'th best rewards are both ' + sorted[K].toFixed(2) + ', so another sort may keep a different pair.';
+      } else if (strategy.startsWith('random')) msg = 'A coin flip, seeded so it is reproducible. Click the strategy again to re-draw.';
+      else msg = 'Every prompt keeps exactly one completion, its highest-scoring one.';
+      document.getElementById('sel-msg').textContent = msg;
+    };
+    document.querySelectorAll('#sel-demo button[data-m]').forEach(btn => btn.addEventListener('click', () => {
+      if (btn.dataset.m === 'random') { const rand = rng(7 + draws++); R = Array.from({ length: 5 }, () => Array.from({ length: 4 }, () => Math.round(rand() * 20) / 20)); }
+      else R = MATS[btn.dataset.m];
+      show();
+    }));
+    document.querySelectorAll('#sel-demo button[data-s]').forEach(btn => btn.addEventListener('click', () => {
+      if (strategy === btn.dataset.s) draws++;
+      strategy = btn.dataset.s;
+      document.querySelectorAll('#sel-demo button[data-s]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      show();
+    }));
+    k.addEventListener('input', show);
+    show();
+  })();
+
+  // Best-of-N with a noisy reward model: quality q ~ N(0,1), score = q + sigma * noise.
+  (() => {
+    const n = document.getElementById('bon-n'), sg = document.getElementById('bon-s');
+    const TRIALS = 4000;
+    const show = () => {
+      const N = Number(n.value), S = Number(sg.value), rand = rng(2026);
+      const gauss = () => { let u = 0, v = 0; while (u === 0) u = rand(); v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+      let sumS = 0, sumQ = 0, best = 0;
+      for (let t = 0; t < TRIALS; t++) {
+        let bs = -Infinity, bq = 0, mq = -Infinity;
+        for (let j = 0; j < N; j++) { const q = gauss(), sc = q + S * gauss(); if (sc > bs) { bs = sc; bq = q; } if (q > mq) mq = q; }
+        sumS += bs; sumQ += bq; if (bq === mq) best++;
+      }
+      document.getElementById('bon-n-o').textContent = N;
+      document.getElementById('bon-s-o').textContent = S.toFixed(2);
+      document.getElementById('bon-score').textContent = (sumS / TRIALS).toFixed(2);
+      document.getElementById('bon-q').textContent = (sumQ / TRIALS).toFixed(2) + ' (gap ' + ((sumS - sumQ) / TRIALS).toFixed(2) + ')';
+      document.getElementById('bon-best').textContent = (100 * best / TRIALS).toFixed(0) + '% of prompts';
+      document.getElementById('bon-kl').textContent = (Math.log(N) - (N - 1) / N).toFixed(2) + ' nats';
+    };
+    [n, sg].forEach(i => i.addEventListener('input', show));
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/rejection_sampling/selection.py (L16-L54)", contents: "def select_top_per_prompt(records: list[Record]) -> list[TrainingPair]:\n    \"\"\"Argmax completion per prompt.\"\"\"\n    pairs: list[TrainingPair] = []\n    for rec in records:\n        if not rec[\"completions\"]:\n            continue\n        best_idx = max(range(len(rec[\"rewards\"])), key=lambda j: rec[\"rewards\"][j])\n        pairs.append((rec[\"question\"], rec[\"completions\"][best_idx]))\n    return pairs\n\n\ndef select_top_k_overall(records: list[Record], k: int) -> list[TrainingPair]:\n    \"\"\"Top-k completions across the full M x N reward matrix.\"\"\"\n    flat = [\n        (float(reward), rec[\"question\"], completion)\n        for rec in records\n        for completion, reward in zip(rec[\"completions\"], rec[\"rewards\"], strict=True)\n    ]\n    flat.sort(key=lambda item: item[0], reverse=True)\n    return [(q, c) for _, q, c in flat[:k]]\n\n\ndef select_random_per_prompt(records: list[Record], seed: int) -> list[TrainingPair]:\n    \"\"\"Random baseline for top_per_prompt: pick one completion per prompt uniformly.\"\"\"\n    rng = random.Random(seed)\n    pairs: list[TrainingPair] = []\n    for rec in records:\n        if not rec[\"completions\"]:\n            continue\n        pick = rng.randrange(len(rec[\"completions\"]))\n        pairs.append((rec[\"question\"], rec[\"completions\"][pick]))\n    return pairs\n\n\ndef select_random_k_overall(records: list[Record], k: int, seed: int) -> list[TrainingPair]:\n    \"\"\"Random baseline for top_k_overall: sample k pairs from the flat M x N pool.\"\"\"\n    rng = random.Random(seed)\n    flat = [(rec[\"question\"], c) for rec in records for c in rec[\"completions\"]]\n    return rng.sample(flat, min(k, len(flat)))\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
