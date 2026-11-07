@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 6: Reinforcement Learning</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid input[type=range]{width:100%;accent-color:var(--accent)}
+  .wid output{font-family:var(--mono)}
+  .grp-in{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s2)}
+  .grp-in label{margin:0}
+  .grp-in input{width:5.5em;font:inherit;font-family:var(--mono);padding:2px var(--s1);background:var(--bg);color:var(--ink);border:1px solid var(--line-3);border-radius:var(--r)}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .wid button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .wid button[aria-pressed=false]{background:transparent;color:var(--ink);border:1px solid var(--line-3)}
+  .wid table td{font-family:var(--mono)}
+  .wid table td:first-child{font-family:var(--sans)}
+  #clip-svg .ax{stroke:var(--line-3);stroke-width:1}
+  #clip-svg .band{fill:var(--accent-soft)}
+  #clip-svg .un{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4}
+  #clip-svg .obj{fill:none;stroke:var(--accent);stroke-width:3}
+  #clip-svg .mk{fill:var(--accent);stroke:var(--panel);stroke-width:2}
+  #run pre{overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+  #pg pre{overflow-x:auto}
+  #code-excerpt{margin-top:var(--s3)}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite]{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s06_ch05-reward-models.html">Chapter 5</a></p>
+  <h1>Chapter 6: Reinforcement Learning</h1>
+  <p class="lede">The RL step updates the model you are training from the reward model's feedback on its own fresh completions. <a class="chip" href="#s1" title="Ch. 6 Reinforcement Learning (L24-L26)">1</a> It is the most complex part of RLHF, but data still decides more of the result. <a class="chip" href="#s2" title="Ch. 6 Reinforcement Learning § The Role of Reinforcement Learning in RLHF (L35-L36)">2</a> Lambert calls this chapter "the kind of crown jewel of the book", his longest. <a class="chip" href="#s3" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:00:00">3</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>One update shape.</strong> Every algorithm here is $\Delta\theta \propto \Psi_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)$: a direction that makes the action more likely, times a score for how good it was. <a class="chip" href="#s4" title="Ch. 6 Reinforcement Learning § Policy Gradient Algorithms (L59-L70)">4</a></li>
+      <li><strong>The algorithms differ in two choices.</strong> How they estimate the advantage, and how they constrain each update. <a class="chip" href="#s5" title="Ch. 6 Reinforcement Learning § The Role of Reinforcement Learning in RLHF (L45-L48)">5</a> <a class="chip" href="#s6" title="Slides lec3-chap6-p1 § Lecture summary (L1340)">6</a></li>
+      <li><strong>PPO adds a learned critic and clipping.</strong> A value function gives per-token credit, and the clipped ratio lets one batch be reused for several steps. <a class="chip" href="#s7" title="Ch. 6 Reinforcement Learning § Value Functions and PPO (L493-L502)">7</a> <a class="chip" href="#s8" title="Slides lec3-chap6-p1 § If REINFORCE is so simple, why PPO? (L948-L950)">8</a></li>
+      <li><strong>GRPO drops the critic.</strong> It compares several completions to the same prompt instead, which made it the default for RL on language models. <a class="chip" href="#s9" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L561-L565)">9</a> <a class="chip" href="#s10" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:50:15">10</a></li>
+      <li><strong>Implementation details change the outcome.</strong> How per-token losses are averaged, where the KL goes, and how far the sampler drifts from the learner all change training. <a class="chip" href="#s11" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L840-L841)">11</a> <a class="chip" href="#s12" title="Ch. 6 Reinforcement Learning § Related: MDP vs. Bandit Framing (L944-L949)">12</a> <a class="chip" href="#s13" title="Ch. 6 Reinforcement Learning § Score Centering (L1238)">13</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Derive the policy gradient and say why a baseline does not bias it.</li>
+      <li>Compute REINFORCE, RLOO, GRPO and Dr. GRPO advantages for a group by hand.</li>
+      <li>Say for any advantage sign and ratio whether PPO's clipped objective passes a gradient.</li>
+      <li>Explain how per-sequence, per-token and fixed-length loss averaging weight short and long answers.</li>
+      <li>Tell $\pi_{\theta_\text{old}}$ from $\pi_\text{ref}$, and the learner from the sampler.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/06-policy-gradients">Chapter 6</a></td><td>The longest chapter</td><td>The derivation, every algorithm, and the implementation details with code.</td></tr>
+        <tr><td>Lecture 3: <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3450s">57:30</a></td><td>58 min</td><td>The math: derivation, REINFORCE, RLOO, PPO, GRPO, GSPO and CISPO.</td></tr>
+        <tr><td>Lecture 4: <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=3220s">53:40</a></td><td>54 min</td><td>The code: log-probs, GAE, the losses, async systems and loss aggregation.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1-L1373">Lecture 3 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L1-L1297">Lecture 4 slides</a></td><td>92 and 71 slides</td><td>Worked tables the chapter lacks, such as the RLOO example and PPO hyperparameter ranges.</td></tr>
+        <tr><td>Q&amp;A 1: <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=371s">6:11</a> to <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=777s">12:57</a></td><td>7 min</td><td>Reader questions on token-level losses, GAE, the shape of $\rho$, and <code>torch.max</code>.</td></tr>
+        <tr><td>GRPO talk (Mar 2025): <a href="https://www.youtube.com/watch?v=amrJDwMUFNs&amp;t=506s">8:26</a> to <a href="https://www.youtube.com/watch?v=amrJDwMUFNs&amp;t=1317s">21:57</a></td><td>14 min</td><td>An earlier view of the loss aggregation and standard deviation debates.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="pg">
+    <h2>The policy gradient</h2>
+    <p class="tag">In Lecture 3: <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=591s">9:51</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=965s">16:05</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1213s">20:13</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1367s">22:47</a></p>
+    <p>The update multiplies two things. $\nabla_\theta \log \pi_\theta$ says which way to move the parameters to make the action more likely, and $\Psi_t$ says how good it was. A positive $\Psi_t$ makes the action more likely, a negative one less likely. <a class="chip" href="#s4" title="Ch. 6 Reinforcement Learning § Policy Gradient Algorithms (L59-L70)">4</a> <a class="chip" href="#s14" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:10:23">14</a></p>
+    <div class="fig" style="overflow-x:auto">$$\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim p_\theta}\!\left[ \sum_{t=0}^{T} \Psi_t \, \nabla_\theta \log \pi_\theta(a_t \mid s_t) \right]$$</div>
+    <h3>Where it comes from, in three steps</h3>
+    <ol>
+      <li><strong>Turn the gradient into an expectation.</strong> The log-derivative trick, $\nabla p = p \, \nabla \log p$, rewrites the gradient of the expected reward as an expectation you can estimate from sampled rollouts. <a class="chip" href="#s15" title="Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L143)">15</a></li>
+      <li><strong>Most terms vanish.</strong> The log-probability of a trajectory has three parts, and only the policy's depends on $\theta$. The start state and the environment drop out. <a class="chip" href="#s16" title="Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L171-L178)">16</a></li>
+      <li><strong>So code is a weighted sum of log-probs.</strong> Sum token log-probs, weight them by the advantage, and let autodiff do the rest: <a class="chip" href="#s17" title="Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L180-L190)">17</a> <a class="chip" href="#s18" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:21:15">18</a></li>
+    </ol>
+    <pre><code>seq_log_probs = (token_log_probs * completion_mask).sum(dim=-1)
+loss = -(seq_log_probs * advantages).mean()
+loss.backward()</code></pre>
+    <p>The minus sign is there because the math maximizes an objective and the optimizer minimizes a loss. <a class="chip" href="#s19" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:08:49">19</a></p>
+    <h3>What $\Psi_t$ can be</h3>
+    <p>The chapter takes six options from Schulman et al. 2015. The advantage $A = Q - V$ has the lowest theoretical variance if you can compute it accurately. <a class="chip" href="#s20" title="Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L204-L213)">20</a> The slides add rough variance and bias ratings, <a class="chip" href="#s21" title="Slides lec3-chap6-p1 § What $\Psi_t$ can be (L386-L392)">21</a> which the lecture calls "a bit oversimplified". <a class="chip" href="#s22" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:14:01">22</a></p>
+    <div class="tablewrap"><table class="kt terms">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$s_t,\ a_t$</td><td>State and action. For a language model, the prompt plus tokens so far, and the next token. <a class="chip" href="#s23" title="Slides lec3-chap6-p1 § Language models as episodic MDPs (L276-L288)">23</a></td></tr>
+        <tr><td>$G_t$</td><td>The return from $t$: the sum of later rewards. $\gamma = 1$ in RLHF, because the whole completion is the unit being optimized. <a class="chip" href="#s24" title="Ch. 6 Reinforcement Learning § Policy Gradient Algorithms (L111)">24</a></td></tr>
+        <tr><td>$b(s_t)$</td><td>A baseline. Subtracting any function of the state alone leaves the expected gradient unchanged, because the score sums to zero over actions. <a class="chip" href="#s25" title="Slides lec3-chap6-p1 § Baselines keep the estimator unbiased (L604-L615)">25</a> The lecture calls it "just a variance reduction device". <a class="chip" href="#s26" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:23:19">26</a></td></tr>
+        <tr><td>$A(s_t, a_t)$</td><td>The advantage, $Q - V$: how much better this action was than average. With a learned $V$ it is the TD residual $r_t + \gamma V(s_{t+1}) - V(s_t)$. <a class="chip" href="#s27" title="Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L220-L222)">27</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Why baselines matter: returns estimated from a few rollouts are noisy, and more so with sparse 0 or 1 rewards. <a class="chip" href="#s28" title="Ch. 6 Reinforcement Learning § Vanilla Policy Gradient (L231-L237)">28</a> The same math serves RLHF and RLVR, with different trade-offs. <a class="chip" href="#s29" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:05:12">29</a> Lambert also points out a fact he cannot explain: these losses, designed for agents learning from scratch, work very well on language models. A model trained with RL only on math does not forget other skills. <a class="chip" href="#s30" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:03:08">30</a> <a class="chip" href="#s31" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:03:39">31</a> The slides add that RL can "fix" rough edges without "squashing" general capabilities. <a class="chip" href="#s32" title="Slides lec3-chap6-p1 § An under-documented benefit of RL (L169-L175)">32</a></p>
+  </section>
+
+  <section id="reinforce">
+    <h2>REINFORCE and RLOO</h2>
+    <p class="tag">In Lecture 3: <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1708s">28:28</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1801s">30:01</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1895s">31:35</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1987s">33:07</a></p>
+    <p>REINFORCE is the Monte Carlo policy gradient. Its name is a backronym, "REward Increment = Nonnegative Factor X Offset Reinforcement X Characteristic Eligibility": the learning rate, a baseline, and $\nabla \log \pi$. <a class="chip" href="#s33" title="Ch. 6 Reinforcement Learning § REINFORCE (L249-L256)">33</a></p>
+    <p>RLOO samples $K$ completions per prompt and uses the mean reward of the <em>other</em> $K-1$ as each one's baseline. Leaving the sample out keeps the estimator exactly unbiased. It needs several completions per prompt. <a class="chip" href="#s34" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L290-L293)">34</a> The lecture says RLOO "just works a bit better" because plain REINFORCE can be unwieldy with language models. <a class="chip" href="#s35" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:33:39">35</a></p>
+    <div class="fig" style="overflow-x:auto">$$\begin{gathered} A^{\text{RLOO}}_i = r_i - \frac{1}{K-1}\sum_{j \neq i} r_j \\[6pt] A^{\text{GRPO}}_i = \frac{r_i - \operatorname{mean}(r_{1:G})}{\operatorname{std}(r_{1:G})} \end{gathered}$$</div>
+    <h3>Try the group advantage</h3>
+    <p>Change the four rewards. The table applies the RLOO, Dr. GRPO and GRPO formulas, with no other logic. The slide example is the first preset. <a class="chip" href="#s36" title="Slides lec3-chap6-p1 § RLOO worked example (L885-L894)">36</a></p>
+    <div class="wid" id="grp-demo">
+      <p class="label" style="margin:0">Group advantages for one prompt</p>
+      <div class="grp-in">
+        <label>$r_1$ <input type="number" step="0.1" value="0.8" data-lavish-action></label>
+        <label>$r_2$ <input type="number" step="0.1" value="0.3" data-lavish-action></label>
+        <label>$r_3$ <input type="number" step="0.1" value="0.6" data-lavish-action></label>
+        <label>$r_4$ <input type="number" step="0.1" value="0.5" data-lavish-action></label>
+      </div>
+      <p class="grp-pre">Try: <button class="btn btn-sm" type="button" data-r="0.8,0.3,0.6,0.5" data-lavish-action>Slide example</button> <button class="btn btn-sm" type="button" data-r="1,0,0,0" data-lavish-action>1 of 4 correct</button> <button class="btn btn-sm" type="button" data-r="1,1,0,0" data-lavish-action>2 of 4 correct</button> <button class="btn btn-sm" type="button" data-r="1,1,1,1" data-lavish-action>All correct</button></p>
+      <div class="tablewrap"><table class="kt grp-out" style="min-width:420px">
+        <thead><tr><th>Completion</th><th>Reward</th><th>RLOO</th><th>Dr. GRPO</th><th>GRPO</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="sub grp-note" style="margin:var(--s2) 0 0"></p>
+    </div>
+    <p style="margin-top:var(--s3)">Two things to see. Dr. GRPO, GRPO without the standard deviation, equals RLOO up to a constant factor $\frac{G}{G-1}$. <a class="chip" href="#s37" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L609)">37</a> The book's RLOO code computes it exactly that way. <a class="chip" href="#s38" title="Code code/policy_gradients/utils.py (L205-L208)">38</a> And with "All correct" every advantage is zero, so the prompt teaches nothing. <a class="chip" href="#s39" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:51:20">39</a> Without a guard the zero standard deviation gives NaNs. <a class="chip" href="#s40" title="Slides lec4-chap6-p2 § PPO debugging checklist (L628-L634)">40</a></p>
+  </section>
+
+  <section id="ppo">
+    <h2>PPO</h2>
+    <p class="tag">In Lecture 3: <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2050s">34:10</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2239s">37:19</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2391s">39:51</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2544s">42:24</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2605s">43:25</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2823s">47:03</a></p>
+    <p>Vanilla policy gradient is sensitive to step size: too small and learning is slow, too large and training collapses. <a class="chip" href="#s41" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:34:41">41</a> PPO gets TRPO-like stability from a clipped objective, so a batch can be reused for several gradient steps. <a class="chip" href="#s8" title="Slides lec3-chap6-p1 § If REINFORCE is so simple, why PPO? (L948-L950)">8</a> The ratio $\rho_t$ corrects for reusing data from the policy that generated it, and the clip keeps that policy from changing too much in one update. <a class="chip" href="#s42" title="Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L337-L346)">42</a></p>
+    <div class="fig" style="overflow-x:auto">$$\begin{gathered} J(\theta) = \mathbb{E}_t\!\left[\min\!\left(\rho_t(\theta) A_t,\ \operatorname{clip}(\rho_t(\theta), 1-\varepsilon, 1+\varepsilon)\, A_t\right)\right] \\[6pt] \rho_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_\text{old}}(a_t \mid s_t)} \end{gathered}$$</div>
+    <div class="tablewrap"><table class="kt terms">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$\pi_{\theta_\text{old}}$</td><td>The policy at the start of this batch. It changes every batch. <a class="chip" href="#s43" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:27:56">43</a> Its log-probs are cached at rollout, and only the current policy's are recomputed, which is what allows several passes over one batch. <a class="chip" href="#s44" title="Slides lec4-chap6-p2 § Cached vs. recomputed (L409)">44</a></td></tr>
+        <tr><td>$\pi_\text{ref}$</td><td>The frozen policy from the start of the whole run, used only for the KL penalty. Do not confuse the two. <a class="chip" href="#s45" title="Slides lec3-chap6-p1 § Two &quot;old&quot; policies — don&#x27;t confuse them (L744-L753)">45</a></td></tr>
+        <tr><td>$\rho_t$</td><td>A per-token ratio, computed by exponentiating the difference of token log-probs. <a class="chip" href="#s46" title="Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L365-L372)">46</a> <a class="chip" href="#s47" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:10:20">47</a> It is 1 on the first gradient step of each batch. <a class="chip" href="#s48" title="Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L385)">48</a> <a class="chip" href="#s49" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:41:24">49</a></td></tr>
+        <tr><td>$\varepsilon$</td><td>Typically 0.1 to 0.2. <a class="chip" href="#s50" title="Slides lec3-chap6-p1 § The PPO clipped objective (put pieces together) (L1009)">50</a></td></tr>
+        <tr><td>$\frac{1}{|a|}$</td><td>Averaging over tokens, common in implementations but not in a formal derivation. <a class="chip" href="#s46" title="Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L365-L372)">46</a></td></tr>
+      </tbody>
+    </table></div>
+    <h3>Try the clip</h3>
+    <p>Pick an advantage sign and move the ratio. The plot and readout come from the objective above. The gradient is zero only where the policy has <em>already</em> moved the action the way the advantage wants, past the trust region. <a class="chip" href="#s51" title="Ch. 6 Reinforcement Learning § Understanding the PPO Objective (L403-L406)">51</a> Inside the region, PPO is plain policy gradient. <a class="chip" href="#s52" title="Ch. 6 Reinforcement Learning § Understanding the PPO Objective (L393-L394)">52</a></p>
+    <div class="wid" id="clip-demo">
+      <p class="label" style="margin:0">The clipped objective for one token</p>
+      <p class="grp-pre">Advantage: <button class="btn btn-sm" type="button" data-a="1" aria-pressed="true" data-lavish-action>Positive, $A_t = +1$</button> <button class="btn btn-sm" type="button" data-a="-1" aria-pressed="false" data-lavish-action>Negative, $A_t = -1$</button></p>
+      <label for="clip-rho">Ratio $\rho_t$: <output id="clip-rho-o">1.00</output></label>
+      <input id="clip-rho" type="range" min="0.5" max="1.5" step="0.01" value="1" data-lavish-action>
+      <label for="clip-eps">Clip range $\varepsilon$: <output id="clip-eps-o">0.20</output></label>
+      <input id="clip-eps" type="range" min="0.05" max="0.4" step="0.01" value="0.2" data-lavish-action>
+      <div class="dg-scroll"><svg class="dg" id="clip-svg" viewBox="0 0 560 230" style="min-width:420px" role="img" aria-label="PPO objective against the policy ratio for the chosen advantage sign, with the trust region shaded and the current ratio marked."></svg></div>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Unclipped $\rho_t A_t$</dt><dd><output id="clip-u"></output></dd>
+        <dt>Clipped term</dt><dd><output id="clip-c"></output></dd>
+        <dt>Objective (the min)</dt><dd><output id="clip-j"></output></dd>
+        <dt>Gradient</dt><dd><output id="clip-g"></output></dd>
+      </div>
+    </div>
+    <p style="margin-top:var(--s3)">The clip is one-sided for each advantage sign: it never blocks a correction in the harmful direction. <a class="chip" href="#s53" title="Slides lec3-chap6-p1 § Clipping summary (L1071)">53</a> Written as a loss with a minus sign, the <code>min</code> becomes <code>torch.max</code>, which picks the more pessimistic gradient. <a class="chip" href="#s54" title="Ch. 6 Reinforcement Learning § Example: PPO (L1333)">54</a> <a class="chip" href="#s55" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:11:53">55</a> Lambert calls this "a common interview question". <a class="chip" href="#s56" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:21:20">56</a></p>
+
+    <h3>The critic, and GAE</h3>
+    <p>PPO trains a value function, another copy of the model, to predict the value at every token. It is a learned baseline, so PPO has two losses. <a class="chip" href="#s7" title="Ch. 6 Reinforcement Learning § Value Functions and PPO (L493-L502)">7</a> With one reward model score at the end, the KL penalty gives every token a reward, and GAE carries the final score back through them: <a class="chip" href="#s57" title="Slides lec3-chap6-p1 § How PPO-RLHF gets token-level credit (L1097-L1103)">57</a> <a class="chip" href="#s58" title="Slides lec4-chap6-p2 § From scalar reward to per-token returns (L365-L371)">58</a></p>
+    <div class="fig" style="overflow-x:auto">$$\begin{gathered} \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t) \\[6pt] \hat{A}_t^{\text{GAE}(\gamma,\lambda)} = \sum_{l=0}^{\infty} (\gamma\lambda)^l \, \delta_{t+l} \end{gathered}$$</div>
+    <p>$\lambda = 0$ is one-step TD and $\lambda = 1$ is the full return. 0.95 is the common default for language models. <a class="chip" href="#s59" title="Ch. 6 Reinforcement Learning § Generalized Advantage Estimation (GAE) (L1448)">59</a> <a class="chip" href="#s60" title="Ch. 6 Reinforcement Learning § Generalized Advantage Estimation (GAE) (L1466-L1477)">60</a> The ranking assumes an accurate critic. <a class="chip" href="#s61" title="Slides lec3-chap6-p1 § GAE: Bias-variance tradeoff (L1162-L1165)">61</a> In language models $\gamma$ is 1 and $\lambda$ is not. <a class="chip" href="#s62" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:47:33">62</a> Lambert admits GAE "takes me a while to still grok". <a class="chip" href="#s63" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:47:03">63</a> In Q&amp;A 1 he says it is still the best way to get value estimates, which he finds surprising. <a class="chip" href="#s64" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:08:44">64</a> The chapter calls it the canonical implementation. <a class="chip" href="#s65" title="Ch. 6 Reinforcement Learning § Value Functions and PPO (L500)">65</a></p>
+    <ul>
+      <li><strong>Four models in memory.</strong> Policy, value, reference and reward model. <a class="chip" href="#s66" title="Slides lec3-chap6-p1 § PPO: Four models in memory (L1199-L1208)">66</a> For a 7B model that is about 56 GB of weights before optimizer state. <a class="chip" href="#s67" title="Slides lec4-chap6-p2 § The four models in memory (L649)">67</a></li>
+      <li><strong>The critic is hard to start.</strong> Value initialization is "very hard" with language models. <a class="chip" href="#s68" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:27:31">68</a> InstructGPT initializes it from the reward model. <a class="chip" href="#s69" title="Ch. 6 Reinforcement Learning § Implementation (L768)">69</a> Tülu 3 also ran a "value model warm-up" before updating the policy. <a class="chip" href="#s70" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:28:32">70</a></li>
+      <li><strong>Two regularizers.</strong> The clip limits each batch's step, and the KL penalty in the reward limits total drift. <a class="chip" href="#s71" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:48:05">71</a> With a KL anchor already present, the chapter says the PPO-versus-REINFORCE difference matters far less than when training agents from scratch. <a class="chip" href="#s72" title="Ch. 6 Reinforcement Learning § Double Regularization (L1525)">72</a></li>
+    </ul>
+  </section>
+
+  <section id="grpo">
+    <h2>GRPO and newer variants</h2>
+    <p class="tag">In Lecture 3: <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3015s">50:15</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3080s">51:20</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3204s">53:24</a> · <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3299s">54:59</a></p>
+    <p>GRPO keeps PPO's clipped loss but drops the value function. Instead it normalizes each reward within the group of completions to the same prompt. This avoids learning a critic from a language model backbone, where best practice is not established, and saves a model copy. <a class="chip" href="#s9" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L561-L565)">9</a> It is usually run with many samples per prompt, because the advantage is entirely relative to the other completions. <a class="chip" href="#s73" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L594)">73</a></p>
+    <ul>
+      <li><strong>The KL moves into the loss.</strong> PPO-style RLHF subtracts the KL from the reward. GRPO adds $\beta\,\mathcal{D}_\text{KL}$ to the loss. <a class="chip" href="#s74" title="Ch. 6 Reinforcement Learning § Example: GRPO (L1355-L1357)">74</a> Lambert's reason: if you already broadcast one advantage to every token, put the per-token KL straight into the loss. <a class="chip" href="#s75" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:35:52">75</a> <a class="chip" href="#s76" title="Slides lec4-chap6-p2 § KL penalty placement (L707)">76</a></li>
+      <li><strong>The standard deviation has a bias.</strong> It boosts prompts where nearly all answers agree. Dr. GRPO removes it, which costs signal on the hardest prompts, where only a few samples succeed. <a class="chip" href="#s77" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L600-L603)">77</a></li>
+      <li><strong>GSPO: one ratio per sequence.</strong> Token ratios outside the clip range get zero gradient, so rare but important tokens can be dropped. GSPO uses one length-normalized ratio per response. <a class="chip" href="#s78" title="Ch. 6 Reinforcement Learning § Group Sequence Policy Optimization (GSPO) (L649-L657)">78</a> <a class="chip" href="#s79" title="Ch. 6 Reinforcement Learning § Group Sequence Policy Optimization (GSPO) (L682)">79</a> In mixture-of-experts models, expert routing makes some token probabilities swing widely. <a class="chip" href="#s80" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:53:55">80</a></li>
+      <li><strong>CISPO: clip the weight, not the objective.</strong> A stop-gradient on the clipped ratio means every token still gets a gradient. It trades bias for lower variance. <a class="chip" href="#s81" title="Ch. 6 Reinforcement Learning § Clipped Importance Sampling Policy Optimization (CISPO) (L699-L700)">81</a> Lecture 4 cites ScaleRL finding it very useful. <a class="chip" href="#s82" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:37:54">82</a></li>
+    </ul>
+    <p>The lecture's short version: GSPO modifies GRPO's importance sampling, and CISPO modifies REINFORCE's. <a class="chip" href="#s83" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:55:32">83</a> Both came from labs training very large MoE models and may matter less in small academic runs. <a class="chip" href="#s84" title="Ch. 6 Reinforcement Learning § Clipped Importance Sampling Policy Optimization (CISPO) (L702-L704)">84</a> Lambert calls RL naming "so horrible", since a minor change can earn a new algorithm name. <a class="chip" href="#s85" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:07:44">85</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Method</th><th>Importance ratio</th><th>Clipping</th><th>Advantage</th></tr></thead>
+      <tbody>
+        <tr><td>REINFORCE</td><td>None</td><td>None</td><td>Monte Carlo baseline</td></tr>
+        <tr><td>RLOO</td><td>None</td><td>None</td><td>Leave-one-out</td></tr>
+        <tr><td>PPO</td><td>Token</td><td>Objective, both sides</td><td>Learned value function</td></tr>
+        <tr><td>GRPO</td><td>Token</td><td>Objective, both sides</td><td>Group-relative</td></tr>
+        <tr><td>GSPO</td><td>Sequence</td><td>Objective, both sides</td><td>Group-relative</td></tr>
+        <tr><td>CISPO</td><td>Token</td><td>Weights, stop-gradient</td><td>Group-relative</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">Table from the chapter. <a class="chip" href="#s86" title="Ch. 6 Reinforcement Learning § Comparing Algorithms (L727-L735)">86</a> All are on-policy in derivation and slightly off-policy in practice, and only PPO needs a value function. <a class="chip" href="#s87" title="Ch. 6 Reinforcement Learning § Comparing Algorithms (L722-L725)">87</a></p>
+  </section>
+
+  <section id="agg">
+    <h2>Averaging the loss</h2>
+    <p class="tag">In Lecture 4: <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2672s">44:32</a> · <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2767s">46:07</a> · <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2923s">48:43</a> · <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=3046s">50:46</a></p>
+    <p>Rewards are per sequence, but the loss is per token, <a class="chip" href="#s88" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:06:42">88</a> so you must choose how to average token losses into one number. The chapter gives three strategies: per sequence (standard GRPO), per token (DAPO) and fixed length (Dr. GRPO). <a class="chip" href="#s89" title="Ch. 6 Reinforcement Learning § Loss Aggregation Tradeoffs (L798-L822)">89</a> Per-sequence feels natural because you care about outcomes, but it carries a length bias. <a class="chip" href="#s11" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L840-L841)">11</a></p>
+    <div class="fig" style="overflow-x:auto">$$\begin{gathered} L_{\text{seq}} = \frac{1}{B}\sum_{i} \frac{1}{|a_i|}\sum_{t} \ell_{i,t} \\[6pt] L_{\text{tok}} = \frac{\sum_{i}\sum_{t} \ell_{i,t}}{\sum_i |a_i|} \\[6pt] L_{\text{fix}} = \frac{1}{B}\sum_{i} \frac{1}{L_{\max}}\sum_{t} \ell_{i,t} \end{gathered}$$</div>
+    <h3>Try the aggregation</h3>
+    <p>The chapter's example uses a 5-token and a 10-token sequence. <a class="chip" href="#s90" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L845-L853)">90</a> Change the lengths and see how much each token counts.</p>
+    <div class="wid" id="agg-demo">
+      <p class="label" style="margin:0">Who gets the gradient: two sequences, one batch</p>
+      <label for="agg-a">Short sequence: <output id="agg-a-o">5</output> tokens</label>
+      <input id="agg-a" type="range" min="1" max="30" step="1" value="5" data-lavish-action>
+      <label for="agg-b">Long sequence: <output id="agg-b-o">10</output> tokens</label>
+      <input id="agg-b" type="range" min="1" max="30" step="1" value="10" data-lavish-action>
+      <label for="agg-l">$L_{\max}$ for fixed-length: <output id="agg-l-o">10</output></label>
+      <input id="agg-l" type="range" min="1" max="30" step="1" value="10" data-lavish-action>
+      <div class="tablewrap"><table class="kt agg-out" style="min-width:460px">
+        <thead><tr><th>Strategy</th><th>Batch loss</th><th>Weight per short token</th><th>Weight per long token</th><th>Short : long</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="sub" style="margin:var(--s2) 0 0">Per-token losses follow the chapter's example: 1 for every token except a 10 on the last. The weights are exact derivatives $\partial L / \partial \ell_{i,t}$ with batch size $B = 2$.</p>
+    </div>
+    <ul style="margin-top:var(--s3)">
+      <li><strong>Per sequence:</strong> tokens in short answers get bigger gradients, <a class="chip" href="#s91" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)">91</a> so the model may favour the short answer when two score the same. <a class="chip" href="#s92" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:48:43">92</a> <a class="chip" href="#s93" title="Slides lec4-chap6-p2 § Per-sequence normalization: Effect (L1006)">93</a></li>
+      <li><strong>Per token:</strong> every token counts the same, so long answers carry more total weight, which can push toward longer completions. <a class="chip" href="#s94" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:49:13">94</a> <a class="chip" href="#s95" title="Slides lec4-chap6-p2 § Per-token normalization: Effect (L1029)">95</a></li>
+      <li><strong>Fixed length:</strong> per-token weights are equal, but scaled by $L_{\max}$ rather than the batch's token count. <a class="chip" href="#s91" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)">91</a></li>
+    </ul>
+    <p>The chapter's verdict is that the best choice depends on the setup. <a class="chip" href="#s91" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)">91</a> Lambert's own view has moved over time; see <a href="#differ">where the sources differ</a>.</p>
+    <h3>Bandit or MDP</h3>
+    <p>The token-level (MDP) view gives each token its own advantage from a value function, as PPO does. The sequence-level (bandit) view gives the whole completion one advantage and broadcasts it, as RLOO and GRPO do. Both KL conventions exist in practice. <a class="chip" href="#s12" title="Ch. 6 Reinforcement Learning § Related: MDP vs. Bandit Framing (L944-L949)">12</a> <a class="chip" href="#s96" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L319-L323)">96</a> That is also why $\gamma = 1$: the reward scores the whole response, so discounting early tokens has no justification. That could change for agentic, multi-step RL. <a class="chip" href="#s97" title="Ch. 6 Reinforcement Learning § Related: MDP vs. Bandit Framing (L971-L975)">97</a></p>
+  </section>
+
+  <section id="infra">
+    <h2>Off-policy in practice</h2>
+    <p class="tag">In Lecture 4: <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2304s">38:24</a> · <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2397s">39:57</a> · <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2428s">40:28</a></p>
+    <p>The derivation needs exactly on-policy data, generate then update, <a class="chip" href="#s98" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:38:55">98</a> but that is slow, so real results run slightly outside the theory. <a class="chip" href="#s99" title="Ch. 6 Reinforcement Learning § Asynchronous RL Systems (L980-L982)">99</a> Systems split the GPUs into "learners" that take RL steps and "actors" that generate, <a class="chip" href="#s100" title="Ch. 6 Reinforcement Learning § Asynchronous RL Systems (L989)">100</a> with the generator one or more steps behind. The slides say slight staleness is usually fine. <a class="chip" href="#s101" title="Slides lec4-chap6-p2 § On-policy vs. off-policy (L850-L852)">101</a> For reasoning models, generating 10K to 100K tokens per answer makes rollouts the bottleneck. <a class="chip" href="#s102" title="Ch. 6 Reinforcement Learning § Asynchronous RL Systems (L996)">102</a> Infrastructure is the part Lambert says he knows best. <a class="chip" href="#s103" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:38:24">103</a></p>
+    <ul>
+      <li><strong>Truncated importance sampling (TIS).</strong> Even with identical weights, the inference engine and the trainer give slightly different token probabilities. TIS reweights by their ratio, capped at $C$. <a class="chip" href="#s104" title="Ch. 6 Reinforcement Learning § Truncated Importance Sampling (L1010-L1015)">104</a> Major open frameworks use it, with Open Instruct setting $C = 2$. <a class="chip" href="#s105" title="Ch. 6 Reinforcement Learning § PPO/GRPO with TIS (Multiple Gradient Steps) (L1064)">105</a></li>
+      <li><strong>Score centering.</strong> A newer fix for a bias that remains under that mismatch, used on top of TIS. <a class="chip" href="#s106" title="Ch. 6 Reinforcement Learning § Score Centering (L1069-L1070)">106</a> The removed "drift" term moves the weights the same way whichever token was sampled. The chapter says labs have "quietly" reported using it. <a class="chip" href="#s107" title="Ch. 6 Reinforcement Learning § Score Centering (L1168-L1171)">107</a> The exact version needs the sampler's full distribution at every token, so it is approximated with the top $k$. <a class="chip" href="#s108" title="Ch. 6 Reinforcement Learning § Score Centering (L1192)">108</a></li>
+    </ul>
+    <p>The chapter says much recent RL algorithm work has been about this training and inference mismatch on large MoE models. <a class="chip" href="#s13" title="Ch. 6 Reinforcement Learning § Score Centering (L1238)">13</a></p>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>The repository trains <code>Qwen/Qwen3-1.7B</code> on a word-reversal task from reasoning-gym. Check first whether each prompt group has contrast, since all-right or all-wrong groups teach nothing. <a class="chip" href="#s109" title="Ch. 6 Reinforcement Learning § Suggested Experiments (L1550-L1560)">109</a> All ten algorithm configs have a validated reference run, GRPO included. <a class="chip" href="#s110" title="Code code/policy_gradients/README.md (L28-L37)">110</a> <strong>I did not run them.</strong> From <code>code/</code>:</p>
+    <pre><code>uv run python -m policy_gradients.train --config policy_gradients/configs/grpo.yaml</code></pre>
+    <p>The chapter suggests sweeping <code>num_rollouts</code> and <code>temperature</code> to see why RLVR recipes tune sampling before the optimizer. <a class="chip" href="#s111" title="Ch. 6 Reinforcement Learning § Suggested Experiments (L1576-L1578)">111</a> This is the GRPO loss: ratio from log-prob differences, clip, the minus sign and <code>min</code>, an optional KL added to the loss, then per-sequence averaging. <a class="chip" href="#s112" title="Code code/policy_gradients/loss.py (L115-L134)">112</a></p>
+    <div id="code-excerpt"><pre><code>class GRPOLoss(nn.Module):
+    """Group Relative Policy Optimization loss (Shao et al., 2024).
+
+    GRPO uses group-level advantage normalization and clipped ratio updates.
+    See Chapter 6 of RLHF Book for mathematical derivation.
+    """
+
+    def __init__(
+        self, clip_eps_lo: float, clip_eps_hi: float, beta: float, kl_estimator: str, **kwargs
+    ) -&gt; None:
+        super().__init__()
+        self.clip_eps_lo = clip_eps_lo
+        self.clip_eps_hi = clip_eps_hi
+        self.beta = beta
+        self.kl_estimator = kl_estimator
+
+    def forward(self, log_probs: torch.Tensor, experience: Experience, **kwargs) -&gt; torch.Tensor:
+        # Policy loss with clipping
+        ratio = (log_probs - experience.log_probs_old).exp()
+        unclipped_term = ratio * experience.advantages
+        clipped_term = (
+            ratio.clamp(1 - self.clip_eps_lo, 1 + self.clip_eps_hi) * experience.advantages
+        )
+        policy_loss = -torch.min(unclipped_term, clipped_term)
+
+        # Optional KL penalty
+        if self.beta:
+            kl_loss = get_approx_kl(
+                self.kl_estimator, log_probs, experience.log_probs_ref, experience.action_mask
+            )
+        else:
+            kl_loss = torch.tensor(0.0, device=log_probs.device, dtype=torch.float32)
+
+        loss = policy_loss + self.beta * kl_loss
+        loss = masked_mean(loss, mask=experience.action_mask, dim=-1).mean(dim=0)
+        return loss
+</code></pre></div>
+    <p style="margin-top:var(--s3)">Its advantages are group z-scores. <a class="chip" href="#s113" title="Code code/policy_gradients/utils.py (L185-L187)">113</a> The DAPO loss in the same file divides by the batch's token count instead, the per-token strategy. <a class="chip" href="#s114" title="Code code/policy_gradients/loss.py (L356-L359)">114</a></p>
+    <h3>What to watch</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>Signal</th><th>Healthy</th><th>Unhealthy</th></tr></thead>
+      <tbody>
+        <tr><td>Clip fraction</td><td>5 to 30%</td><td>0%, or over 50% <a class="chip" href="#s115" title="Slides lec4-chap6-p2 § What to monitor during training (L1068-L1075)">115</a></td></tr>
+        <tr><td>KL to reference</td><td>Rising slowly</td><td>Exploding</td></tr>
+        <tr><td>Value loss (PPO)</td><td>Falling, then stable</td><td>Not falling</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">Slide ranges are illustrative and vary by model, task and algorithm. <a class="chip" href="#s115" title="Slides lec4-chap6-p2 § What to monitor during training (L1068-L1075)">115</a> Clip fraction is only a proxy, since not every clipped sample has zero gradient. <a class="chip" href="#s116" title="Ch. 6 Reinforcement Learning § Double Regularization (L1528-L1529)">116</a></p>
+    <p>The hardest bugs are silent ones: wrong masking, stale caches, shape mismatches. <a class="chip" href="#s117" title="Slides lec4-chap6-p2 § From math to code (L128)">117</a> Examples are training on prompt tokens and reward indexing off by one. <a class="chip" href="#s118" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:31:08">118</a> Score only at the EOS token and penalize truncation. <a class="chip" href="#s119" title="Ch. 6 Reinforcement Learning § Implementation (L762-L763)">119</a> Change one hyperparameter at a time, since tuning them all at once "is literally hell". <a class="chip" href="#s120" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:29:03">120</a> Bigger batches are the simplest variance reduction, <a class="chip" href="#s121" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:29:35">121</a> and the slides call them one of the cheapest ways to stabilize training. <a class="chip" href="#s122" title="Slides lec4-chap6-p2 § Why batch size matters more in RL (L604)">122</a> Advantages are normally whitened. <a class="chip" href="#s123" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:26:29">123</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter and slides are dated by the pinned commit, November 2026. The first two are settled.</p>
+
+    <div class="callout"><p class="label">Settled by Lambert</p><p><strong>Objective or loss on the slides?</strong></p><ul>
+      <li><strong>Lecture 4 (Apr 2026):</strong> while presenting, he notes one recap slide mixes gradients and objectives, <a class="chip" href="#s124" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:03:08">124</a> and another has "a extra minus sign". <a class="chip" href="#s125" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:10:55">125</a></li>
+      <li><strong>Slides at this pin:</strong> both now say losses, minimized, with the minus signs explained. <a class="chip" href="#s126" title="Slides lec4-chap6-p2 § Recall: The policy gradient algorithms (L180)">126</a> <a class="chip" href="#s127" title="Slides lec4-chap6-p2 § Recall: Proximal policy optimization (PPO) (L311-L313)">127</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Settled by Lambert</p><p><strong>Is the reward placed on the last token, or broadcast?</strong></p><ul>
+      <li><strong>Lecture 4, <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=874s">14:34</a>:</strong> he says what he is saying differs from the slide, and he will check. <a class="chip" href="#s128" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:14:34">128</a></li>
+      <li><strong>Same lecture, <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=935s">15:35</a>:</strong> the slide is right for PPO-style RLHF. Broadcasting applies to GRPO without a value model. <a class="chip" href="#s129" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:15:35">129</a> This matches the slide and the chapter. <a class="chip" href="#s58" title="Slides lec4-chap6-p2 § From scalar reward to per-token returns (L365-L371)">58</a> <a class="chip" href="#s96" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L319-L323)">96</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Which loss averaging is best?</strong></p><ul>
+      <li><strong>GRPO talk (Mar 2025):</strong> "we don't actually know which one is best". <a class="chip" href="#s130" title="GRPO&#x27;s new variants and implementation secrets @ 00:08:57">130</a> He doubts it has a huge impact and calls it "still an open question". <a class="chip" href="#s131" title="GRPO&#x27;s new variants and implementation secrets @ 00:14:08">131</a></li>
+      <li><strong>Lecture 4 (Apr 2026):</strong> fixed length and per token differ by "a linear factor", absorbed into the learning rate. <a class="chip" href="#s132" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:50:46">132</a></li>
+      <li><strong>Q&amp;A 1 (Jun 2026):</strong> "the token level normalization ended up winning out" for reasoning training. <a class="chip" href="#s133" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:07:12">133</a></li>
+      <li><strong>Chapter at this pin:</strong> "the best strategy depends on the specific training setup". <a class="chip" href="#s91" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)">91</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Should GRPO divide by the standard deviation?</strong></p><ul>
+      <li><strong>GRPO talk (Mar 2025):</strong> high-variance prompts are the best signal, so removing the term, as Dr. GRPO does, is "a really brilliant idea". <a class="chip" href="#s134" title="GRPO&#x27;s new variants and implementation secrets @ 00:16:13">134</a></li>
+      <li><strong>Chapter at this pin:</strong> removing it down-weights prompts with only a few correct answers, which "can be exactly the hardest cases". <a class="chip" href="#s77" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L600-L603)">77</a></li>
+      <li><span class="badge info">agent note</span> Both describe the same effect, judged differently. The group calculator shows it: "1 of 4 correct" gets a larger GRPO advantage than "2 of 4 correct".</li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How many gradient steps per batch is typical?</strong></p><ul>
+      <li><strong>Chapter:</strong> "1-4" is common practice, <a class="chip" href="#s48" title="Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L385)">48</a> "Many typical values for this are from 2-4 or higher", <a class="chip" href="#s135" title="Ch. 6 Reinforcement Learning § PPO/GRPO Simplification with One Gradient Step per Sample (No Clipping) (L1341-L1348)">135</a> yet with language models PPO and GRPO are "often run with only one gradient step per batch". DAPO uses 16, and Tülu 3 used 4 except 1 at 405B. <a class="chip" href="#s136" title="Ch. 6 Reinforcement Learning § Double Regularization (L1531-L1532)">136</a></li>
+      <li><strong>Lecture 3 slides:</strong> "Typical: K = 2–4". <a class="chip" href="#s137" title="Slides lec3-chap6-p1 § PPO training loop (conceptual) (L1193)">137</a></li>
+      <li><strong>Lecture 4 slides:</strong> 2 to 4, and past about 6 the policy is too far off-policy, <a class="chip" href="#s138" title="Slides lec4-chap6-p2 § Multiple epochs and minibatches (L486-L488)">138</a> but the hyperparameter table says 2 to 6. <a class="chip" href="#s139" title="Slides lec4-chap6-p2 § PPO hyperparameters (L580-L588)">139</a></li>
+      <li><span class="badge info">agent note</span> Part of this is counting. An "epoch" over a batch can contain several optimizer steps when the batch is split into minibatches, which the slides say lets clipping activate even with one epoch. <a class="chip" href="#s140" title="Slides lec4-chap6-p2 § Multiple epochs and minibatches (L476)">140</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is KL leaving RLVR for good?</strong></p><ul>
+      <li><strong>Chapter and slides:</strong> KL penalties have decreased with RLVR, and many reasoning setups turn them off. <a class="chip" href="#s141" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L314-L316)">141</a> The trend is "as reward signals become more reliable, the need for KL regularization decreases". <a class="chip" href="#s142" title="Slides lec3-chap6-p1 § KL in RLHF vs. RLVR (L734-L736)">142</a></li>
+      <li><strong>Lecture 3 (Apr 2026):</strong> this "might evolve over time and become a bit outdated", because very long runs may need the KL penalty again. <a class="chip" href="#s143" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:26:55">143</a></li>
+      <li>More on this in the earlier question page, <a href="s01_q-rlvr-kl-penalty.html">why RLVR often drops the KL penalty</a>.</li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>"No clipping" can be a setup artifact.</strong> With one gradient step and no minibatches, $\rho = 1$ throughout and clipping never activates. <a class="chip" href="#s138" title="Slides lec4-chap6-p2 § Multiple epochs and minibatches (L486-L488)">138</a> <a class="chip" href="#s144" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:21:51">144</a> Lambert says papers get confused by this. <a class="chip" href="#s145" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:22:21">145</a></li>
+      <li><strong>Value clipping has no clear origin.</strong> Lambert could not trace whether the PPO paper prescribed it; it became default over time. <a class="chip" href="#s146" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:25:27">146</a> It is kept "because it works well in practice". <a class="chip" href="#s147" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:12:25">147</a></li>
+      <li><strong>Length bias used not to matter.</strong> In March 2025 Lambert said older RLHF did not care about response length, so the older implementations were not wrong. <a class="chip" href="#s148" title="GRPO&#x27;s new variants and implementation secrets @ 00:21:26">148</a></li>
+      <li><strong>Captions mishear.</strong> "side" is $\Psi$, <a class="chip" href="#s14" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:10:23">14</a> "Sis Bot" and "SISPO" are CISPO, <a class="chip" href="#s149" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:02:37">149</a> <a class="chip" href="#s83" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:55:32">83</a> "ARLU" is RLOO, <a class="chip" href="#s35" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:33:39">35</a> and "203" is Tülu 3. <a class="chip" href="#s70" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:28:32">70</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Why can you subtract a baseline from the reward without biasing the gradient?</summary>
+      <p>Because the baseline depends only on the state, and the expected score $\nabla \log \pi$ over actions is zero. The term it adds vanishes in expectation. <a class="chip" href="#s25" title="Slides lec3-chap6-p1 § Baselines keep the estimator unbiased (L604-L615)">25</a> <a class="chip" href="#s28" title="Ch. 6 Reinforcement Learning § Vanilla Policy Gradient (L231-L237)">28</a></p>
+    </details>
+    <details><summary>All eight completions to a prompt get reward 1. What does GRPO learn from that prompt?</summary>
+      <p>Nothing: every advantage is zero. <a class="chip" href="#s39" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:51:20">39</a> Without an epsilon in the denominator you also get NaNs. <a class="chip" href="#s40" title="Slides lec4-chap6-p2 § PPO debugging checklist (L628-L634)">40</a></p>
+    </details>
+    <details><summary>PPO's objective takes a min. Why does the code take <code>torch.max</code>?</summary>
+      <p>The loss is the negated objective, so the max of the negatives is the more pessimistic choice, the same as the min of the objective. <a class="chip" href="#s54" title="Ch. 6 Reinforcement Learning § Example: PPO (L1333)">54</a> <a class="chip" href="#s55" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:11:53">55</a></p>
+    </details>
+    <details><summary>Your run takes one gradient step per batch, with no minibatches. The clip fraction is 0. Is something broken?</summary>
+      <p>No. $\pi_\theta = \pi_{\theta_\text{old}}$, so $\rho = 1$ and clipping can never activate. <a class="chip" href="#s138" title="Slides lec4-chap6-p2 § Multiple epochs and minibatches (L486-L488)">138</a> The update reduces to plain policy gradient. <a class="chip" href="#s135" title="Ch. 6 Reinforcement Learning § PPO/GRPO Simplification with One Gradient Step per Sample (No Clipping) (L1341-L1348)">135</a></p>
+    </details>
+    <details><summary>Lambert's exercise: in GRPO's loss, is the KL term $+\beta\,\mathcal{D}_\text{KL}$ or $-\beta\,\mathcal{D}_\text{KL}$?</summary>
+      <p>Plus. The objective subtracts the KL, and the loss is the negated objective, so the KL is added. That matches the chapter's $L = L_{\text{policy gradient}} + \beta\,\mathcal{D}_\text{KL}$, <a class="chip" href="#s74" title="Ch. 6 Reinforcement Learning § Example: GRPO (L1355-L1357)">74</a> the minus sign convention, <a class="chip" href="#s19" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:08:49">19</a> and Lambert's own guess. <a class="chip" href="#s150" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:34:16">150</a></p>
+    </details>
+    <details><summary>A 5-token and a 10-token answer get the same advantage. Under per-sequence averaging, whose tokens move more?</summary>
+      <p>The short answer's. Each sequence counts once, so its weight is spread over fewer tokens. <a class="chip" href="#s91" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)">91</a> <a class="chip" href="#s92" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:48:43">92</a></p>
+    </details>
+    <details><summary>Which model copies does PPO-RLHF hold that GRPO does not, and what replaces it?</summary>
+      <p>The value function. GRPO uses the group's reward statistics as the baseline instead. <a class="chip" href="#s66" title="Slides lec3-chap6-p1 § PPO: Four models in memory (L1199-L1208)">66</a> <a class="chip" href="#s9" title="Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L561-L565)">9</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The slide's aggregation table mixes scales.</strong> Not Lambert: the Lecture 4 table gives 0.20 and 0.10 per token for per-sequence, 0.067 for per-token, and 0.10 for fixed-length. <a class="chip" href="#s151" title="Slides lec4-chap6-p2 § Comparing aggregation strategies (L1056-L1060)">151</a> The per-token row divides by all 15 tokens, but the other two rows leave out the $\frac{1}{B}$ for the batch of 2. The exact derivatives are 0.10 and 0.05, 0.067 and 0.067, and 0.05 and 0.05, which is what the calculator above shows. The ratios within each row, and so the slide's conclusion, still hold. The chapter's own code example includes the $\frac{1}{B}$. <a class="chip" href="#s91" title="Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)">91</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>"Absorbed into the learning rate" holds per batch.</strong> Not Lambert: per-token divides by the batch's token count, and fixed length by $B \cdot L_{\max}$. Within a batch they differ by one constant, as Lecture 4 says. <a class="chip" href="#s132" title="Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:50:46">132</a> Across batches that constant changes with the total length, so the learning rate absorbs it only on average.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The default GRPO run can clip in one pass.</strong> Not Lambert: the config collects 4 prompts × 8 rollouts and trains in microbatches of 2, with an optimizer step every 4. <a class="chip" href="#s152" title="Code code/policy_gradients/configs/grpo.yaml (L10-L25)">152</a> The buffer holds one completion per item, <a class="chip" href="#s153" title="Code code/policy_gradients/rollout.py (L91-L92)">153</a> <a class="chip" href="#s154" title="Code code/policy_gradients/buffer.py (L106-L109)">154</a> and the loop makes one pass with a step every <code>batch_acc</code> microbatches. <a class="chip" href="#s155" title="Code code/policy_gradients/train.py (L101-L131)">155</a> By my count that is 4 optimizer steps per batch of rollouts, so $\rho$ can leave 1 after the first. This is the minibatch case in the slides. <a class="chip" href="#s140" title="Slides lec4-chap6-p2 § Multiple epochs and minibatches (L476)">140</a> The same config sets <code>beta: 0.0</code>, so no reference model is loaded. <a class="chip" href="#s156" title="Code code/policy_gradients/utils.py (L118-L119)">156</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Two standard deviations.</strong> Not Lambert: the Lecture 4 slide writes the group standard deviation with $\frac{1}{G}$, <a class="chip" href="#s157" title="Slides lec4-chap6-p2 § Recall: Group relative policy optimization (GRPO) (L663-L665)">157</a> while the book's code calls PyTorch's <code>.std()</code>, <a class="chip" href="#s113" title="Code code/policy_gradients/utils.py (L185-L187)">113</a> which by default divides by $G-1$. For $G = 4$ that changes GRPO advantages by a factor of about 1.15. The calculator uses the code's version.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the full GAE derivation and the score-centering math</li>
+      <li>the importance-sampling methods table</li>
+      <li>the further-reading algorithms: SAPO, VAPO, MDPO and others</li>
+      <li>the log-prob code walkthrough</li>
+    </ul>
+    <p>Lambert defers regularization and over-optimization to Chapters 14 and 15. I describe papers only through Lambert. The slides at this pin may be newer than the April 2026 recordings.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 7 (Reasoning and Inference-Time Scaling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 7&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 7</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 6 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 6&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 6</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L24-L26">
+      <blockquote style="margin:0">In the RLHF process, the reinforcement learning algorithm slowly updates the model's weights with respect to feedback from a reward model. … This chapter explains the mathematics and trade-offs across various algorithms used to learn from the signal the reward model gives to on-policy data.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L24-L26">Ch. 6 Reinforcement Learning (L24-L26)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#reinforcement-learning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L35-L36">
+      <blockquote style="margin:0">At a machine learning level, this section is the subject with the highest complexity in the RLHF process. However, as with most modern AI models, the largest determining factor in its success is the data provided as inputs to the process.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L35-L36">Ch. 6 Reinforcement Learning § The Role of Reinforcement Learning in RLHF (L35-L36)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#the-role-of-reinforcement-learning-in-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="yt:i-AIMpZHgeg@00:00:00-00:01:01">
+      <blockquote style="margin:0">this RL chapter is the kind of crown jewel of the book. It's much longer than any other chapter and something that I'm prouder of than any of them.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=0s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L59-L70">
+      <blockquote style="margin:0">$$\Delta \theta \propto \Psi_t \, \nabla_\theta \log \pi_\theta(a_t \mid s_t)$$ … $\Psi_t &gt; 0$ updates parameters to make $a_t$ more likely, $\Psi_t &lt; 0$ updates them to make it less likely.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L59-L70">Ch. 6 Reinforcement Learning § Policy Gradient Algorithms (L59-L70)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#policy-gradient-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L45-L48">
+      <blockquote style="margin:0">At its simplest, the RL stage of RLHF requires two models: a policy (the model being trained) and a reward model that scores its outputs … The most complex algorithm covered here, PPO, adds a fourth model -- a learned value function … The algorithms in this chapter differ mainly in how they estimate a quantity called *advantages* -- a measure of how good the current action (completion) from the model is relative to average -- and how they constrain policy updates so the optimization is numerically stable.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L45-L48">Ch. 6 Reinforcement Learning § The Role of Reinforcement Learning in RLHF (L45-L48)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#the-role-of-reinforcement-learning-in-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1340">
+      <blockquote style="margin:0">In most RLHF setups, data quality and reward signal quality dominate; algorithm choice mostly determines stability, efficiency, and engineering burden.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1340">Slides lec3-chap6-p1 § Lecture summary (L1340)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L493-L502">
+      <blockquote style="margin:0">The value function within PPO is an additional copy of the model that is used to predict the value per token. … PPO has two losses -- one to learn the value function and another to use that value function to update the policy.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L493-L502">Ch. 6 Reinforcement Learning § Value Functions and PPO (L493-L502)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#value-functions-and-ppo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L948-L950">
+      <blockquote style="margin:0">vanilla policy gradient is sensitive to step size. … gets TRPO-like stability with a simple clipped objective — and because the clipping keeps updates conservative, you can safely take multiple gradient steps per batch of rollouts, improving sample efficiency.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L948-L950">Slides lec3-chap6-p1 § If REINFORCE is so simple, why PPO? (L948-L950)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L561-L565">
+      <blockquote style="margin:0">GRPO can be viewed as a PPO-inspired algorithm with a very similar surrogate loss, but it avoids learning a value function … Avoiding the challenge of learning a value function from an LM backbone, where research hasn't established best practices. … Saves memory by not needing to keep the extra set of model weights in memory</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L561-L565">Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L561-L565)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#group-relative-policy-optimization-grpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="yt:K_Sj_-1BUMM@00:50:15-00:50:48">
+      <blockquote style="margin:0">It has quickly become the de facto algorithm for any RL and language models as RLVR VR has been popular.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3015s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:50:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L840-L841">
+      <blockquote style="margin:0">Intuitively, per-sequence normalization (Strategy 1) seems best since we care about *outcomes*, not individual tokens. However, this introduces subtle biases based on sequence length</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L840-L841">Ch. 6 Reinforcement Learning § Why Does This Matter? (L840-L841)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#why-does-this-matter">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L944-L949">
+      <blockquote style="margin:0">the **bandit (sequence-level)** view treats the whole completion as a single action with one scalar reward $R$. … Note that many GRPO implementations use a bandit-style advantage *and* add a separate per-token KL term in the loss, while many PPO/RLOO implementations fold KL into the reward before computing advantages; both conventions exist in practice.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L944-L949">Ch. 6 Reinforcement Learning § Related: MDP vs. Bandit Framing (L944-L949)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#related-mdp-vs-bandit-framing">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1238">
+      <blockquote style="margin:0">Since the emergence of reasoning models and the great popularity of GRPO, much of the innovation in RL algorithms across industry and academia has been around stabilizing training-inference mismatch on large MoE models with long, agentic reasoning traces.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1238">Ch. 6 Reinforcement Learning § Score Centering (L1238)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#score-centering">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="yt:K_Sj_-1BUMM@00:10:23-00:10:55">
+      <blockquote style="margin:0">this side thing is a quantity of how good is it. So, we want to be able to figure out which actions are relevant, and if we want to make them more likely or less likely.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=623s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:10:23</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L143">
+      <blockquote style="margin:0">Notice that we can use the … log-derivative trick … in order to rewrite the gradient of the integral as an expectation:</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L143">Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L143)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#deriving-the-policy-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L171-L178">
+      <blockquote style="margin:0">(initial state distribution doesn't depend on $\theta$) … (environment transition dynamics don't depend on $\theta$) … only $\nabla_\theta \log \pi_\theta(a_t|s_t)$ survives</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L171-L178">Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L171-L178)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#deriving-the-policy-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L180-L190">
+      <blockquote style="margin:0">Reaching this equation is a crucial point in the implementation. … They end up looking like a sum of log-probabilities in the loss, and then we compute the gradients via autodiff. … seq_log_probs = (token_log_probs * completion_mask).sum(dim=-1) loss = -(seq_log_probs * advantages).mean()</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L180-L190">Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L180-L190)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#deriving-the-policy-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:K_Sj_-1BUMM@00:21:15-00:21:46">
+      <blockquote style="margin:0">that's why it looks like the gradient is literally just composed of the probabilities from the model because the packages like PyTorch compute all the gradients for you</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1275s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:21:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:i-AIMpZHgeg@00:08:49-00:09:21">
+      <blockquote style="margin:0">when you implement it in auto diff, we're using a loss, which we have to minimize. So, then this negative sign fits exactly with that.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=529s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:08:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L204-L213">
+      <blockquote style="margin:0">a taxonomy adopted from Schulman et al. 2015 … $A^{\pi}(s_t, a_t)$: advantage function, which yields the lowest possible theoretical variance if it can be computed accurately. … The *baseline* is a value used to reduce variance of policy updates</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L204-L213">Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L204-L213)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#deriving-the-policy-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L386-L392">
+      <blockquote style="margin:0">| | $\Psi_t$ | Description | Variance | Bias | … | 1. | $R(\tau) = \sum_{t=0}^{T} r_t$ | Total trajectory reward | Highest | None |</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L386-L392">Slides lec3-chap6-p1 § What $\Psi_t$ can be (L386-L392)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="yt:K_Sj_-1BUMM@00:14:01-00:14:33">
+      <blockquote style="margin:0">The bias and variance tradeoffs on this slide are these are a a bit oversimplified, cuz it depends on the execution of them</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=841s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:14:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L276-L288">
+      <blockquote style="margin:0">| State $s_t$ | Prompt + tokens generated so far … Two views of this MDP: **token-level** (each token is a separate action, used in PPO with GAE) vs. **sequence-level** (entire completion is one action, used in REINFORCE/GRPO).</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L276-L288">Slides lec3-chap6-p1 § Language models as episodic MDPs (L276-L288)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L111">
+      <blockquote style="margin:0">In practice, RLHF for language models sets $\gamma = 1$ (no discounting) because the unit of optimization is the collective completion, not individual tokens</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L111">Ch. 6 Reinforcement Learning § Policy Gradient Algorithms (L111)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#policy-gradient-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L604-L615">
+      <blockquote style="margin:0">The first term is the original estimator. The second vanishes: … The gradient of a normalized distribution sums to zero — so we're free to subtract **any function of state** as a baseline.</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L604-L615">Slides lec3-chap6-p1 § Baselines keep the estimator unbiased (L604-L615)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:K_Sj_-1BUMM@00:23:19-00:24:21">
+      <blockquote style="margin:0">because this baseline is only state dependent and not action dependent, it doesn't actually um ex- depend change the expectation of that gradient … It's just a variance reduction device.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1399s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:23:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L220-L222">
+      <blockquote style="margin:0">This final form is exactly the temporal difference (TD) residual (item 6 above)</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L220-L222">Ch. 6 Reinforcement Learning § Deriving the Policy Gradient (L220-L222)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#deriving-the-policy-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L231-L237">
+      <blockquote style="margin:0">A common problem with vanilla policy gradient algorithms is the high variance in gradient updates … The variance across return estimates is higher in domains with sparse rewards … Even these action-independent baselines can reduce variance without changing the expected gradient</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L231-L237">Ch. 6 Reinforcement Learning § Vanilla Policy Gradient (L231-L237)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#vanilla-policy-gradient">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:K_Sj_-1BUMM@00:05:12-00:05:44">
+      <blockquote style="margin:0">everything I say in this lecture in terms of the math of RL is applicable to both RLHF and RLVR with different tradeoffs.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=312s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:05:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:K_Sj_-1BUMM@00:03:08-00:04:11">
+      <blockquote style="margin:0">these RL optimizers we're using just work very well with language models. … we just found that the models just behaved a bit nicer across all domains after going through some RL.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=188s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:03:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="yt:K_Sj_-1BUMM@00:03:39-00:04:41">
+      <blockquote style="margin:0">The models, if you train them just on math, they they don't have catastrophic forgetting elsewhere when you're doing RL. … We don't necessarily know why.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=219s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:03:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L169-L175">
+      <blockquote style="margin:0">RL can \"fix\" rough edges on a model — making outputs more robust, better formatted, and more compatible with serving frameworks like vLLM … RL operates on a narrow prompt distribution and tends not to \"squash\" general capabilities</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L169-L175">Slides lec3-chap6-p1 § An under-documented benefit of RL (L169-L175)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L249-L256">
+      <blockquote style="margin:0">The name is an acronym for \"REward Increment = Nonnegative Factor X Offset Reinforcement X Characteristic Eligibility.\" … Nonnegative factor: This is the learning rate (step size) … Offset Reinforcement: This is a baseline $b$ … Characteristic Eligibility: This attributes the scalar reward signal to the parameters that produced the action.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L249-L256">Ch. 6 Reinforcement Learning § REINFORCE (L249-L256)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#reinforce">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L290-L293">
+      <blockquote style="margin:0">it takes the average reward of the *other* samples in the batch to compute the baseline … By excluding the current sample's reward from its own baseline, the RLOO baseline is independent of the action being evaluated, which keeps the gradient estimator exactly unbiased. Crucially, this only works when generating multiple trajectories (completions) per state (prompt)</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L290-L293">Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L290-L293)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#reinforce-leave-one-out-rloo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:K_Sj_-1BUMM@00:33:39-00:34:10">
+      <blockquote style="margin:0">ARLU is still very simple in terms of being a sampled policy gradient algorithm. It just works a bit better because with language models like standard reinforce can be a bit unwieldy.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2019s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:33:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L885-L894">
+      <blockquote style="margin:0">$K = 4$ completions for one prompt, with rewards $[0.8, 0.3, 0.6, 0.5]$ … Completion 1 (best) gets reinforced. Completion 2 (worst) gets suppressed. Completions 3 and 4 get small updates.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L885-L894">Slides lec3-chap6-p1 § RLOO worked example (L885-L894)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L609">
+      <blockquote style="margin:0">is equivalent to the RLOO estimation (which uses the average reward of other samples as its baseline) up to a constant scaling factor</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L609">Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L609)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#group-relative-policy-optimization-grpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L205-L208">
+      <blockquote style="margin:0">return (K / (K - 1)) * (rewards - rewards.mean(dim=0, keepdim=True))</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L205-L208">Code code/policy_gradients/utils.py (L205-L208)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="yt:K_Sj_-1BUMM@00:51:20-00:52:22">
+      <blockquote style="margin:0">if all the rewards are the same, the mean is that reward, and the advantage becomes zeroed out, and then you'll have no gradient, but when there is diversity in the completions, it works very well.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3080s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:51:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L628-L634">
+      <blockquote style="margin:0">Common **silent bugs** — training runs but learns the wrong thing: … Zero-std GRPO groups (all completions get same reward → NaN advantages)</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L628-L634">Slides lec4-chap6-p2 § PPO debugging checklist (L628-L634)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="yt:K_Sj_-1BUMM@00:34:41-00:35:45">
+      <blockquote style="margin:0">these policy gradient algorithms like reinforce were very sensitive to step size because they have such large variance. And you kind of have this trade-off where if your step size is too small, learning is super slow.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2081s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:34:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L337-L346">
+      <blockquote style="margin:0">is the policy that was used to collect the training data … The ratio between these two policies emerges from *importance sampling*, which allows us to reuse data collected under an old policy to estimate gradients for a new policy. … PPO addresses this by clipping the ratio to the range $[1-\varepsilon, 1+\varepsilon]$, ensuring that the policy cannot change too drastically in a single update.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L337-L346">Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L337-L346)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#proximal-policy-optimization-ppo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:K_Sj_-1BUMM@00:27:56-00:28:28">
+      <blockquote style="margin:0">Pi old is the policy at the start of each policy step. And this is different than pi ref. Pi ref is what we were talking about on this slide which is the start of the entire RL run.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1676s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:27:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L409">
+      <blockquote style="margin:0">uses one fresh quantity and one cached — this is what enables multiple epochs over the same rollout batch.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L409">Slides lec4-chap6-p2 § Cached vs. recomputed (L409)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L744-L753">
+      <blockquote style="margin:0">Two \"old\" policies — don't confuse them … In some implementations, \"old logprobs\" refers to the generation-time logprobs — the model has simply been updated since those logprobs were computed, not a separate model copy.</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L744-L753">Slides lec3-chap6-p1 § Two &quot;old&quot; policies — don&#x27;t confuse them (L744-L753)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L365-L372">
+      <blockquote style="margin:0">For language models, the objective (or loss) is computed per token … one computes the difference of token log-probabilities and exponentiates it to recover the policy ratio $\rho_t$. … the term for averaging by the number of tokens in the action, $\frac{1}{|a|}$, comes from common implementation practices, but is not in a formal derivation of the loss</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L365-L372">Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L365-L372)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#proximal-policy-optimization-ppo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:x-MqKBzoxkI@00:10:20-00:10:51">
+      <blockquote style="margin:0">this ratio is a per token ratio where every prompt and token in the batch you look at the difference in the probabilities between the current policy and the policy at the beginning of this RL batch.</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=620s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:10:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L385">
+      <blockquote style="margin:0">the policy ratio starts at 1 for the first gradient step for that batch … A common practice is to take 1-4 gradient steps per batch with policy gradient algorithms before updating $\pi_{\theta_{\text{old}}}$.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L385">Ch. 6 Reinforcement Learning § Proximal Policy Optimization (PPO) (L385)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#proximal-policy-optimization-ppo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:K_Sj_-1BUMM@00:41:24-00:41:54">
+      <blockquote style="margin:0">Again, to repeat on the first policy gradient step of each batch, the policy hasn't changed so ratio is one so it just like this first update is fairly standard.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2484s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:41:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1009">
+      <blockquote style="margin:0">Where $\varepsilon$ is typically 0.1–0.2. The $\min$ selects the **more conservative** estimate.</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1009">Slides lec3-chap6-p1 § The PPO clipped objective (put pieces together) (L1009)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L403-L406">
+      <blockquote style="margin:0">The clipping only zeroes out the gradient in the two regions where the policy has *already* moved the sampled action in the desired direction, past the edge of the trust region: … we avoid over-reinforcing an action that is already more expressed. … we avoid over-suppressing an action that is already discouraged.</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L403-L406">Ch. 6 Reinforcement Learning § Understanding the PPO Objective (L403-L406)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#understanding-the-ppo-objective">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L393-L394">
+      <blockquote style="margin:0">Within the trust region, PPO operates the same as other policy gradient algorithms. … The objective becomes flat outside of it.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L393-L394">Ch. 6 Reinforcement Learning § Understanding the PPO Objective (L393-L394)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#understanding-the-ppo-objective">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1071">
+      <blockquote style="margin:0">The clipping is **one-sided per advantage sign**: it caps movement when the policy has already moved enough in the beneficial direction, but never blocks correction in the detrimental direction.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1071">Slides lec3-chap6-p1 § Clipping summary (L1071)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1333">
+      <blockquote style="margin:0">Because we're minimizing a *negative* loss (recall the negative sign in front of advantages), taking the maximum selects the more pessimistic gradient—the one that produces a smaller policy update.</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1333">Ch. 6 Reinforcement Learning § Example: PPO (L1333)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#example-ppo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:x-MqKBzoxkI@00:11:53-00:12:57">
+      <blockquote style="margin:0">In order to take the most conservative step, you actually take the max between these two.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=713s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:11:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:i-AIMpZHgeg@00:21:20-00:21:51">
+      <blockquote style="margin:0">this is a common interview question is that you do torch.max rather than torch.min.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1280s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:21:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1097-L1103">
+      <blockquote style="margin:0">PPO-style RLHF often starts with one scalar reward for the whole completion. … This is how PPO-RLHF turns a sequence-level reward into token-level training.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1097-L1103">Slides lec3-chap6-p1 § How PPO-RLHF gets token-level credit (L1097-L1103)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L365-L371">
+      <blockquote style="margin:0">The reward model gives one scalar $R(x, y)$ at the end of a completion. Per-token rewards are shaped via KL: … These per-token rewards feed into GAE, which propagates credit backward to assign per-token advantages.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L365-L371">Slides lec4-chap6-p2 § From scalar reward to per-token returns (L365-L371)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1448">
+      <blockquote style="margin:0">where the $\lambda$ hyperparameter controls the bias-variance tradeoff—ranging from single-step TD ($\lambda=0$) to full trajectory returns ($\lambda=1$); $\lambda=0.95$ is a common default for LLM fine-tuning.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1448">Ch. 6 Reinforcement Learning § Generalized Advantage Estimation (GAE) (L1448)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#generalized-advantage-estimation-gae">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1466-L1477">
+      <blockquote style="margin:0">\delta_t^V = r_t + \gamma V(s_{t+1}) - V(s_t) … = \sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}^V</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1466-L1477">Ch. 6 Reinforcement Learning § Generalized Advantage Estimation (GAE) (L1466-L1477)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#generalized-advantage-estimation-gae">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1162-L1165">
+      <blockquote style="margin:0">Typical default for LLMs … These rankings assume an accurate $V_\phi$ — in practice, a poorly trained critic can make even low-$\lambda$ estimates unreliable.</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1162-L1165">Slides lec3-chap6-p1 § GAE: Bias-variance tradeoff (L1162-L1165)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:K_Sj_-1BUMM@00:47:33-00:48:05">
+      <blockquote style="margin:0">we normally use gamma of one, which is like every token in the completion contributes to the reward equally, we normally do not use lambda of one.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2853s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:47:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:K_Sj_-1BUMM@00:47:03-00:47:33">
+      <blockquote style="margin:0">Mathematically, this is very complicated and honestly like it takes me a while to still grok this</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2823s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:47:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="yt:x-MqKBzoxkI@00:08:44-00:09:15">
+      <blockquote style="margin:0">the GAE implementations tend to work well. It's the best way of getting the value estimates that people have still which is surprising.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=524s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:08:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L500">
+      <blockquote style="margin:0">Generalized Advantage Estimation (GAE) is considered the state-of-the-art and canonical implementation in modern systems</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L500">Ch. 6 Reinforcement Learning § Value Functions and PPO (L500)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#value-functions-and-ppo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1199-L1208">
+      <blockquote style="margin:0">PPO requires **four** models … This is memory-intensive — a key motivation for simpler alternatives like GRPO.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1199-L1208">Slides lec3-chap6-p1 § PPO: Four models in memory (L1199-L1208)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L649">
+      <blockquote style="margin:0">**~56 GB** just for model weights before optimizer states, activations, or gradients.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L649">Slides lec4-chap6-p2 § The four models in memory (L649)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="yt:i-AIMpZHgeg@00:27:31-00:28:02">
+      <blockquote style="margin:0">value function initialization is very hard, especially with language models.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1651s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:27:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L768">
+      <blockquote style="margin:0">The standard established in InstructGPT … is to initialize the value network from the reward model used during RLHF.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L768">Ch. 6 Reinforcement Learning § Implementation (L768)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#implementation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="yt:i-AIMpZHgeg@00:28:32-00:29:03">
+      <blockquote style="margin:0">this is called value model warm-up. We did it in 203 when we're initializing from a reward model to do PPO.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1712s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:28:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="yt:K_Sj_-1BUMM@00:48:05-00:49:09">
+      <blockquote style="margin:0">there are two types of regularization in PPO algorithm RLHF. One internal to the algorithm, the clipping, and two, the reward function, which includes this KL penalty.</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2885s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:48:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1525">
+      <blockquote style="margin:0">a large part of the difference between algorithms like PPO (which have internal step-size regularization) and REINFORCE (which is simpler, and to which PPO reduces under certain hyperparameters) is far less meaningful for fine-tuning language models than training agents from scratch.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1525">Ch. 6 Reinforcement Learning § Double Regularization (L1525)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#double-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L594">
+      <blockquote style="margin:0">GRPO is often run with a far higher number of samples per prompt because the advantage is entirely about the relative value of a completion to its peers from that prompt.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L594">Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L594)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#group-relative-policy-optimization-grpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1355-L1357">
+      <blockquote style="margin:0">Where the standard KL penalty application for RLHF is applied as $r=r_\theta - \beta \mathcal{D}_{\text{KL}}$, the GRPO implementation is along the lines of: … $$ L = L_{\text{policy gradient}} + \beta * \mathcal{D}_{\text{KL}} $$</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1355-L1357">Ch. 6 Reinforcement Learning § Example: GRPO (L1355-L1357)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#example-grpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="yt:i-AIMpZHgeg@00:35:52-00:36:22">
+      <blockquote style="margin:0">if you're already broadcasting the advantages, might as well just apply the KL directly to the loss, which is also per token and there's less transformations.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2152s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:35:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L707">
+      <blockquote style="margin:0">GRPO's approach avoids interaction between KL and advantage estimation.</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L707">Slides lec4-chap6-p2 § KL penalty placement (L707)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L600-L603">
+      <blockquote style="margin:0">The normalization by standard deviation rewards questions in a batch that have a low variation in answer correctness. … propose removing the standard deviation term given this bias, but this comes at the cost of down-weighting questions that were all incorrect with a few correct answers, which could be seen as valuable learning signal for the model. Those low-variance prompts can be exactly the hardest cases, where only a few sampled completions find the correct answer and provide a strong training signal.</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L600-L603">Ch. 6 Reinforcement Learning § Group Relative Policy Optimization (GRPO) (L600-L603)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#group-relative-policy-optimization-grpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L649-L657">
+      <blockquote style="margin:0">when a token's importance ratio moves outside the clipping range $[1-\varepsilon, 1+\varepsilon]$, that token receives zero gradient. … GSPO addresses this by computing a single importance weight per response.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L649-L657">Ch. 6 Reinforcement Learning § Group Sequence Policy Optimization (GSPO) (L649-L657)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#group-sequence-policy-optimization-gspo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L682">
+      <blockquote style="margin:0">GSPO can be summarized as \"GRPO with sequence-level importance ratios\"—the IS correction granularity is matched to the reward granularity.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L682">Ch. 6 Reinforcement Learning § Group Sequence Policy Optimization (GSPO) (L682)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#group-sequence-policy-optimization-gspo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:K_Sj_-1BUMM@00:53:55-00:54:26">
+      <blockquote style="margin:0">In MOEs, you can have specific tokens that have way bigger variations in the probability because of the routing of the experts</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3235s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:53:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L699-L700">
+      <blockquote style="margin:0">clipping the weight (not the objective) means every token still receives a gradient signal proportional to its advantage … This is a bias-variance tradeoff: clipping weights introduces bias but controls variance and, critically, avoids dropping token gradients entirely.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L699-L700">Ch. 6 Reinforcement Learning § Clipped Importance Sampling Policy Optimization (CISPO) (L699-L700)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#clipped-importance-sampling-policy-optimization-cispo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="yt:i-AIMpZHgeg@00:37:54-00:38:24">
+      <blockquote style="margin:0">A great paper, um scale RL, found Sispo to be very useful</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2274s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:37:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="yt:K_Sj_-1BUMM@00:55:32-00:56:03">
+      <blockquote style="margin:0">GSPO is a importance sampling modification to GRPO, and SISPO is more of an importance sampling modification to something like reinforce.</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3332s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:55:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L702-L704">
+      <blockquote style="margin:0">Both CISPO and GSPO were developed by organizations pushing the limits of applying RL on large-scale MoE models … less studied and beneficial within smaller, academic experiments.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L702-L704">Ch. 6 Reinforcement Learning § Clipped Importance Sampling Policy Optimization (CISPO) (L702-L704)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#clipped-importance-sampling-policy-optimization-cispo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="yt:x-MqKBzoxkI@00:07:44-00:08:44">
+      <blockquote style="margin:0">GRPO is an evolution of the PPO algorithm and this points to why particularly in RL algorithms naming has been so horrible.</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=464s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:07:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L727-L735">
+      <blockquote style="margin:0">| **REINFORCE** | None | None | Monte Carlo baseline | … | **CISPO** | Token | Weights (stop-grad) | Group-relative |</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L727-L735">Ch. 6 Reinforcement Learning § Comparing Algorithms (L727-L735)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#comparing-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L722-L725">
+      <blockquote style="margin:0">All of the policy gradient algorithms above are on-policy in derivation, though most are applied slightly off-policy in practice. … Only PPO requires a learned value function. REINFORCE and RLOO have no importance-sampling ratio</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L722-L725">Ch. 6 Reinforcement Learning § Comparing Algorithms (L722-L725)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#comparing-algorithms">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:x-MqKBzoxkI@00:06:42-00:07:12">
+      <blockquote style="margin:0">The rewards we are getting is not actually moving to be that much more granular in token level, but you use these outcome-based rewards in order to get a token level loss</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=402s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:06:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L798-L822">
+      <blockquote style="margin:0">Strategy 1: Per-sequence normalization** (standard GRPO; also used in some PPO implementations) … Strategy 2: Per-token normalization** (DAPO … Strategy 3: Fixed-length normalization** (Dr. GRPO</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L798-L822">Ch. 6 Reinforcement Learning § Loss Aggregation Tradeoffs (L798-L822)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#loss-aggregation-tradeoffs">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L845-L853">
+      <blockquote style="margin:0">seq_1_losses = [1, 1, 1, 1, 10]  # 5 tokens, mean = 2.8 … With **Strategy 3** (fixed-length with $L_{\max}=10$): The short sequence contributes $1.4$ and the long sequence contributes $1.9$, balancing per-token gradients while still weighting by sequence.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L845-L853">Ch. 6 Reinforcement Learning § Why Does This Matter? (L845-L853)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#why-does-this-matter">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L930-L935">
+      <blockquote style="margin:0">The output shows that with Strategy 1 (`masked_mean`), the short sequence has larger per-token gradients (0.25) than the long sequence (0.14). Strategies 2 and 3 equalize the per-token gradients across sequences. Note that these results can vary substantially if gradient accumulation is used … In practice, the best strategy depends on the specific training setup.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L930-L935">Ch. 6 Reinforcement Learning § Why Does This Matter? (L930-L935)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#why-does-this-matter">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:i-AIMpZHgeg@00:48:43-00:49:13">
+      <blockquote style="margin:0">tokens in shorter sequences are prioritized by the loss. And this could make the model focus on the shorter completion that gets the same advantage.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2923s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:48:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L1006">
+      <blockquote style="margin:0">Short sequences have **larger per-token gradients**. This can bias the model away from lengthy responses.</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L1006">Slides lec4-chap6-p2 § Per-sequence normalization: Effect (L1006)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:i-AIMpZHgeg@00:49:13-00:49:45">
+      <blockquote style="margin:0">So, this can bias the model towards longer completion lengths.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2953s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:49:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L1029">
+      <blockquote style="margin:0">Can bias toward **verbose completions**</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L1029">Slides lec4-chap6-p2 § Per-token normalization: Effect (L1029)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L319-L323">
+      <blockquote style="margin:0">assign the same sequence-level advantage (or reward) to every token when computing the loss. Algorithms that use a learned value network, such as PPO, assign a different value to every token individually … GRPO typically retains a sequence-level advantage but adds a separate per-token term to the loss, rather than subtracting it from the reward.</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L319-L323">Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L319-L323)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#reinforce-leave-one-out-rloo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L971-L975">
+      <blockquote style="margin:0">This framing distinction also explains why the discount factor $\gamma$ is set to 1.0 in virtually all RLHF implementations. … Discounting earlier tokens would arbitrarily down-weight their contribution with no principled justification. As agentic RL settings mature … discounting may become relevant again</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L971-L975">Ch. 6 Reinforcement Learning § Related: MDP vs. Bandit Framing (L971-L975)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#related-mdp-vs-bandit-framing">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:i-AIMpZHgeg@00:38:55-00:39:27">
+      <blockquote style="margin:0">the math only works if you're doing this kind of on policy sampling idea, which would be generate update, generate update.</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2335s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:38:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L980-L982">
+      <blockquote style="margin:0">The theoretical derivations of policy-gradient rely on all actions being exactly on-policy … In practice, maintaining exact on-policy execution substantially slows training … Therefore, all of the recent empirical results with language models tend to be slightly outside of the theoretical proofs.</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L980-L982">Ch. 6 Reinforcement Learning § Asynchronous RL Systems (L980-L982)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#asynchronous-rl-systems">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L989">
+      <blockquote style="margin:0">the GPUs dedicated to taking the RL steps are called the \"learners\" and the GPUs dedicated to sampling from the language model are called the \"actors\".</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L989">Ch. 6 Reinforcement Learning § Asynchronous RL Systems (L989)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#asynchronous-rl-systems">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L850-L852">
+      <blockquote style="margin:0">The model used for generation may be 1–N steps behind the training model. **Tradeoff**: perfect on-policy is slow (GPUs idle during generation or training). Slight staleness is usually fine.</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L850-L852">Slides lec4-chap6-p2 § On-policy vs. off-policy (L850-L852)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L996">
+      <blockquote style="margin:0">With reasoning models, the extremely long inference characteristics of problems requiring 10K to 100K+ tokens per answer make the generation of roll-outs a far stronger bottleneck.</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L996">Ch. 6 Reinforcement Learning § Asynchronous RL Systems (L996)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#asynchronous-rl-systems">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="yt:i-AIMpZHgeg@00:38:24-00:38:55">
+      <blockquote style="margin:0">This is the stuff that I really know more than the loss functions is training infrastructure.</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2304s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:38:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1010-L1015">
+      <blockquote style="margin:0">caps these weights with $\min(\rho, C)$ for some constant $C$, trading a small bias for bounded variance in the policy gradient. … Even when the sampler and learner share identical parameters $\theta$, their effective token distributions can differ because the inference engine (e.g., vLLM) and training framework (e.g., FSDP) use different kernels, precision, and parallelism strategies</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1010-L1015">Ch. 6 Reinforcement Learning § Truncated Importance Sampling (L1010-L1015)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#truncated-importance-sampling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1064">
+      <blockquote style="margin:0">TIS for the learner–sampler ratio has been adopted across major open-source RL frameworks (VeRL, TRL, OpenRLHF, SkyRL, OAT, and Open Instruct, which uses $C = 2$)</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1064">Ch. 6 Reinforcement Learning § PPO/GRPO with TIS (Multiple Gradient Steps) (L1064)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#ppogrpo-with-tis-multiple-gradient-steps">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1069-L1070">
+      <blockquote style="margin:0">Another intervention, called score-centering, comes from the realization that there is a persistent bias in the policy-gradient formulation, especially in off-policy settings … It can be used in addition to importance-sampling corrections like TIS, rather than replacing them.</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1069-L1070">Ch. 6 Reinforcement Learning § Score Centering (L1069-L1070)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#score-centering">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1168-L1171">
+      <blockquote style="margin:0">The other term, the \"drift\", which we just zeroed out, depends on the advantages only through their mean, so it moves the weights the same way regardless of which token was sampled. … in practice, this can pull the learner's weights towards a stale and/or quantized sampler, causing potentially compounding instabilities. … Many labs at the frontier of RL have reported, quietly, to use this method.</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1168-L1171">Ch. 6 Reinforcement Learning § Score Centering (L1168-L1171)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#score-centering">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1192">
+      <blockquote style="margin:0">this centering computation would require storing the sampler's full next-token distribution over $\mathcal{V}$ for every token in the sequence, which is very expensive in modern setups.</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1192">Ch. 6 Reinforcement Learning § Score Centering (L1192)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#score-centering">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1550-L1560">
+      <blockquote style="margin:0">The default configs train `Qwen/Qwen3-1.7B` on the `spell_backward` procedural task from `reasoning-gym` … uv run python -m policy_gradients.train --config policy_gradients/configs/grpo.yaml … The useful first question is whether each prompt group contains contrast: if all sampled completions are right or all are wrong, a group-relative update has little learning signal.</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1550-L1560">Ch. 6 Reinforcement Learning § Suggested Experiments (L1550-L1560)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/README.md#L28-L37">
+      <blockquote style="margin:0">| **REINFORCE** | [run](https://wandb.ai/rlhf-book/core/runs/0uqbq4oz) | ✅ Validated | … | **GRPO** | [run](https://wandb.ai/rlhf-book/core/runs/vjp7lgdi) | ✅ Validated | … | **MaxRL** | [run](https://wandb.ai/rlhf-book/core/runs/fdowf1se) | ✅ Validated |</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/README.md?plain=1#L28-L37">Code code/policy_gradients/README.md (L28-L37)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1576-L1578">
+      <blockquote style="margin:0">Small `num_rollouts` reduces group contrast; very low temperature can collapse samples; very high temperature can generate too many malformed answers. This is the simplest way to see why RLVR recipes often spend so much effort on sampling settings before touching the optimizer.</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1576-L1578">Ch. 6 Reinforcement Learning § Suggested Experiments (L1576-L1578)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/loss.py#L115-L134">
+      <blockquote style="margin:0">ratio = (log_probs - experience.log_probs_old).exp() … policy_loss = -torch.min(unclipped_term, clipped_term) … loss = masked_mean(loss, mask=experience.action_mask, dim=-1).mean(dim=0)</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/loss.py#L115-L134">Code code/policy_gradients/loss.py (L115-L134)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L185-L187">
+      <blockquote style="margin:0">def compute_standardized_advantages(rewards: torch.Tensor, eps: float = 1e-8) -&gt; torch.Tensor: … return (rewards - rewards.mean(dim=0, keepdim=True)) / (rewards.std(dim=0, keepdim=True) + eps)</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L185-L187">Code code/policy_gradients/utils.py (L185-L187)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/loss.py#L356-L359">
+      <blockquote style="margin:0">total_tokens = mask.sum().clamp(1e-8) total_loss = (per_token_loss * mask).sum() return total_loss / total_tokens</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/loss.py#L356-L359">Code code/policy_gradients/loss.py (L356-L359)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L1068-L1075">
+      <blockquote style="margin:0">Illustrative ranges — thresholds vary by model size, task, and algorithm: … | `metrics/clip_frac` | 5–30% | 0% or &gt;50% |</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L1068-L1075">Slides lec4-chap6-p2 § What to monitor during training (L1068-L1075)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1528-L1529">
+      <blockquote style="margin:0">one can look at the clip fraction variable in many popular implementations, which is the percentage of samples in the batch whose probability ratio falls outside the clipping interval. … not every such sample has zero gradient</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1528-L1529">Ch. 6 Reinforcement Learning § Double Regularization (L1528-L1529)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#double-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L128">
+      <blockquote style="margin:0">The hardest bugs aren't math errors — they're silent implementation mistakes: wrong masking, stale caches, shape mismatches.</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L128">Slides lec4-chap6-p2 § From math to code (L128)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:i-AIMpZHgeg@00:31:08-00:31:40">
+      <blockquote style="margin:0">you could start training on the policy tokens and the models going to try to learn them. You could have reward indexing that is wrong or off by one.</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1868s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:31:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L762-L763">
+      <blockquote style="margin:0">A failure mode of RLHF is that the model is regularly truncated in its answers … The solution to this is to *only* run reward model scoring on the `eos_token`, and to otherwise assign a penalty to the model for generating too long.</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L762-L763">Ch. 6 Reinforcement Learning § Implementation (L762-L763)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#implementation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="yt:i-AIMpZHgeg@00:29:03-00:29:35">
+      <blockquote style="margin:0">You want to find a stable recipe and then modify one thing at a time. You don't want to have to try to find all these hyper parameters at once because that is literally hell.</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1743s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:29:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="yt:i-AIMpZHgeg@00:29:35-00:30:07">
+      <blockquote style="margin:0">The simplest way to reduce variance is to sample more and sampling more is making the batch size better.</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1775s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:29:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L604">
+      <blockquote style="margin:0">Large batches reduce gradient variance proportional to $1/N$. In RLHF, this is one of the cheapest ways to stabilize training — more effective than most hyperparameter tuning.</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L604">Slides lec4-chap6-p2 § Why batch size matters more in RL (L604)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="yt:i-AIMpZHgeg@00:26:29-00:27:00">
+      <blockquote style="margin:0">the advantages that get passed to the model normally are whitened.</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1589s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:26:29</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:i-AIMpZHgeg@00:03:08-00:03:38">
+      <blockquote style="margin:0">Some of the top two are gradients. And the bottom two are objectives. I'm taking a note of this to fix the slide.</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=188s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:03:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="yt:i-AIMpZHgeg@00:10:55-00:11:28">
+      <blockquote style="margin:0">This slide actually I will edit as well where there's a extra minus sign here. This is mixing up an objective and a loss function.</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=655s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:10:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L180">
+      <blockquote style="margin:0">All methods minimize the same family of **losses** (note the leading minus signs)</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L180">Slides lec4-chap6-p2 § Recall: The policy gradient algorithms (L180)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L311-L313">
+      <blockquote style="margin:0">The clipped surrogate loss (minimized): $$L^{\text{CLIP}}(\theta) = -\mathbb{E}_t</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L311-L313">Slides lec4-chap6-p2 § Recall: Proximal policy optimization (PPO) (L311-L313)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="yt:i-AIMpZHgeg@00:14:34-00:15:35">
+      <blockquote style="margin:0">I realized what I'm saying on the slides is different. Um when you're using a KL penalty, the reward is cast as the final token and all the other tokens have a KL penalty. I'm going to check this and make sure it's true</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=874s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:14:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s129" data-cite="yt:i-AIMpZHgeg@00:15:35-00:16:05">
+      <blockquote style="margin:0">I went to check this this slide and this slide is true for the RLHF case and in the GRPO cases with RLVR, you can do the broadcasting that I was mentioned.</blockquote>
+      <figcaption><span class="chip">129</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=935s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:15:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s130" data-cite="yt:amrJDwMUFNs@00:08:57-00:09:28">
+      <blockquote style="margin:0">And we don't actually know which one is best, but this ended up coming up in a few of the other papers here.</blockquote>
+      <figcaption><span class="chip">130</span> <a href="https://www.youtube.com/watch?v=amrJDwMUFNs&amp;t=537s">GRPO&#x27;s new variants and implementation secrets @ 00:08:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s131" data-cite="yt:amrJDwMUFNs@00:14:08-00:15:12">
+      <blockquote style="margin:0">I don't think that this actually has a huge impact … it might be a trade-off of numerical stability and it's kind of still an open question for if it is going to make everything fundamentally better.</blockquote>
+      <figcaption><span class="chip">131</span> <a href="https://www.youtube.com/watch?v=amrJDwMUFNs&amp;t=848s">GRPO&#x27;s new variants and implementation secrets @ 00:14:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s132" data-cite="yt:i-AIMpZHgeg@00:50:46-00:51:17">
+      <blockquote style="margin:0">The difference between fixed length and per token is a scale a linear factor in the loss, which can be absorbed into the learning rate.</blockquote>
+      <figcaption><span class="chip">132</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=3046s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:50:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s133" data-cite="yt:x-MqKBzoxkI@00:07:12-00:08:14">
+      <blockquote style="margin:0">Mostly the token level normalization is just is they they end up having different biases in terms of how the models evolve over time, but the token level normalization ended up winning out for by enabling kind of better reasoning training and so on.</blockquote>
+      <figcaption><span class="chip">133</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=432s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:07:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s134" data-cite="yt:amrJDwMUFNs@00:16:13-00:16:45">
+      <blockquote style="margin:0">answers that questions that have a high standard deviation are the highest learning signal because the model gets it right sometimes and wrong sometimes. … So this idea of removing this which is already implemented in TRL is a really brilliant idea.</blockquote>
+      <figcaption><span class="chip">134</span> <a href="https://www.youtube.com/watch?v=amrJDwMUFNs&amp;t=973s">GRPO&#x27;s new variants and implementation secrets @ 00:16:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s135" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1341-L1348">
+      <blockquote style="margin:0">PPO (and GRPO) implementations can be handled much more elegantly if the hyperparameter \"number of gradient steps per sample\" is equal to 1. Many typical values for this are from 2-4 or higher. … This leads to PPO or GRPO implementations where the second policy gradient and clipping logic can be omitted</blockquote>
+      <figcaption><span class="chip">135</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1341-L1348">Ch. 6 Reinforcement Learning § PPO/GRPO Simplification with One Gradient Step per Sample (No Clipping) (L1341-L1348)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#ppogrpo-simplification-with-one-gradient-step-per-sample-no-clipping">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s136" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1531-L1532">
+      <blockquote style="margin:0">In practice with language models, algorithms like PPO and GRPO are often run with only one gradient step per batch, which means that the PPO-native regularization is never applied … and the KL distance penalties predominate. However, this is not universal. For example, DAPO uses 16 gradient steps per batch … and Tülu 3 uses 4 PPO update iterations per batch for 8B and 70B models but reduces to 1 for 405B to maintain training stability</blockquote>
+      <figcaption><span class="chip">136</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1531-L1532">Ch. 6 Reinforcement Learning § Double Regularization (L1531-L1532)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#double-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s137" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L1193">
+      <blockquote style="margin:0">Typical: K = 2–4 gradient steps per batch before re-generating.</blockquote>
+      <figcaption><span class="chip">137</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L1193">Slides lec3-chap6-p1 § PPO training loop (conceptual) (L1193)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s138" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L486-L488">
+      <blockquote style="margin:0">Typical $K = 2$–$4$; beyond $\sim$6 the policy is too far off-policy. … With $K = 1$ and **no** minibatching: $\pi_\theta = \pi_{\theta_\text{old}}$, ratios are always 1, and clipping never activates — PPO reduces to vanilla policy gradient with GAE.</blockquote>
+      <figcaption><span class="chip">138</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L486-L488">Slides lec4-chap6-p2 § Multiple epochs and minibatches (L486-L488)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s139" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L580-L588">
+      <blockquote style="margin:0">Illustrative ranges from common LLM RLHF setups — not universal defaults … | Clip $\varepsilon$ | 0.1–0.2 | Trust region width | … | Epochs per batch $K$ | 2–6 | Off-policy budget |</blockquote>
+      <figcaption><span class="chip">139</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L580-L588">Slides lec4-chap6-p2 § PPO hyperparameters (L580-L588)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s140" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L476">
+      <blockquote style="margin:0">After updating on the first minibatch, $\pi_\theta$ has changed — so later minibatches in the *same* epoch already see $\rho_t \neq 1$. Clipping can activate even with $K = 1$ epoch.</blockquote>
+      <figcaption><span class="chip">140</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L476">Slides lec4-chap6-p2 § Multiple epochs and minibatches (L476)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s141" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L314-L316">
+      <blockquote style="margin:0">GRPO-style training mainly differs in how it applies the KL regularizer (as an explicit loss term vs. folded into the reward) and whether it uses PPO-style ratio clipping. … With the transition from RLHF to reasoning and reinforcement learning with verifiable rewards (RLVR), the prevalence of KL penalties has decreased overall, with many reasoning adaptations of RLHF code turning them off entirely.</blockquote>
+      <figcaption><span class="chip">141</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L314-L316">Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L314-L316)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#reinforce-leave-one-out-rloo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s142" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L734-L736">
+      <blockquote style="margin:0">**RLVR** (verifiable rewards, e.g. math correctness): KL is often reduced or removed entirely. … The trend: as reward signals become more reliable, the need for KL regularization decreases.</blockquote>
+      <figcaption><span class="chip">142</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L734-L736">Slides lec3-chap6-p1 § KL in RLHF vs. RLVR (L734-L736)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s143" data-cite="yt:K_Sj_-1BUMM@00:26:55-00:27:56">
+      <blockquote style="margin:0">the key point is that in RLVR, these KL distances this point here is often used a lot less. And this might evolve over time and become a bit outdated as when you do very very long RL runs, you might need this KL penalty a bit more again.</blockquote>
+      <figcaption><span class="chip">143</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1615s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:26:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s144" data-cite="yt:i-AIMpZHgeg@00:21:51-00:22:21">
+      <blockquote style="margin:0">On the first step of a mini batch, those two values are exactly the same, so there's never clipping on the first mini batch.</blockquote>
+      <figcaption><span class="chip">144</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1311s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:21:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s145" data-cite="yt:i-AIMpZHgeg@00:22:21-00:22:52">
+      <blockquote style="margin:0">your clipping actually never activates, where you say you're using a GRPO-like algorithm, but you do one gradient update per batch and you don't do this mini batching.</blockquote>
+      <figcaption><span class="chip">145</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1341s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:22:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s146" data-cite="yt:i-AIMpZHgeg@00:25:27-00:26:29">
+      <blockquote style="margin:0">I actually wasn't able to track down if it was in their original work that they said to do this clipping on the value function, but it's kind of one of these details that becomes default implementation over time.</blockquote>
+      <figcaption><span class="chip">146</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=1527s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:25:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s147" data-cite="yt:x-MqKBzoxkI@00:12:25-00:12:57">
+      <blockquote style="margin:0">they use this in the value function as well, just because it works well in practice.</blockquote>
+      <figcaption><span class="chip">147</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=745s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:12:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s148" data-cite="yt:amrJDwMUFNs@00:21:26-00:21:57">
+      <blockquote style="margin:0">RL and RHF really didn't care about response length before. … So I wouldn't say it's that people were doing it wrong.</blockquote>
+      <figcaption><span class="chip">148</span> <a href="https://www.youtube.com/watch?v=amrJDwMUFNs&amp;t=1286s">GRPO&#x27;s new variants and implementation secrets @ 00:21:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s149" data-cite="yt:K_Sj_-1BUMM@00:02:37-00:03:08">
+      <blockquote style="margin:0">obviously PPO and reinforce, and then the newer versions with GRPO, GSPO, Sis Bot, etc.</blockquote>
+      <figcaption><span class="chip">149</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=157s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:02:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s150" data-cite="yt:i-AIMpZHgeg@00:34:16-00:34:48">
+      <blockquote style="margin:0">What I was taking a note of is should this beta KL be a positive or minus? A good exercise for the reader, check that. I think it's actually right as it is</blockquote>
+      <figcaption><span class="chip">150</span> <a href="https://www.youtube.com/watch?v=i-AIMpZHgeg&amp;t=2056s">Implementing RL Algorithms for LLMs | Post-Training Course, Lecture 4 @ 00:34:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s151" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L1056-L1060">
+      <blockquote style="margin:0">| **Per-sequence** | $(2.8 + 1.9)/2 = 2.35$ | 0.20 per token | 0.10 per token | | **Per-token** | $(14 + 19)/15 = 2.2$ | 0.067 per token | 0.067 per token | | **Fixed-length** ($L=10$) | $(1.4 + 1.9)/2 = 1.65$ | 0.10 per token | 0.10 per token |</blockquote>
+      <figcaption><span class="chip">151</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L1056-L1060">Slides lec4-chap6-p2 § Comparing aggregation strategies (L1056-L1060)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s152" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/configs/grpo.yaml#L10-L25">
+      <blockquote style="margin:0">loss: grpo model_name: Qwen/Qwen3-1.7B … beta: 0.0  # KL penalty coefficient (0 = disabled, set &gt;0 to enable) … prompts_per_step: 4 num_rollouts: 8 train_batch_size: 2 batch_acc: 4</blockquote>
+      <figcaption><span class="chip">152</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/configs/grpo.yaml#L10-L25">Code code/policy_gradients/configs/grpo.yaml (L10-L25)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s153" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/rollout.py#L91-L92">
+      <blockquote style="margin:0">expected = self.cfg.prompts_per_step * self.cfg.num_rollouts while len(buffer) &lt; expected:</blockquote>
+      <figcaption><span class="chip">153</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/rollout.py#L91-L92">Code code/policy_gradients/rollout.py (L91-L92)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s154" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/buffer.py#L106-L109">
+      <blockquote style="margin:0">Add a batched experience to the buffer (splits into individual experiences).</blockquote>
+      <figcaption><span class="chip">154</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/buffer.py#L106-L109">Code code/policy_gradients/buffer.py (L106-L109)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s155" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/train.py#L101-L131">
+      <blockquote style="margin:0">experience_sampler = DataLoader( dataset=replay_buffer.buffer, batch_size=cfg.train_batch_size, … if (idx + 1) % cfg.batch_acc == 0 or (idx + 1) == len(experience_sampler): grad_norm = clip_grad_norm_(params, max_norm=cfg.max_norm) optimizer.step()</blockquote>
+      <figcaption><span class="chip">155</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/train.py#L101-L131">Code code/policy_gradients/train.py (L101-L131)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s156" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L118-L119">
+      <blockquote style="margin:0">Load reference model for KL penalty (only if beta &gt; 0).</blockquote>
+      <figcaption><span class="chip">156</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L118-L119">Code code/policy_gradients/utils.py (L118-L119)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s157" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L663-L665">
+      <blockquote style="margin:0">For each prompt, sample $G$ completions and compute group-normalized advantages: … \sigma_G = \sqrt{\frac{1}{G}\sum_{j=1}^{G}(R_j - \mu_G)^2}</blockquote>
+      <figcaption><span class="chip">157</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L663-L665">Slides lec4-chap6-p2 § Recall: Group relative policy optimization (GRPO) (L663-L665)</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // Group advantages: RLOO, Dr. GRPO and GRPO exactly as written on the page.
+  (() => {
+    const box = document.getElementById('grp-demo');
+    const inputs = [...box.querySelectorAll('.grp-in input')];
+    const body = box.querySelector('tbody');
+    const note = box.querySelector('.grp-note');
+    const f = x => (Math.abs(x) < 5e-4 ? 0 : x).toFixed(3);
+    const show = () => {
+      const r = inputs.map(i => Number(i.value) || 0);
+      const G = r.length;
+      const mean = r.reduce((a, b) => a + b, 0) / G;
+      const sd = Math.sqrt(r.reduce((a, b) => a + (b - mean) ** 2, 0) / (G - 1));
+      body.innerHTML = r.map((ri, i) => {
+        const loo = ri - (r.reduce((a, b) => a + b, 0) - ri) / (G - 1);
+        const dr = ri - mean;
+        const g = sd > 0 ? f(dr / sd) : 'undefined';
+        return `<tr><td>${i + 1}</td><td>${ri.toFixed(2)}</td><td>${f(loo)}</td><td>${f(dr)}</td><td>${g}</td></tr>`;
+      }).join('');
+      note.textContent = sd > 0
+        ? `Mean ${mean.toFixed(3)}, standard deviation ${sd.toFixed(3)} (divides by G - 1, like the book's code). RLOO is ${(G / (G - 1)).toFixed(3)} times Dr. GRPO in every row.`
+        : 'Every reward is equal: all advantages are zero, and GRPO divides zero by zero unless an epsilon is added.';
+    };
+    inputs.forEach(i => i.addEventListener('input', show));
+    box.querySelectorAll('button[data-r]').forEach(btn => btn.addEventListener('click', () => {
+      btn.dataset.r.split(',').forEach((v, i) => { inputs[i].value = v; });
+      show();
+    }));
+    show();
+  })();
+
+  // PPO clip: J = min(rho A, clip(rho, 1-eps, 1+eps) A), drawn for A = +1 or -1.
+  (() => {
+    const box = document.getElementById('clip-demo');
+    const rho = document.getElementById('clip-rho');
+    const eps = document.getElementById('clip-eps');
+    const svg = document.getElementById('clip-svg');
+    const buttons = [...box.querySelectorAll('button[data-a]')];
+    let A = 1;
+    const W = 560, H = 230, L = 48, R = 16, T = 14, Bm = 36, lo = 0.5, hi = 1.5;
+    const x = v => L + (v - lo) / (hi - lo) * (W - L - R);
+    const y = (v, a) => {
+      const ymin = a > 0 ? 0.4 : -1.6, ymax = a > 0 ? 1.6 : -0.4;
+      return T + (ymax - v) / (ymax - ymin) * (H - T - Bm);
+    };
+    const J = (p, e, a) => Math.min(p * a, Math.min(Math.max(p, 1 - e), 1 + e) * a);
+    const show = () => {
+      const p = Number(rho.value), e = Number(eps.value);
+      document.getElementById('clip-rho-o').textContent = p.toFixed(2);
+      document.getElementById('clip-eps-o').textContent = e.toFixed(2);
+      const pts = [], un = [];
+      for (let v = lo; v <= hi + 1e-9; v += 0.005) {
+        pts.push(`${x(v).toFixed(1)},${y(J(v, e, A), A).toFixed(1)}`);
+        un.push(`${x(v).toFixed(1)},${y(v * A, A).toFixed(1)}`);
+      }
+      const ticks = [0.5, 0.75, 1, 1.25, 1.5].map(v => `<line class="ax" x1="${x(v)}" x2="${x(v)}" y1="${H - Bm}" y2="${H - Bm + 4}"/><text class="l" x="${x(v)}" y="${H - Bm + 17}" text-anchor="middle">${v}</text>`).join('');
+      const ylab = (A > 0 ? [0.5, 1, 1.5] : [-1.5, -1, -0.5]).map(v => `<text class="l" x="${L - 6}" y="${y(v, A) + 4}" text-anchor="end">${v}</text>`).join('');
+      svg.innerHTML = `<rect class="band" x="${x(1 - e)}" y="${T}" width="${x(1 + e) - x(1 - e)}" height="${H - T - Bm}"/>`
+        + `<text class="l" x="${(x(1 - e) + x(1 + e)) / 2}" y="${T + 13}" text-anchor="middle">trust region</text>`
+        + `<line class="ax" x1="${L}" x2="${W - R}" y1="${H - Bm}" y2="${H - Bm}"/><line class="ax" x1="${L}" x2="${L}" y1="${T}" y2="${H - Bm}"/>`
+        + ticks + ylab
+        + `<text class="l" x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">ratio ρ</text>`
+        + `<polyline class="un" points="${un.join(' ')}"/><polyline class="obj" points="${pts.join(' ')}"/>`
+        + `<circle class="mk" cx="${x(p)}" cy="${y(J(p, e, A), A)}" r="7"/>`;
+      const clipped = Math.min(Math.max(p, 1 - e), 1 + e) * A;
+      const j = J(p, e, A);
+      const flat = (A > 0 && p > 1 + e) || (A < 0 && p < 1 - e);
+      document.getElementById('clip-u').textContent = (p * A).toFixed(3);
+      document.getElementById('clip-c').textContent = clipped.toFixed(3);
+      document.getElementById('clip-j').textContent = j.toFixed(3) + (flat ? ' (the clipped term)' : ' (the unclipped term)');
+      document.getElementById('clip-g').textContent = flat
+        ? 'zero: the action has already moved past the trust region in the direction the advantage wants'
+        : (A > 0 ? 'flows: push this token\'s probability up' : 'flows: push this token\'s probability down');
+    };
+    [rho, eps].forEach(i => i.addEventListener('input', show));
+    buttons.forEach(btn => btn.addEventListener('click', () => {
+      A = Number(btn.dataset.a);
+      buttons.forEach(o => o.setAttribute('aria-pressed', String(o === btn)));
+      show();
+    }));
+    show();
+  })();
+
+  // Loss aggregation: exact dL/dl for each strategy, batch of two sequences.
+  (() => {
+    const box = document.getElementById('agg-demo');
+    const [a, bb, lm] = ['agg-a', 'agg-b', 'agg-l'].map(id => document.getElementById(id));
+    const body = box.querySelector('tbody');
+    const show = () => {
+      const n1 = Number(a.value), n2 = Number(bb.value), Lmax = Number(lm.value);
+      ['agg-a', 'agg-b', 'agg-l'].forEach((id, k) => { document.getElementById(id + '-o').textContent = [n1, n2, Lmax][k]; });
+      const sum = n => (n - 1) + 10;
+      const rows = [
+        ['Per sequence', (sum(n1) / n1 + sum(n2) / n2) / 2, 1 / (2 * n1), 1 / (2 * n2)],
+        ['Per token', (sum(n1) + sum(n2)) / (n1 + n2), 1 / (n1 + n2), 1 / (n1 + n2)],
+        ['Fixed length', (sum(n1) + sum(n2)) / (2 * Lmax), 1 / (2 * Lmax), 1 / (2 * Lmax)],
+      ];
+      body.innerHTML = rows.map(([name, loss, w1, w2]) =>
+        `<tr><td>${name}</td><td>${loss.toFixed(3)}</td><td>${w1.toFixed(4)}</td><td>${w2.toFixed(4)}</td><td>${(w1 / w2).toFixed(2)} : 1</td></tr>`).join('');
+    };
+    [a, bb, lm].forEach(i => i.addEventListener('input', show));
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/policy_gradients/loss.py (L99-L134)", contents: "class GRPOLoss(nn.Module):\n    \"\"\"Group Relative Policy Optimization loss (Shao et al., 2024).\n\n    GRPO uses group-level advantage normalization and clipped ratio updates.\n    See Chapter 6 of RLHF Book for mathematical derivation.\n    \"\"\"\n\n    def __init__(\n        self, clip_eps_lo: float, clip_eps_hi: float, beta: float, kl_estimator: str, **kwargs\n    ) -> None:\n        super().__init__()\n        self.clip_eps_lo = clip_eps_lo\n        self.clip_eps_hi = clip_eps_hi\n        self.beta = beta\n        self.kl_estimator = kl_estimator\n\n    def forward(self, log_probs: torch.Tensor, experience: Experience, **kwargs) -> torch.Tensor:\n        # Policy loss with clipping\n        ratio = (log_probs - experience.log_probs_old).exp()\n        unclipped_term = ratio * experience.advantages\n        clipped_term = (\n            ratio.clamp(1 - self.clip_eps_lo, 1 + self.clip_eps_hi) * experience.advantages\n        )\n        policy_loss = -torch.min(unclipped_term, clipped_term)\n\n        # Optional KL penalty\n        if self.beta:\n            kl_loss = get_approx_kl(\n                self.kl_estimator, log_probs, experience.log_probs_ref, experience.action_mask\n            )\n        else:\n            kl_loss = torch.tensor(0.0, device=log_probs.device, dtype=torch.float32)\n\n        loss = policy_loss + self.beta * kl_loss\n        loss = masked_mean(loss, mask=experience.action_mask, dim=-1).mean(dim=0)\n        return loss\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
