@@ -1,0 +1,28 @@
+[project]
+name = "rlhfbook-deepdive"
+version = "0.1.0"
+description = "Learning scratch pad for Nathan Lambert's RLHF book and channel, with checkable citations"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["mypy>=1.13", "pytest>=8.3.3", "ruff>=0.14.2"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["sources"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+strict = true
+files = ["scripts", "tests"]
+mypy_path = "scripts"

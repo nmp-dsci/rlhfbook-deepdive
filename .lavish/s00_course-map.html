@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RLHF book course map</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script>addEventListener('load',()=>{if(!window.lavish)document.querySelectorAll('.launch').forEach(b=>b.remove())})</script>
+</head>
+<body>
+<main class="wrap">
+  <p class="eyebrow">Start here · course map</p>
+  <h1>Every chapter, with what Lambert recorded for it</h1>
+  <p class="lede">Each row links a chapter of <a href="https://rlhfbook.com/">Reinforcement Learning from Human Feedback</a> to its lectures, slides, reader Q&amp;A and talks. In a Lavish session, “Walk me through” asks the agent for that chapter's walkthrough.</p>
+  <div class="verdict" style="margin-top:var(--s5)">
+    <div class="stat"><div class="label">Book</div><strong>20</strong> <span class="small">chapters and appendices, 84,791 words</span></div>
+    <div class="stat"><div class="label">Videos</div><strong>51</strong> <span class="small">29 hours of transcripts</span></div>
+    <div class="stat"><div class="label">Reader questions</div><strong>20</strong> <span class="small">answered on video, timestamped</span></div>
+    <div class="stat"><div class="label">Book pinned at</div><strong><a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a></strong> <span class="small">7 Nov 2026</span></div>
+  </div>
+
+  <section>
+    <h2>Chapters</h2>
+    <p class="sub">Links open the live book and the videos. Answers cite the pinned commit instead, so line numbers cannot drift.</p>
+    <div class="tablewrap"><table style="min-width:1040px">
+      <thead><tr><th>#</th><th>Chapter</th><th>Lecture</th><th>Q&amp;A, conversation</th><th>Talks</th><th><span class="sr-only">Action</span></th></tr></thead>
+      <tbody>
+      <tr>
+        <td style="white-space:nowrap"><strong>1</strong></td>
+        <td><a href="https://rlhfbook.com/c/01-introduction">Introduction</a><br><span class="tag">5,653 words · 25 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=o6l6tJQgUg4">Lecture 1</a> <span class="tag">46 min</span> · <a href="https://rlhfbook.com/teach/course/lec1-chap1-3/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ">Aligning Open Language Models (Stanford CS25)</a> <span class="tag">Apr 2024</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 1 (Introduction) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 1&quot;,element:this,data:{chapter:&quot;1&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>2</strong></td>
+        <td><a href="https://rlhfbook.com/c/02-related-works">A Tiny History of RLHF</a><br><span class="tag">1,028 words · 4 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=o6l6tJQgUg4">Lecture 1</a> <span class="tag">46 min</span> · <a href="https://rlhfbook.com/teach/course/lec1-chap1-3/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 2 (A Tiny History of RLHF) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 2&quot;,element:this,data:{chapter:&quot;2&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>3</strong></td>
+        <td><a href="https://rlhfbook.com/c/03-training-overview">Training Overview</a><br><span class="tag">3,553 words · 15 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=o6l6tJQgUg4">Lecture 1</a> <span class="tag">46 min</span> · <a href="https://rlhfbook.com/teach/course/lec1-chap1-3/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><a href="https://www.youtube.com/watch?v=6yIMb0K-aS4">How Language Model Post-Training Is Done Today</a> <span class="tag">Jan 2025</span><br><a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A">How We Built a Leading Reasoning Model (Olmo 3)</a> <span class="tag">Dec 2025</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 3 (Training Overview) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 3&quot;,element:this,data:{chapter:&quot;3&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>4</strong></td>
+        <td><a href="https://rlhfbook.com/c/04-instruction-tuning">Instruction Fine-Tuning</a><br><span class="tag">2,533 words · 11 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=4gIwiSPmQkU">Lecture 2</a> <span class="tag">50 min</span> · <a href="https://rlhfbook.com/teach/course/lec2-chap4-5-9/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 4 (Instruction Fine-Tuning) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 4&quot;,element:this,data:{chapter:&quot;4&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>5</strong></td>
+        <td><a href="https://rlhfbook.com/c/05-reward-models">Reward Modeling</a><br><span class="tag">6,090 words · 26 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=4gIwiSPmQkU">Lecture 2</a> <span class="tag">50 min</span> · <a href="https://rlhfbook.com/teach/course/lec2-chap4-5-9/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 5 (Reward Modeling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 5&quot;,element:this,data:{chapter:&quot;5&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>6</strong></td>
+        <td><a href="https://rlhfbook.com/c/06-policy-gradients">Reinforcement Learning</a><br><span class="tag">16,596 words · 72 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM">Lecture 3</a> <span class="tag">58 min</span> · <a href="https://rlhfbook.com/teach/course/lec3-chap6-p1/">slides</a><br><a href="https://www.youtube.com/watch?v=i-AIMpZHgeg">Lecture 4</a> <span class="tag">54 min</span> · <a href="https://rlhfbook.com/teach/course/lec4-chap6-p2/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><a href="https://www.youtube.com/watch?v=amrJDwMUFNs">GRPO&#x27;s New Variants and Implementation Secrets</a> <span class="tag">Mar 2025</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 6 (Reinforcement Learning) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 6&quot;,element:this,data:{chapter:&quot;6&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>7</strong></td>
+        <td><a href="https://rlhfbook.com/c/07-reasoning">Reasoning and Inference-Time Scaling</a><br><span class="tag">5,137 words · 22 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=o4AB5xHIDdM">Lecture 5</a> <span class="tag">45 min</span> · <a href="https://rlhfbook.com/teach/course/lec5-chap7/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE">Q&amp;A 2</a></td>
+        <td><a href="https://www.youtube.com/watch?v=YXTYbr3hiFU">An Unexpected Reinforcement Learning Renaissance</a> <span class="tag">Feb 2025</span><br><a href="https://www.youtube.com/watch?v=J1APR8Bo9dE">Early Stages of the Reinforcement Learning Era of Language Models</a> <span class="tag">Mar 2025</span><br><a href="https://www.youtube.com/watch?v=zYeIqzULzr0">Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR)</a> <span class="tag">Apr 2025</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 7 (Reasoning and Inference-Time Scaling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 7&quot;,element:this,data:{chapter:&quot;7&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>8</strong></td>
+        <td><a href="https://rlhfbook.com/c/08-direct-alignment">Direct-Alignment Algorithms</a><br><span class="tag">4,302 words · 19 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=6g6b4gvO-y0">Lecture 6</a> <span class="tag">43 min</span> · <a href="https://rlhfbook.com/teach/course/lec6-chap8-dpo/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE">Q&amp;A 2</a><br><a href="https://www.youtube.com/watch?v=rhA7pLVt4E0">Conversation 2</a></td>
+        <td><a href="https://www.youtube.com/watch?v=YJMCSVLRUNs">DPO Debate: Is RL Needed for RLHF?</a> <span class="tag">Dec 2023</span><br><a href="https://www.youtube.com/watch?v=dnF463_Ar9I">Life After DPO (Stanford CS224N)</a> <span class="tag">May 2024</span><br><a href="https://www.youtube.com/watch?v=rDF7eFPeVto">An Update on DPO vs PPO for LLM Alignment</a> <span class="tag">Jul 2024</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 8 (Direct-Alignment Algorithms) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 8&quot;,element:this,data:{chapter:&quot;8&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>9</strong></td>
+        <td><a href="https://rlhfbook.com/c/09-rejection-sampling">Rejection Sampling</a><br><span class="tag">2,274 words · 10 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=4gIwiSPmQkU">Lecture 2</a> <span class="tag">50 min</span> · <a href="https://rlhfbook.com/teach/course/lec2-chap4-5-9/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI">Q&amp;A 1</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 9 (Rejection Sampling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 9&quot;,element:this,data:{chapter:&quot;9&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>10</strong></td>
+        <td><a href="https://rlhfbook.com/c/10-preferences">The Nature of Preferences</a><br><span class="tag">2,994 words · 13 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs">Lecture 8</a> <span class="tag">36 min</span> · <a href="https://rlhfbook.com/teach/course/lec8-chap10-11-preferences/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ">Q&amp;A 3</a></td>
+        <td><a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA">15 Minute History of Reinforcement Learning and Human Feedback</a> <span class="tag">Dec 2023</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 10 (The Nature of Preferences) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 10&quot;,element:this,data:{chapter:&quot;10&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>11</strong></td>
+        <td><a href="https://rlhfbook.com/c/11-preference-data">Preference Data</a><br><span class="tag">4,232 words · 18 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs">Lecture 8</a> <span class="tag">36 min</span> · <a href="https://rlhfbook.com/teach/course/lec8-chap10-11-preferences/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ">Q&amp;A 3</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 11 (Preference Data) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 11&quot;,element:this,data:{chapter:&quot;11&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>12</strong></td>
+        <td><a href="https://rlhfbook.com/c/12-synthetic-data">Synthetic Data &amp; Distillation</a><br><span class="tag">7,131 words · 31 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE">Lecture 7</a> <span class="tag">50 min</span> · <a href="https://rlhfbook.com/teach/course/lec7-chap12-synthetic-data/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE">Q&amp;A 2</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 12 (Synthetic Data &amp; Distillation) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 12&quot;,element:this,data:{chapter:&quot;12&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>13</strong></td>
+        <td><a href="https://rlhfbook.com/c/13-tools">Tool Use and Function Calling</a><br><span class="tag">2,891 words · 13 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=GMry2DzC304">Lecture 11</a> <span class="tag">38 min</span> · <a href="https://rlhfbook.com/teach/course/lec11-chap13-tools/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ">Q&amp;A 3</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 13 (Tool Use and Function Calling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 13&quot;,element:this,data:{chapter:&quot;13&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>14</strong></td>
+        <td><a href="https://rlhfbook.com/c/14-over-optimization">Over-Optimization</a><br><span class="tag">2,538 words · 11 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=y04JhXpiI4s">Lecture 9</a> <span class="tag">24 min</span> · <a href="https://rlhfbook.com/teach/course/lec9-chap14-appb-overoptimization/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ">Q&amp;A 3</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 14 (Over-Optimization) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 14&quot;,element:this,data:{chapter:&quot;14&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>15</strong></td>
+        <td><a href="https://rlhfbook.com/c/15-regularization">Regularization</a><br><span class="tag">3,859 words · 17 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=IwpYxANrpUs">Lecture 10</a> <span class="tag">32 min</span> · <a href="https://rlhfbook.com/teach/course/lec10-chap15-regularization/">slides</a></td>
+        <td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ">Q&amp;A 3</a></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 15 (Regularization) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 15&quot;,element:this,data:{chapter:&quot;15&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>16</strong></td>
+        <td><a href="https://rlhfbook.com/c/16-evaluation">Evaluation</a><br><span class="tag">3,997 words · 17 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=dFafQmClYq4">Lecture 12</a> <span class="tag">32 min</span> · <a href="https://rlhfbook.com/teach/course/lec12-chap16-evals/">slides</a></td>
+        <td><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 16 (Evaluation) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 16&quot;,element:this,data:{chapter:&quot;16&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>17</strong></td>
+        <td><a href="https://rlhfbook.com/c/17-product">Crafting Model Character and Products</a><br><span class="tag">4,896 words · 21 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=xECWRYBxq1E">Lecture 13</a> <span class="tag">33 min</span> · <a href="https://rlhfbook.com/teach/course/lec13-chap17-character/">slides</a></td>
+        <td><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 17 (Crafting Model Character and Products) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Ch. 17&quot;,element:this,data:{chapter:&quot;17&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>A</strong></td>
+        <td><a href="https://rlhfbook.com/c/appendix-a-definitions">Definitions</a><br><span class="tag">1,535 words · 7 min read</span></td>
+        <td style="white-space:nowrap"><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Appendix A (Definitions) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Appendix A&quot;,element:this,data:{chapter:&quot;A&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>B</strong></td>
+        <td><a href="https://rlhfbook.com/c/appendix-b-style">Beyond &quot;Just Style&quot;</a><br><span class="tag">2,321 words · 10 min read</span></td>
+        <td style="white-space:nowrap"><a href="https://www.youtube.com/watch?v=y04JhXpiI4s">Lecture 9</a> <span class="tag">24 min</span> · <a href="https://rlhfbook.com/teach/course/lec9-chap14-appb-overoptimization/">slides</a></td>
+        <td><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Appendix B (Beyond \&quot;Just Style\&quot;) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Appendix B&quot;,element:this,data:{chapter:&quot;B&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap"><strong>C</strong></td>
+        <td><a href="https://rlhfbook.com/c/appendix-c-practical">Practical Issues</a><br><span class="tag">1,231 words · 5 min read</span></td>
+        <td style="white-space:nowrap"><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><span class="tag">none</span></td>
+        <td><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Appendix C (Practical Issues) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:'chapter',text:&quot;Appendix C&quot;,element:this,data:{chapter:&quot;C&quot;}});this.textContent='Queued';this.disabled=true">Walk me through</button></td>
+      </tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Reader questions Lambert answered on video</h2>
+    <p class="sub">These include his own corrections to earlier lectures, so a chapter walkthrough checks them first.</p>
+    <div class="tablewrap"><table style="min-width:640px">
+      <thead><tr><th>Session</th><th>Question</th><th>At</th></tr></thead>
+      <tbody>
+      <tr><td>Q&amp;A 1</td><td>What prerequisites should a learner cover before this course?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=38s">0:38</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>For synthetic SFT data, is one teacher model better than many?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=125s">2:05</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>Is there a unified benchmark across pairwise RMs, ORMs, PRMs, and generative RMs?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=313s">5:13</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>Why choose token-level rewards over sequence-level rewards?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=384s">6:24</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>Is GAE the only way to compute the advantage in PPO?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=479s">7:59</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>What is the shape of the importance ratio ρ?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=555s">9:15</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>Why does PPO use torch.max for both policy and value losses?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=680s">11:20</a></td></tr>
+      <tr><td>Q&amp;A 1</td><td>How should data-annotation companies stay valuable as synthetic data gets simpler?</td><td><a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=791s">13:11</a></td></tr>
+      <tr><td>Q&amp;A 2</td><td>Correction: the KD-as-RL-advantage slide (Lecture 7)</td><td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=32s">0:32</a></td></tr>
+      <tr><td>Q&amp;A 2</td><td>Correction: KL divergence is not a “distance” (Lecture 0)</td><td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=100s">1:40</a></td></tr>
+      <tr><td>Q&amp;A 2</td><td>Correction: the Bradley-Terry loss derivation (Lecture 2 / Ch 5)</td><td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=267s">4:27</a></td></tr>
+      <tr><td>Q&amp;A 2</td><td>Can we get programming &amp; math assignments?</td><td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=374s">6:14</a></td></tr>
+      <tr><td>Q&amp;A 2</td><td>Notation gotchas in Chapter 6: reward indexing, scalar placement, trajectory expectations</td><td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=494s">8:14</a></td></tr>
+      <tr><td>Q&amp;A 2</td><td>Why switch between ∇J(θ) and J(θ) across algorithms?</td><td><a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=720s">12:00</a></td></tr>
+      <tr><td>Q&amp;A 3</td><td>Should capabilities be trained separately, then merged?</td><td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=13s">0:13</a></td></tr>
+      <tr><td>Q&amp;A 3</td><td>Why does RLVR often omit the KL penalty?</td><td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=254s">4:14</a></td></tr>
+      <tr><td>Q&amp;A 3</td><td>How does the ~1M SFT prompt budget scale with model size?</td><td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=358s">5:58</a></td></tr>
+      <tr><td>Q&amp;A 3</td><td>Is RL just regularized SFT?</td><td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=491s">8:11</a></td></tr>
+      <tr><td>Q&amp;A 3</td><td>When should in-house traces be trained into the weights vs. handled with ICL?</td><td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=661s">11:01</a></td></tr>
+      <tr><td>Q&amp;A 3</td><td>Can continued pretraining on a distillation-only dataset make a model worse?</td><td><a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=764s">12:44</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Course videos not tied to one chapter</h2>
+    <div class="tablewrap"><table style="min-width:640px">
+      <thead><tr><th>Video</th><th>Uploaded</th><th>Length</th><th>Slides</th></tr></thead>
+      <tbody>
+      <tr><td><a href="https://www.youtube.com/watch?v=MMDNaeIFVy8">Lecture 0: The ML Foundations of LLM Post-Training</a></td><td>2026-06-24</td><td>24 min</td><td><a href="https://rlhfbook.com/teach/course/lec0-prereq-review/">slides</a></td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=sbXEPxIazqY">Conversation 1: Frontier post-training recipes in 2026 (w/ Finbarr Timbers)</a></td><td>2026-06-16</td><td>57 min</td><td><a href="https://rlhfbook.com/teach/course/conversation-01/">slides</a></td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=3xaaGxSjGN4">Bonus 1: What&#x27;s With the Shoggoths?</a></td><td>2026-08-12</td><td>6 min</td><td><a href="https://rlhfbook.com/teach/extras/01-shoggoths/">slides</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>The rest of his channel</h2>
+    <p class="sub">Searchable too, but the 2021–22 talks are on model-based RL for robotics, not post-training.</p>
+    <div class="tablewrap"><table style="min-width:640px">
+      <thead><tr><th>Video</th><th>Uploaded</th><th>Length</th></tr></thead>
+      <tbody>
+      <tr><td><a href="https://www.youtube.com/watch?v=zsO5RktNB7k">How Open Models Win Against OpenAI and Anthropic</a></td><td>2026-11-02</td><td>17 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=79Pnm5hANsA">Open Language Models: Overview, Open Source History, Distillation, Risks, &amp; Chinese Labs</a></td><td>2026-10-26</td><td>48 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=0xiq7RHVGRE">Kimi K3.1 Pro Reactions and Living Through Hackmageddon | Interconnects Podcast</a></td><td>2026-10-25</td><td>47 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=jlOs01fe-iw">TMax: Open-Source Data for SOTA Terminal Agents</a></td><td>2026-06-22</td><td>6 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=jQPiH-KB4B0">Welcome to the Post-Training Course for The RLHF Book</a></td><td>2026-04-14</td><td>4 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=WfwtvzouZGA">Recapping Open Models in 2025</a></td><td>2025-11-05</td><td>35 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=DZFEX3ppflk">Traits of next generation reasoning models</a></td><td>2025-06-05</td><td>18 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=grpc-Wyy-Zg">How to approach post-training for AI applications</a></td><td>2025-01-17</td><td>22 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=qP3rXJc_L5Y">Self-directed Synthetic Dialogues (and other recent synth data)</a></td><td>2024-07-31</td><td>16 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=B7m787UXz2M">Open-source AI (and LLMs): Definitions, Finding Nuance, and Policy</a></td><td>2024-03-31</td><td>21 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=CAaHAfCqrBA">Introducing RewardBench: The First Benchmark for Reward Models (of the LLM Variety)</a></td><td>2024-03-20</td><td>17 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=KK0iKM8ULOc">Reward Reports Brief Intro</a></td><td>2022-07-18</td><td>3 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=HxbeQI7hfo4">[Talk] Planning through Exploration and Exploitation in Model-based Reinforcement Learning</a></td><td>2022-04-25</td><td>61 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=DaHuSrl1FmE">[Talk] Dissertation Talk: Synergy of Prediction and Control in Model-based Reinforcement Learning</a></td><td>2022-04-15</td><td>36 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=xqGhoa6_3cE">[Talk] Industry Review Talk: Machine Learning for Microsystem Control</a></td><td>2022-04-09</td><td>13 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=Z4EpSWfU48E">[Talk] Semiautonomous Seminar: Model learning for low-level control in robotics</a></td><td>2021-10-13</td><td>54 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=haINijwCDkk">[Paper Summary] The Importance of Hyperparameter Optimization for Model-based Reinforcement Learning</a></td><td>2021-03-23</td><td>3 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=H5Q1UAEkhZY">[Talk] Cornell Robotics Seminar: MPC in MBRL</a></td><td>2021-03-04</td><td>48 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=kA2i0zHWePU">[Talk] Bringing model-based RL to novel robotic platforms</a></td><td>2021-02-04</td><td>45 min</td></tr>
+      <tr><td><a href="https://www.youtube.com/watch?v=OcVGm7b_bug">[Paper Summary] Objective Mismatch in Model-based Reinforcement Learning</a></td><td>2021-02-04</td><td>6 min</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>What this map does not cover</h2>
+    <div class="callout warn">
+      <ul>
+        <li>The <a href="https://www.youtube.com/@interconnects">@interconnects</a> channel, except the videos his course page links.</li>
+        <li>His <a href="https://www.interconnects.ai/">Interconnects newsletter</a>.</li>
+        <li>The Levine and Silver courses his page recommends, because they are not his.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</body>
+</html>

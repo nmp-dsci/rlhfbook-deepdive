@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why does RLVR often omit the KL penalty?</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+  <p class="eyebrow">Question · answered from Nathan Lambert's material · reference example</p>
+  <h1>Why does RLVR often omit the KL penalty?</h1>
+  <p class="lede">The KL penalty exists to stop the optimizer exploiting a learned reward model. In RLVR the reward is a check against a verifiable answer, so there is less to exploit, and removing the penalty lets long runs explore further. Lambert limits this to basic math and code: as runs lengthen and tool use grows, regularization is coming back. <a class="chip" href="#s1">1</a> <a class="chip" href="#s4">4</a> <a class="chip" href="#s6">6</a></p>
+
+  <section>
+    <h2>What Lambert says</h2>
+    <p><strong>What the penalty is for.</strong> In RLHF the reward model is a learned proxy, and without regularization the policy exploits its imperfections. <a class="chip" href="#s2">2</a> In practice that meant the optimizer moving stylistic features until the model stopped making sense. <a class="chip" href="#s3">3</a></p>
+    <p><strong>Why RLVR needs it less.</strong> A reader proposed that verifiable rewards avoid the proxy problem, and Lambert's answer was "Overall yes", adding that Tülu 3 models could learn math without out-of-distribution degradation. <a class="chip" href="#s1">1</a> His slide states the general trend: more reliable reward signals mean less need for KL regularization. <a class="chip" href="#s2">2</a></p>
+    <p><strong>What removing it buys.</strong> The book gives a second reason beside the reward: RL runs got longer, and dropping the constraint to the base model lets the model explore further during training. <a class="chip" href="#s4">4</a> Open-Reasoner-Zero, Magistral, Skywork OR-1, DAPO and GLM-5 all dropped it. <a class="chip" href="#s5">5</a></p>
+    <p><strong>Where the rule stops.</strong> He applies "you do not need a KL penalty" to basic math and code RLVR. With tool use, over-optimization takes more forms and regularization is returning. <a class="chip" href="#s6">6</a> Very long runs may also bring the penalty back, to keep the model grounded near where it started. <a class="chip" href="#s7">7</a></p>
+  </section>
+
+  <section>
+    <h2>Where his sources differ</h2>
+    <div class="callout warn">
+      <p><span class="badge warn">unresolved</span> <strong>DeepSeek R1.</strong> Three of Lambert's own sources describe it differently. Lecture 3's slide says R1-style setups drop the reference model altogether. <a class="chip" href="#s10">10</a> The Q&amp;A 3 slide says R1's GRPO objective ships with a KL term to the reference model. <a class="chip" href="#s11">11</a> In the Q&amp;A 3 recording he says R1 "didn't actually talk about it". <a class="chip" href="#s12">12</a></p>
+      <p>His material does not settle this. The R1 paper would: the Q&amp;A 3 slide cites it as <code>guo2025deepseek</code>.</p>
+    </div>
+    <div class="callout warn">
+      <p><span class="badge warn">unresolved</span> <strong>What is coming back.</strong> Lecture 5 (June 2026) says long-horizon agentic training is reviving a KL or reference term. <a class="chip" href="#s9">9</a> Lecture 10 (July 2026) says regularization is returning but aimed at drift from the sampling distribution, "not a KL penalty to a reference model". <a class="chip" href="#s8">8</a> These may describe different training setups, or a change in his view; the slides alone do not say which.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Beyond the sources</h2>
+    <div class="callout">
+      <p><span class="badge info">agent note</span> Not Lambert: quote 1 mixes two speakers. The first half is the reader's question and the second is Lambert's reply. Also, the Q&amp;A 3 captions render "Tülu 3" as "Tool Use 3" at <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">4:42</a>, so this page takes the name from his slide. Key terms in a transcript are worth checking against the slides or the video.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book and slide links open the exact lines at a pinned commit; video links open at the second.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L88-L93">
+      <blockquote style="margin:0">in RLVR the reward is verifiable ground truth, so we don't run into the over-optimization problem you get in RLHF, where a learned reward model is only a proxy … Overall yes. We even found during Tülu 3 that in RLVR the models are very good at selectively updating behaviors -- e.g. learning math without OOD degradation.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L88-L93">Slides qa-03 § Q2: &quot;Why does RLVR often omit the KL penalty?&quot; (L88-L93)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L732-L736">
+      <blockquote style="margin:0">RLHF (reward model signal): KL penalty is critical — the reward model is a learned proxy, and the policy will exploit any imperfections without regularization. … RLVR (verifiable rewards, e.g. math correctness): KL is often reduced or removed entirely. The reward is ground truth, so there's less to exploit. … The trend: as reward signals become more reliable, the need for KL regularization decreases.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L732-L736">Slides lec3-chap6-p1 § KL in RLHF vs. RLVR (L732-L736)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="yt:o4AB5xHIDdM@00:37:25-00:38:26">
+      <blockquote style="margin:0">in the RHF sense, it would kind of move stylistic features that made the model kind of nonsense. And in RLVR, because the reward signals were more precise, you didn't really need this in earlier earlier work.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2245s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:37:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L291">
+      <blockquote style="margin:0">As the length of RL runs (in any metric, total GPU hours, FLOPS, or RL steps) increased for reasoning models relative to RLHF training, and the reward function became less prone to over-optimization, many models removed the KL penalty constraining the RL-learned policy to be similar to the base model used at the start of training. This allows the model to further explore during its training.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L291">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L291)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L104-L106">
+      <blockquote style="margin:0">Open-Reasoner-Zero, Magistral, and Skywork OR-1 ran RLVR at $\beta = 0$ (Lecture 5's list). DAPO removed it explicitly so long reasoning chains can explore. GLM-5 (2026): "we remove the KL regularization term to accelerate RL improvement"</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L104-L106">Slides qa-03 § Dropped it (L104-L106)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:46">
+      <blockquote style="margin:0">as these RL things got more complicated, especially in tool use, over optimization can come into many different forms and the regularization is starting to come back so there's some people to kind of manage this complexity, but the basic math and code RLVR it seems like you do not need a KL penalty.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="yt:o4AB5xHIDdM@00:37:56-00:38:26">
+      <blockquote style="margin:0">as RL runs get really long, this KL penalty might come back because you want to make it sure that when you do a really, really long RL run that you have some grounding on what the model should stay near.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2276s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:37:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L70-L72">
+      <blockquote style="margin:0">Reasoning models (before tool use) often dropped the KL penalty to enhance learning. With the emergence of large-scale tool-use, regularization is coming back into vogue -- but aimed at drift from the sampling distribution, not a KL penalty to a reference model</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L70-L72">Slides lec10-chap15-regularization § RLVR has regularization too, but different best practices (L70-L72)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L574">
+      <blockquote style="margin:0">KL penalty: dropped, now creeping back -- single-turn math RLVR usually sets $\beta=0$ (verifiable rewards resist over-optimization). … But long-horizon, off-policy agentic training is reviving a KL/reference term for stability</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L574">Slides lec5-chap7 § Recipe decisions (1/4) (L574)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L734">
+      <blockquote style="margin:0">Some RLVR setups (e.g. DeepSeek R1) drop the reference model altogether, saving memory.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L734">Slides lec3-chap6-p1 § KL in RLHF vs. RLVR (L734)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L112">
+      <blockquote style="margin:0">DeepSeek-R1's GRPO objective ships with a $\beta\, D_{\mathrm{KL}}$ term to the reference model</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L112">Slides qa-03 § Kept (a version of) it (L112)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="yt:6StK9ttLNbQ@00:05:15-00:05:46">
+      <blockquote style="margin:0">they all talk about you not using the KL penalty, but Deep Seek R1 didn't actually talk about it.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=315s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15</a></figcaption>
+    </figure>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Copy to .lavish/sNN_q-<topic>.html, fill it in, then run `make check`.
+     Worked example: .lavish/s01_q-rlvr-kl-penalty.html. Rules: AGENTS.md. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QUESTION</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<!-- Math: keep only if the page has $...$ -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+  <p class="eyebrow">Question · answered from Nathan Lambert's material</p>
+  <h1>QUESTION</h1>
+  <p class="lede">ANSWER IN TWO OR THREE SENTENCES. <a class="chip" href="#s1">1</a></p>
+
+  <section>
+    <h2>What Lambert says</h2>
+    <p>ONE CLAIM PER PARAGRAPH, EACH WITH ITS CHIPS. <a class="chip" href="#s1">1</a></p>
+  </section>
+
+  <!-- Keep only if the sources differ. Show each side; do not pick silently. -->
+  <section>
+    <h2>Where his sources differ</h2>
+    <div class="callout warn"><p>WHAT DIFFERS, WITH CHIPS, AND WHAT WOULD SETTLE IT.</p></div>
+  </section>
+
+  <!-- Keep only if used. Anything not traceable to a source goes here and nowhere else. -->
+  <section>
+    <h2>Beyond the sources</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> YOUR INFERENCE OR ANALOGY. NOT LAMBERT.</p></div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>.</p>
+    <figure class="callout" id="s1" data-cite="CITATION ID FROM make search">
+      <blockquote style="margin:0">VERBATIM QUOTE, ELIDED WITH … IF NEEDED</blockquote>
+      <figcaption><span class="chip">1</span> <a href="LINK FROM make resolve">LABEL FROM make resolve</a></figcaption>
+    </figure>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# Generated from transcript-rag-agent by `make transcripts`. Transcripts carry no licence, so the
+# public repo commits only sources/catalog.json (facts and hashes). See AGENTS.md.
+sources/transcripts/
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.DS_Store
+.env
+.env.*

@@ -1,0 +1,5 @@
+[submodule "sources/rlhf-book"]
+	path = sources/rlhf-book
+	url = https://github.com/natolambert/rlhf-book
+	shallow = true
+	branch = main

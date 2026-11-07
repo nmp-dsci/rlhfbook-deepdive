@@ -1,0 +1,489 @@
+{
+  "source": "https://rlhfbook.com/course",
+  "retrieved": "2026-11-07",
+  "playlist": "PLL1tdVxB1CpVpEtMHxwuR4uI4Lxjw00_y",
+  "course": [
+    {
+      "id": "lec0",
+      "kind": "lecture",
+      "title": "Lecture 0: The ML Foundations of LLM Post-Training",
+      "summary": "A refresher on the ML prerequisites of post-training — language modeling, KL, cross-entropy, & other math — to acclimate to the series",
+      "chapters": [],
+      "appendices": [],
+      "video_id": "MMDNaeIFVy8",
+      "slides": "teach/course/lec0-prereq-review.md"
+    },
+    {
+      "id": "lec1",
+      "kind": "lecture",
+      "title": "Lecture 1: Overview",
+      "summary": "Chapters 1-3 · Foundations of RLHF and post-training",
+      "chapters": [
+        1,
+        2,
+        3
+      ],
+      "appendices": [],
+      "video_id": "o6l6tJQgUg4",
+      "slides": "teach/course/lec1-chap1-3.md"
+    },
+    {
+      "id": "lec2",
+      "kind": "lecture",
+      "title": "Lecture 2: IFT, Reward Models, & Rejection Sampling",
+      "summary": "Chapters 4, 5, 9 · Start of the core optimization methods section",
+      "chapters": [
+        4,
+        5,
+        9
+      ],
+      "appendices": [],
+      "video_id": "4gIwiSPmQkU",
+      "slides": "teach/course/lec2-chap4-5-9.md"
+    },
+    {
+      "id": "lec3",
+      "kind": "lecture",
+      "title": "Lecture 3: RL Motivation & Math",
+      "summary": "Chapter 6, Part 1 · Policy gradients math, intuitions, and theory",
+      "chapters": [
+        6
+      ],
+      "appendices": [],
+      "video_id": "K_Sj_-1BUMM",
+      "slides": "teach/course/lec3-chap6-p1.md"
+    },
+    {
+      "id": "lec4",
+      "kind": "lecture",
+      "title": "Lecture 4: RL Implementation & Practice",
+      "summary": "Chapter 6, Part 2 · Code, loss aggregation, async training, and practical engineering",
+      "chapters": [
+        6
+      ],
+      "appendices": [],
+      "video_id": "i-AIMpZHgeg",
+      "slides": "teach/course/lec4-chap6-p2.md"
+    },
+    {
+      "id": "qa-01",
+      "kind": "qa",
+      "title": "Q&A 1: Reader questions, lec. 1-4",
+      "summary": "",
+      "chapters": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "appendices": [],
+      "video_id": "x-MqKBzoxkI",
+      "slides": "teach/course/qa-01.md",
+      "covers": [
+        "lec1",
+        "lec2",
+        "lec3",
+        "lec4"
+      ]
+    },
+    {
+      "id": "lec5",
+      "kind": "lecture",
+      "title": "Lecture 5: The Rise of Reasoning Models",
+      "summary": "Chapter 7 · RLVR, inference-time scaling, and the 2025 reasoning model wave",
+      "chapters": [
+        7
+      ],
+      "appendices": [],
+      "video_id": "o4AB5xHIDdM",
+      "slides": "teach/course/lec5-chap7.md"
+    },
+    {
+      "id": "lec6",
+      "kind": "lecture",
+      "title": "Lecture 6: Direct Preference Optimization",
+      "summary": "Chapter 8 · Deriving DPO step by step, plus variants and practice",
+      "chapters": [
+        8
+      ],
+      "appendices": [],
+      "video_id": "6g6b4gvO-y0",
+      "slides": "teach/course/lec6-chap8-dpo.md"
+    },
+    {
+      "id": "conversation-01",
+      "kind": "conversation",
+      "title": "Conversation 1: Frontier post-training recipes in 2026 (w/ Finbarr Timbers)",
+      "summary": "",
+      "chapters": [],
+      "appendices": [],
+      "video_id": "sbXEPxIazqY",
+      "slides": "teach/course/conversation-01.md"
+    },
+    {
+      "id": "lec7",
+      "kind": "lecture",
+      "title": "Lecture 7: Synthetic Data and Modern Post-training Methods",
+      "summary": "Chapter 12 · On-policy distillation, AI feedback, Constitutional AI, and rubrics",
+      "chapters": [
+        12
+      ],
+      "appendices": [],
+      "video_id": "6nyJ8y8ghsE",
+      "slides": "teach/course/lec7-chap12-synthetic-data.md"
+    },
+    {
+      "id": "qa-02",
+      "kind": "qa",
+      "title": "Q&A 2: Reader questions, lec. 5-7",
+      "summary": "",
+      "chapters": [
+        7,
+        8,
+        12
+      ],
+      "appendices": [],
+      "video_id": "gB-bYUECpzE",
+      "slides": "teach/course/qa-02.md",
+      "covers": [
+        "lec5",
+        "lec6",
+        "lec7"
+      ]
+    },
+    {
+      "id": "lec8",
+      "kind": "lecture",
+      "title": "Lecture 8: On \"Preferences\" and Preference Data",
+      "summary": "Chapters 10 & 11 · Where the idea of quantifying preference came from and opaque data practices",
+      "chapters": [
+        10,
+        11
+      ],
+      "appendices": [],
+      "video_id": "Y2tv5vuaxFs",
+      "slides": "teach/course/lec8-chap10-11-preferences.md"
+    },
+    {
+      "id": "lec9",
+      "kind": "lecture",
+      "title": "Lecture 9: Over-Optimization and RLHF's Bad Reputation",
+      "summary": "Chapter 14 & Appendix B · Goodhart's law, reward hacking, sycophancy, and style",
+      "chapters": [
+        14
+      ],
+      "appendices": [
+        "b"
+      ],
+      "video_id": "y04JhXpiI4s",
+      "slides": "teach/course/lec9-chap14-appb-overoptimization.md"
+    },
+    {
+      "id": "lec10",
+      "kind": "lecture",
+      "title": "Lecture 10: Regularization in RL, Why RL Generalizes, and Why SFT Forgets",
+      "summary": "Chapter 15 · The KL penalty, implicit regularization, and why RL forgets less",
+      "chapters": [
+        15
+      ],
+      "appendices": [],
+      "video_id": "IwpYxANrpUs",
+      "slides": "teach/course/lec10-chap15-regularization.md"
+    },
+    {
+      "id": "conversation-02",
+      "kind": "conversation",
+      "title": "Conversation 2: From academic research to frontier practice (w/ Scott Geng)",
+      "summary": "We discuss what it takes to land a well-grounded academic result into a near-frontier model. Scott and I worked together on DPO for Olmo 3, and how building models is much more than the idea, it's making it fit in a more complex puzzle.",
+      "chapters": [
+        8
+      ],
+      "appendices": [],
+      "video_id": "rhA7pLVt4E0",
+      "slides": null
+    },
+    {
+      "id": "lec11",
+      "kind": "lecture",
+      "title": "Lecture 11: Tool Use, Function Calling and The Road to Agents",
+      "summary": "Chapter 13 · Why models need tools, MCP and harnesses, and tool-use RL",
+      "chapters": [
+        13
+      ],
+      "appendices": [],
+      "video_id": "GMry2DzC304",
+      "slides": "teach/course/lec11-chap13-tools.md"
+    },
+    {
+      "id": "qa-03",
+      "kind": "qa",
+      "title": "Q&A 3: Reader questions, lec. 8-11",
+      "summary": "",
+      "chapters": [
+        10,
+        11,
+        13,
+        14,
+        15
+      ],
+      "appendices": [],
+      "video_id": "6StK9ttLNbQ",
+      "slides": "teach/course/qa-03.md",
+      "covers": [
+        "lec8",
+        "lec9",
+        "lec10",
+        "lec11"
+      ]
+    },
+    {
+      "id": "lec12",
+      "kind": "lecture",
+      "title": "Lecture 12: The Evolution of Frontier Model Evaluation",
+      "summary": "Chapter 16 · The eras of evaluation, agentic evals, and trusting the numbers",
+      "chapters": [
+        16
+      ],
+      "appendices": [],
+      "video_id": "dFafQmClYq4",
+      "slides": "teach/course/lec12-chap16-evals.md"
+    },
+    {
+      "id": "lec13",
+      "kind": "lecture",
+      "title": "Lecture 13: An Introduction to Character Training",
+      "summary": "Chapter 17 · Constitutions, model specs, model personalities, and open questions",
+      "chapters": [
+        17
+      ],
+      "appendices": [],
+      "video_id": "xECWRYBxq1E",
+      "slides": "teach/course/lec13-chap17-character.md"
+    },
+    {
+      "id": "bonus-01",
+      "kind": "bonus",
+      "title": "Bonus 1: What's With the Shoggoths?",
+      "summary": "Bonus talk · The meme that explained post-training.",
+      "chapters": [],
+      "appendices": [],
+      "video_id": "3xaaGxSjGN4",
+      "slides": "teach/extras/01-shoggoths.md"
+    }
+  ],
+  "talks": [
+    {
+      "video_id": "AdLgPmcrXwQ",
+      "title": "Aligning Open Language Models (Stanford CS25)",
+      "date": "Apr 2024",
+      "chapters": [
+        1
+      ]
+    },
+    {
+      "video_id": "6yIMb0K-aS4",
+      "title": "How Language Model Post-Training Is Done Today",
+      "date": "Jan 2025",
+      "chapters": [
+        3
+      ]
+    },
+    {
+      "video_id": "uaZ3yRdYg8A",
+      "title": "How We Built a Leading Reasoning Model (Olmo 3)",
+      "date": "Dec 2025",
+      "chapters": [
+        3
+      ]
+    },
+    {
+      "video_id": "amrJDwMUFNs",
+      "title": "GRPO's New Variants and Implementation Secrets",
+      "date": "Mar 2025",
+      "chapters": [
+        6
+      ]
+    },
+    {
+      "video_id": "Mu_-FWIuhDA",
+      "title": "15 Minute History of Reinforcement Learning and Human Feedback",
+      "date": "Dec 2023",
+      "chapters": [
+        10
+      ]
+    },
+    {
+      "video_id": "YXTYbr3hiFU",
+      "title": "An Unexpected Reinforcement Learning Renaissance",
+      "date": "Feb 2025",
+      "chapters": [
+        7
+      ]
+    },
+    {
+      "video_id": "J1APR8Bo9dE",
+      "title": "Early Stages of the Reinforcement Learning Era of Language Models",
+      "date": "Mar 2025",
+      "chapters": [
+        7
+      ]
+    },
+    {
+      "video_id": "zYeIqzULzr0",
+      "title": "Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR)",
+      "date": "Apr 2025",
+      "chapters": [
+        7
+      ]
+    },
+    {
+      "video_id": "YJMCSVLRUNs",
+      "title": "DPO Debate: Is RL Needed for RLHF?",
+      "date": "Dec 2023",
+      "chapters": [
+        8
+      ]
+    },
+    {
+      "video_id": "dnF463_Ar9I",
+      "title": "Life After DPO (Stanford CS224N)",
+      "date": "May 2024",
+      "chapters": [
+        8
+      ]
+    },
+    {
+      "video_id": "rDF7eFPeVto",
+      "title": "An Update on DPO vs PPO for LLM Alignment",
+      "date": "Jul 2024",
+      "chapters": [
+        8
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "What prerequisites should a learner cover before this course?",
+      "seconds": 38
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "For synthetic SFT data, is one teacher model better than many?",
+      "seconds": 125
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "Is there a unified benchmark across pairwise RMs, ORMs, PRMs, and generative RMs?",
+      "seconds": 313
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "Why choose token-level rewards over sequence-level rewards?",
+      "seconds": 384
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "Is GAE the only way to compute the advantage in PPO?",
+      "seconds": 479
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "What is the shape of the importance ratio ρ?",
+      "seconds": 555
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "Why does PPO use torch.max for both policy and value losses?",
+      "seconds": 680
+    },
+    {
+      "entry": "qa-01",
+      "video_id": "x-MqKBzoxkI",
+      "question": "How should data-annotation companies stay valuable as synthetic data gets simpler?",
+      "seconds": 791
+    },
+    {
+      "entry": "qa-02",
+      "video_id": "gB-bYUECpzE",
+      "question": "Correction: the KD-as-RL-advantage slide (Lecture 7)",
+      "seconds": 32
+    },
+    {
+      "entry": "qa-02",
+      "video_id": "gB-bYUECpzE",
+      "question": "Correction: KL divergence is not a “distance” (Lecture 0)",
+      "seconds": 100
+    },
+    {
+      "entry": "qa-02",
+      "video_id": "gB-bYUECpzE",
+      "question": "Correction: the Bradley-Terry loss derivation (Lecture 2 / Ch 5)",
+      "seconds": 267
+    },
+    {
+      "entry": "qa-02",
+      "video_id": "gB-bYUECpzE",
+      "question": "Can we get programming & math assignments?",
+      "seconds": 374
+    },
+    {
+      "entry": "qa-02",
+      "video_id": "gB-bYUECpzE",
+      "question": "Notation gotchas in Chapter 6: reward indexing, scalar placement, trajectory expectations",
+      "seconds": 494
+    },
+    {
+      "entry": "qa-02",
+      "video_id": "gB-bYUECpzE",
+      "question": "Why switch between ∇J(θ) and J(θ) across algorithms?",
+      "seconds": 720
+    },
+    {
+      "entry": "qa-03",
+      "video_id": "6StK9ttLNbQ",
+      "question": "Should capabilities be trained separately, then merged?",
+      "seconds": 13
+    },
+    {
+      "entry": "qa-03",
+      "video_id": "6StK9ttLNbQ",
+      "question": "Why does RLVR often omit the KL penalty?",
+      "seconds": 254
+    },
+    {
+      "entry": "qa-03",
+      "video_id": "6StK9ttLNbQ",
+      "question": "How does the ~1M SFT prompt budget scale with model size?",
+      "seconds": 358
+    },
+    {
+      "entry": "qa-03",
+      "video_id": "6StK9ttLNbQ",
+      "question": "Is RL just regularized SFT?",
+      "seconds": 491
+    },
+    {
+      "entry": "qa-03",
+      "video_id": "6StK9ttLNbQ",
+      "question": "When should in-house traces be trained into the weights vs. handled with ICL?",
+      "seconds": 661
+    },
+    {
+      "entry": "qa-03",
+      "video_id": "6StK9ttLNbQ",
+      "question": "Can continued pretraining on a distillation-only dataset make a model worse?",
+      "seconds": 764
+    }
+  ]
+}

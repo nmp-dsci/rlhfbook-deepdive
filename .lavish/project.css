@@ -1,0 +1,4 @@
+/* rlhfbook-deepdive: house UI v1, house default accent.
+   This project has no `ui:` block in nmp-central-ai/registry/projects.yaml because no hue is left
+   30 degrees from the others, and a project's colour is never picked by hand (D8). When the
+   separation rule settles, this file gets its one line: :root{ --hue:N; }. Load after house.css. */
