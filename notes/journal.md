@@ -14,3 +14,4 @@ written anywhere under `notes/` is checked by `make check`.
 | 2026-11-07 | Walk me through Chapter 5 | [s06](../.lavish/s06_ch05-reward-models.html) |
 | 2026-11-07 | Walk me through Chapter 6 | [s07](../.lavish/s07_ch06-policy-gradients.html) |
 | 2026-11-07 | Walk me through Chapter 7 | [s08](../.lavish/s08_ch07-reasoning.html) |
+| 2026-11-08 | Walk me through Chapter 8 | [s09](../.lavish/s09_ch08-direct-alignment.html) |
