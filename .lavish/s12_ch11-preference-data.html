@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 11: Preference Data</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid output{font-family:var(--mono)}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .tog[aria-pressed=false]{background:transparent;color:var(--ink-2);border:1px solid var(--line-3)}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  .lk-scale{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:4px;margin-top:var(--s2)}
+  .lk-pt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:var(--s1) 0;min-width:0;font:inherit;font-size:var(--t-2);background:var(--bg);color:var(--ink);border:1px solid var(--line-3);border-radius:var(--r);cursor:pointer}
+  .lk-pt b{font-family:var(--mono);font-size:var(--t-1)}
+  .lk-pt .dots{font-family:var(--mono);color:var(--accent);letter-spacing:-1px;min-height:1.2em;overflow-wrap:anywhere}
+  .cs-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--s3);margin-top:var(--s2)}
+  .cs-row label{display:block;font-size:var(--t-1)}
+  .wid textarea{width:100%;margin-top:var(--s1);font:inherit;font-family:var(--mono);font-size:var(--t-2);padding:var(--s2);background:var(--bg);color:var(--ink);border:1px solid var(--line-3);border-radius:var(--r);resize:vertical}
+  table.likert th,table.likert td{text-align:center}
+  table.likert th:first-child,table.likert td:first-child{text-align:left}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite],.kv{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s11_ch10-preferences.html">Chapter 10</a></p>
+  <h1>Chapter 11: Preference Data</h1>
+  <p class="lede">We cannot write down a loss for human preferences, so preference data is the proxy signal RLHF tunes against. <a class="chip" href="#s1" title="Ch. 11 Preference Data (L22-L23)">1</a> Lambert names two challenges: collecting it is costly and operationally complex, and it needs to be "on-policy", generated by the model being trained. <a class="chip" href="#s2" title="Ch. 11 Preference Data (L27)">2</a> Chapter 10 asked what a preference is. This chapter is about the mechanics: interfaces, formats, contracts and biases. Lambert calls collecting it well "one of the most opaque pieces of the pipeline". <a class="chip" href="#s3" title="Ch. 11 Preference Data § Collecting Preference Data (L40-L42)">3</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Judging beats generating.</strong> It is easier to tell a good answer from a bad one than to write a good one, which is why this data works. <a class="chip" href="#s4" title="Ch. 11 Preference Data § Why We Need Preference Data (L33-L35)">4</a></li>
+      <li><strong>On-policy matters.</strong> Preferences should be collected on completions from your own family of models. <a class="chip" href="#s5" title="Ch. 11 Preference Data § Collecting Preference Data (L50-L53)">5</a></li>
+      <li><strong>Rankings, binarized.</strong> Data is collected as ratings or Likert-scale rankings, then usually reduced to chosen and rejected. <a class="chip" href="#s6" title="Ch. 11 Preference Data § Rankings vs. Ratings (L100-L101)">6</a> <a class="chip" href="#s7" title="Ch. 11 Preference Data § Rankings vs. Ratings (L132)">7</a></li>
+      <li><strong>Buying it is hard.</strong> Vendors are supply-limited, contracts run in weekly batches, and much of the spend is "wasted". <a class="chip" href="#s8" title="Ch. 11 Preference Data § Sourcing and Contracts (L199-L202)">8</a> <a class="chip" href="#s9" title="Ch. 11 Preference Data § Sourcing and Contracts (L226-L228)">9</a> <a class="chip" href="#s10" title="Ch. 11 Preference Data § Sourcing and Contracts (L236-L240)">10</a></li>
+      <li><strong>Biases ride along.</strong> Prefix bias, sycophancy, verbosity and formatting pass from the data into the model. <a class="chip" href="#s11" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)">11</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Explain what "on-policy" means for preference data, and why it is softer than in RL.</li>
+      <li>Compare ratings and rankings, and 5-point and 8-point Likert scales, and say what binarizing loses.</li>
+      <li>Build a structured preference pair from a checkable constraint.</li>
+      <li>Describe a human-data contract from vendor to delivery, and where it goes wrong.</li>
+      <li>Name the common biases in preference data.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/11-preference-data">Chapter 11</a></td><td>Medium</td><td>Interfaces, formats, sourcing, biases and open questions.</td></tr>
+        <tr><td>Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1216s">20:16</a> to <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2148s">35:48</a></td><td>16 min</td><td>Recorded July 2026. The second half of a lecture shared with Chapter 10.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L369-L646">Lecture 8 slides</a>, Parts 2 and 3</td><td>20 slides</td><td>All five interfaces, both Likert scales, the contract timeline and the InstructGPT instructions.</td></tr>
+        <tr><td>Lecture 7: <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=2269s">37:49</a> to <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=2393s">39:53</a></td><td>2 min</td><td>Costs, and John Schulman's view of human versus AI labels.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="why">
+    <h2>Why we need preference data</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1216s">20:16</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1246s">20:46</a></p>
+    <p>One reward function cannot capture complex human values, as Chapter 10 argued. Collecting comparisons to train reward models is one of RLHF's original ideas. It works because it is far easier, for people and for AI supervisors, to tell a good answer from a bad one than to write the good one. <a class="chip" href="#s4" title="Ch. 11 Preference Data § Why We Need Preference Data (L33-L35)">4</a> <a class="chip" href="#s12" title="Slides lec8-chap10-11-preferences § Where we started -- why collect preference data (L375-L379)">12</a> The data is so rich "that it is difficult to replace this style of optimization at all". <a class="chip" href="#s13" title="Ch. 11 Preference Data (L25)">13</a> Human preference data mattered most when RLHF was the final step, and "is still definitely used to understand and improve the models today". <a class="chip" href="#s14" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:20:46">14</a></p>
+  </section>
+
+  <section id="collect">
+    <h2>Collecting preference data</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1277s">21:17</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1309s">21:49</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1806s">30:06</a></p>
+    <p>Doing it well means iterative training, hundreds of thousands or millions of dollars, detailed instructions and data vendors in between. <a class="chip" href="#s3" title="Ch. 11 Preference Data § Collecting Preference Data (L40-L42)">3</a> As of 2026 no open model has released fully open human preference data together with how it was collected. The closest are NVIDIA's HelpSteer datasets. <a class="chip" href="#s15" title="Ch. 11 Preference Data § Collecting Preference Data (L43)">15</a> <a class="chip" href="#s16" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:21:17">16</a> Lambert sees this as a part of the literature that got "left behind". <a class="chip" href="#s17" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:21:49">17</a> Many new teams skip human data entirely, for AI feedback or off-the-shelf reward models. <a class="chip" href="#s18" title="Ch. 11 Preference Data § Collecting Preference Data (L44)">18</a></p>
+    <h3>On-policy, in a softer sense</h3>
+    <p>The best preference data is assumed to come from the previous checkpoints of your own training. <a class="chip" href="#s19" title="Ch. 11 Preference Data § Collecting Preference Data (L46-L48)">19</a> In RL, on-policy means data from the latest policy. For preference data it means data from "the current family of models", and research shows this beats pooled completions from popular models. <a class="chip" href="#s5" title="Ch. 11 Preference Data § Collecting Preference Data (L50-L53)">5</a> Little documents this, and the balance of human and AI preference data in frontier models is unknown. <a class="chip" href="#s20" title="Ch. 11 Preference Data § Collecting Preference Data (L55-L56)">20</a> At Hugging Face, Lambert's small team found on-policy collection "really hard", so they bought SFT data, which has no such constraint. <a class="chip" href="#s21" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:30:06">21</a> <a class="chip" href="#s22" title="Ch. 11 Preference Data § Sourcing and Contracts (L242-L245)">22</a></p>
+    <p>One subtlety: the chosen answer is not necessarily correct, only better than the alternatives shown. Models can learn even when every completion is right, or every one wrong. <a class="chip" href="#s23" title="Ch. 11 Preference Data § Collecting Preference Data (L59-L61)">23</a></p>
+  </section>
+
+  <section id="interfaces">
+    <h2>Interfaces</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1309s">21:49</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1340s">22:20</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1371s">22:51</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1404s">23:24</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1434s">23:54</a></p>
+    <p>Interface design is "more of an art than a science". Even speed changes a model's vibe: users may think a fast reasoning model is less intelligent. <a class="chip" href="#s24" title="Ch. 11 Preference Data § Interfaces (L65-L66)">24</a> "Every interface shapes the preference it captures." <a class="chip" href="#s25" title="Slides lec8-chap10-11-preferences § Interface 5: Pick-from-many (default in image models) (L426)">25</a> Lambert's survey of the five main kinds: "pretty much every permutation here has been tried". <a class="chip" href="#s26" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:51">26</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:620px">
+      <thead><tr><th>Interface</th><th>Example</th><th>What the user does</th><th>Book</th></tr></thead>
+      <tbody>
+        <tr><td>Research data collection</td><td>Anthropic, early Claude</td><td>Converse, then pick A or B on a scale, with notes and a rating <a class="chip" href="#s27" title="Ch. 11 Preference Data § Interfaces (L68-L70)">27</a> <a class="chip" href="#s28" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:20">28</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/anthropic-interface.png">figure</a></td></tr>
+        <tr><td>A/B test in production</td><td>ChatGPT</td><td>Two near-identical answers; which do you prefer? <a class="chip" href="#s29" title="Ch. 11 Preference Data § Interfaces (L74-L76)">29</a> <a class="chip" href="#s30" title="Ch. 11 Preference Data § Interfaces (L79)">30</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/chatgpt-ab-test.jpeg">figure</a></td></tr>
+        <tr><td>Pairwise with a tie</td><td>Arena</td><td>A, B, tie, or both bad; used for evaluation <a class="chip" href="#s31" title="Ch. 11 Preference Data § Interfaces (L81-L82)">31</a> <a class="chip" href="#s26" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:51">26</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/chatbotarena.png">figure</a></td></tr>
+        <tr><td>A single bit</td><td>Ai2 demos, most chat apps</td><td>Thumbs up or down on one answer <a class="chip" href="#s32" title="Ch. 11 Preference Data § Interfaces (L86-L87)">32</a> <a class="chip" href="#s33" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:23:24">33</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/up-down-vote.png">figure</a></td></tr>
+        <tr><td>Pick from many</td><td>Midjourney, image models</td><td>Choose one of a grid of generations <a class="chip" href="#s34" title="Ch. 11 Preference Data § Interfaces (L92-L93)">34</a> <a class="chip" href="#s35" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:23:54">35</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/midj.jpeg">figure</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Production A/B tests may train future models, or only evaluate them; it depends on the application. <a class="chip" href="#s29" title="Ch. 11 Preference Data § Interfaces (L74-L76)">29</a> In ChatGPT's case the two answers were "very close", which shows how noisy the data is. <a class="chip" href="#s30" title="Ch. 11 Preference Data § Interfaces (L79)">30</a> <a class="chip" href="#s36" title="Slides lec8-chap10-11-preferences § Interface 2: A/B testing in production (ChatGPT user data) (L401)">36</a> Lambert recalls OpenAI's post on sycophancy: a reward model trained on which A/B answer users picked was over-optimized, and sycophancy emerged. <a class="chip" href="#s37" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:51">37</a></p>
+  </section>
+
+  <section id="formats">
+    <h2>Rankings vs. ratings</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1434s">23:54</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1464s">24:24</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1495s">24:55</a></p>
+    <p>The biggest design choice: <strong>ratings</strong> score one completion on its own, and <strong>rankings</strong> compare completions. Training usually uses rankings, with ratings kept as metadata. <a class="chip" href="#s6" title="Ch. 11 Preference Data § Rankings vs. Ratings (L100-L101)">6</a> <a class="chip" href="#s38" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:24:24">38</a> <a class="chip" href="#s39" title="Slides lec8-chap10-11-preferences § Rankings vs. ratings (L433-L437)">39</a> A 1-to-5 rating rubric is one simple option. <a class="chip" href="#s40" title="Ch. 11 Preference Data § Rankings vs. Ratings (L103-L109)">40</a> UltraFeedback turns ratings into pairs: the top-rated completion against a random lower one. <a class="chip" href="#s41" title="Ch. 11 Preference Data § Rankings vs. Ratings (L111)">41</a></p>
+    <p>Most rankings use a Likert scale. It too is a single integer, so the difference from a rating is the structure, not the number. <a class="chip" href="#s42" title="Ch. 11 Preference Data § Rankings vs. Ratings (L113-L114)">42</a></p>
+    <div class="tablewrap"><table class="kt likert" style="min-width:480px">
+      <thead><tr><th>5-point, with tie <a class="chip" href="#s43" title="Ch. 11 Preference Data § Rankings vs. Ratings (L116-L120)">43</a></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead>
+      <tbody><tr><td>Meaning</td><td>A ≫ B</td><td>A &gt; B</td><td>Tie</td><td>B &gt; A</td><td>B ≫ A</td></tr></tbody>
+    </table></div>
+    <div class="tablewrap" style="margin-top:var(--s2)"><table class="kt likert" style="min-width:560px">
+      <thead><tr><th>8-point, no tie <a class="chip" href="#s44" title="Ch. 11 Preference Data § Rankings vs. Ratings (L122-L130)">44</a></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th></tr></thead>
+      <tbody><tr><td>Meaning</td><td>A ⋙ B</td><td></td><td></td><td>A &gt; B</td><td>B &gt; A</td><td></td><td></td><td>B ⋙ A</td></tr></tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Early Anthropic work used 8 points, which forces a direction. <a class="chip" href="#s44" title="Ch. 11 Preference Data § Rankings vs. Ratings (L122-L130)">44</a> <a class="chip" href="#s45" title="Slides lec8-chap10-11-preferences § What exactly is a &quot;Likert scale&quot;? (L477-L491)">45</a> Either way, the information is "still reduced to a binary signal" for the reward model. <a class="chip" href="#s7" title="Ch. 11 Preference Data § Rankings vs. Ratings (L132)">7</a> Lambert says Likert strength "was at times it was used for training but it never really stuck". <a class="chip" href="#s46" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:24:55">46</a></p>
+    <h3>Try reducing a Likert vote</h3>
+    <div class="wid" id="lk-demo">
+      <p class="label" style="margin:0">Ten labelers compare A and B (an illustration, not Lambert's)</p>
+      <p class="grp-pre">Scale: <button class="btn btn-sm tog" type="button" data-scale="5" aria-pressed="true" data-lavish-action>5-point, with tie</button> <button class="btn btn-sm tog" type="button" data-scale="8" aria-pressed="false" data-lavish-action>8-point, no tie</button></p>
+      <p class="grp-pre">Votes: <button class="btn btn-sm" type="button" data-p="clear" data-lavish-action>Clear win for A</button> <button class="btn btn-sm" type="button" data-p="split" data-lavish-action>Split</button> <button class="btn btn-sm" type="button" data-p="close" data-lavish-action>Mostly "about the same"</button> <button class="btn btn-sm" type="button" data-p="clearall" data-lavish-action>Clear</button></p>
+      <p class="sub" style="margin:var(--s2) 0 0">Click a point on the scale to add a labeler's vote there (ten at most).</p>
+      <div class="lk-scale" id="lk-scale"></div>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Votes</dt><dd><output id="lk-n"></output></dd>
+        <dt>Prefer A, tie, prefer B</dt><dd><output id="lk-split"></output></dd>
+        <dt>Average strength, toward the winner</dt><dd><output id="lk-str"></output></dd>
+        <dt>Binary label for training</dt><dd><output id="lk-bin"></output></dd>
+      </div>
+      <p id="lk-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">All three presets give the same pair, A chosen over B, though one is a clear win, one a near split and one mostly ties; the strength and the disagreement are discarded. Make the non-tie votes even and no pair forms at all. Whether that disagreement is noise or signal is one of the chapter's open questions. <a class="chip" href="#s47" title="Ch. 11 Preference Data § Open Questions in RLHF Preference Data (L269-L272)">47</a></p>
+    <h3>Multi-turn data</h3>
+    <p>Usually only the final turn is labeled. When every turn is labeled, the conversation continues with the chosen answer, and a long conversation can be unrolled into several training prompts, carefully, to avoid bias. <a class="chip" href="#s48" title="Ch. 11 Preference Data § Multiturn Data (L137-L140)">48</a> Earlier turns are masked from the loss, as in SFT. <a class="chip" href="#s49" title="Ch. 11 Preference Data § Multiturn Data (L143)">49</a> An open question, after John Schulman: should the person who writes the prompt also label the responses, to avoid sycophancy? If not, multi-turn is hard in practice, because conversations must continue in real time. <a class="chip" href="#s50" title="Ch. 11 Preference Data § Multiturn Data (L141-L142)">50</a></p>
+  </section>
+
+  <section id="structured">
+    <h2>Structured preference data</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1525s">25:25</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1556s">25:56</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1589s">26:29</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1621s">27:01</a></p>
+    <p>Some domains label themselves. In math, a correct solution beats an incorrect one. <a class="chip" href="#s51" title="Ch. 11 Preference Data § Structured Preference Data (L147-L148)">51</a> <a class="chip" href="#s52" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:25:25">52</a> For instruction following, as in IFEval, you sample the same model twice, with and without a constraint like "Start each sentence with the letter g", and prefer the one that obeys it. <a class="chip" href="#s53" title="Ch. 11 Preference Data § Structured Preference Data (L149-L154)">53</a> The check is code, "so the label is free". <a class="chip" href="#s54" title="Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L501-L505)">54</a> The prompt in the pair must include the constraint. <a class="chip" href="#s55" title="Ch. 11 Preference Data § Structured Preference Data (L183-L185)">55</a> Pairs like this have brought "meaningful performance improvements" on instruction following and math, <a class="chip" href="#s55" title="Ch. 11 Preference Data § Structured Preference Data (L183-L185)">55</a> and the slides say they "can beat quality-judged preferences" in narrow domains. <a class="chip" href="#s54" title="Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L501-L505)">54</a></p>
+    <h3>Try building a pair</h3>
+    <p>The chapter's example uses GPT-4.5-Preview, <a class="chip" href="#s56" title="Ch. 11 Preference Data § Structured Preference Data (L156-L167)">56</a> and the slides use an all-lowercase constraint. <a class="chip" href="#s57" title="Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L507-L530)">57</a> Edit either text and the pair updates. A pair forms only when exactly one response passes.</p>
+    <div class="wid" id="cs-demo">
+      <p class="label" style="margin:0">Build a structured preference pair</p>
+      <p class="grp-pre">Constraint: <button class="btn btn-sm tog" type="button" data-c="g" aria-pressed="true" data-lavish-action>Every line starts with g</button> <button class="btn btn-sm tog" type="button" data-c="lower" aria-pressed="false" data-lavish-action>All lowercase</button></p>
+      <p class="grp-pre">Load: <button class="btn btn-sm" type="button" data-p="goldfish" data-lavish-action>Chapter's goldfish poems</button> <button class="btn btn-sm" type="button" data-p="ocean" data-lavish-action>Slides' ocean example</button></p>
+      <div class="cs-row">
+        <label>Sampled <em>with</em> the constraint<textarea id="cs-a" rows="8" data-lavish-action></textarea></label>
+        <label>Sampled <em>without</em> it<textarea id="cs-b" rows="8" data-lavish-action></textarea></label>
+      </div>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>First passes the check</dt><dd><output id="cs-pa"></output></dd>
+        <dt>Second passes the check</dt><dd><output id="cs-pb"></output></dd>
+        <dt>Preference pair</dt><dd><output id="cs-pair"></output></dd>
+      </div>
+    </div>
+    <p style="margin-top:var(--s3)">The chapter notes the unconstrained goldfish poem is also lower quality. <a class="chip" href="#s58" title="Ch. 11 Preference Data § Structured Preference Data (L169-L176)">58</a> Lambert warns of the reverse case, where hard constraints make the content "really contrived". <a class="chip" href="#s59" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:25:56">59</a></p>
+    <h3>Alternatives to pairs</h3>
+    <p>Single thumbs-up or thumbs-down labels with KTO, token-level feedback, and written critiques all give richer signal at a higher collection cost. They have "not been pursued in as much detail". <a class="chip" href="#s60" title="Ch. 11 Preference Data § Alternatives (L189-L191)">60</a> <a class="chip" href="#s61" title="Slides lec8-chap10-11-preferences § Beyond pairwise preferences (L537-L543)">61</a> In Lambert's telling, KTO is "pretty effective in industry", <a class="chip" href="#s62" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:26:29">62</a> <a class="chip" href="#s63" title="How to approach post-training for AI applications @ 00:10:22">63</a> while the richer kinds "faded away", like process reward models, as too hard to collect. <a class="chip" href="#s64" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:27:01">64</a></p>
+  </section>
+
+  <section id="sourcing">
+    <h2>Sourcing and contracts</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1652s">27:32</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1682s">28:02</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1713s">28:33</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1745s">29:05</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1836s">30:36</a></p>
+    <p>The chapter describes buying human preference data when the field is moving fast, and expects it to become far more automated. <a class="chip" href="#s65" title="Ch. 11 Preference Data § Sourcing and Contracts (L195-L197)">65</a> The steps:</p>
+    <ol class="steps">
+      <li><strong>Find a vendor.</strong> It is "a who-you-know game": vendors are supply-limited and favor big budgets and famous brands, with discounts on early batches "to get training teams hooked". <a class="chip" href="#s8" title="Ch. 11 Preference Data § Sourcing and Contracts (L199-L202)">8</a> <a class="chip" href="#s66" title="Ch. 11 Preference Data § Sourcing and Contracts (L204-L206)">66</a> <a class="chip" href="#s67" title="Slides lec8-chap10-11-preferences § Sourcing &amp; contracts (L554-L556)">67</a></li>
+      <li><strong>Sign, carefully.</strong> Some vendors delivered only under threat of legal action. Default terms often forbid open-sourcing the data. <a class="chip" href="#s68" title="Ch. 11 Preference Data § Sourcing and Contracts (L208-L211)">68</a></li>
+      <li><strong>Write the instructions.</strong> Detailed documents of corner cases and priorities. The public example is OpenAI's InstructGPT instructions, <a class="chip" href="#s69" title="Ch. 11 Preference Data § Sourcing and Contracts (L213-L215)">69</a> once deleted and recovered by Lambert. <a class="chip" href="#s70" title="Slides lec8-chap10-11-preferences § Guiding data collection: Labeler instructions (L564-L567)">70</a> <a class="chip" href="#s71" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:29:05">71</a></li>
+      <li><strong>Book the time.</strong> Math and code labelers must be scheduled weeks out; vendors plan their workforce like labs plan compute. <a class="chip" href="#s72" title="Ch. 11 Preference Data § Sourcing and Contracts (L217-L219)">72</a></li>
+      <li><strong>Collect in weekly batches.</strong> A typical contract runs 6 weeks, about $500K for a smaller one. Early weeks calibrate, and more early data gets thrown out. <a class="chip" href="#s9" title="Ch. 11 Preference Data § Sourcing and Contracts (L226-L228)">9</a> <a class="chip" href="#s73" title="Ch. 11 Preference Data § Sourcing and Contracts (L230)">73</a> You ramp up as the data aligns with what you want. <a class="chip" href="#s74" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:02">74</a></li>
+      <li><strong>Improve the model by week 4 or 5,</strong> as with Llama 2's 14 stages, but "it doesn't always go well". <a class="chip" href="#s75" title="Ch. 11 Preference Data § Sourcing and Contracts (L232-L234)">75</a></li>
+    </ol>
+    <p><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/pref-data-timeline.png">The chapter's figure</a> shows the batch cycle. Your training pipeline must be ready before the data arrives, or the data goes stale. <a class="chip" href="#s76" title="Ch. 11 Preference Data § Sourcing and Contracts (L221-L224)">76</a> Millions are probably "wasted", and few organizations can make full use of human data. <a class="chip" href="#s10" title="Ch. 11 Preference Data § Sourcing and Contracts (L236-L240)">10</a> Lambert's warning: "a lot of times people buy data and nothing happens", so don't buy data until your own methods are established. <a class="chip" href="#s77" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:33">77</a> <a class="chip" href="#s78" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:02">78</a></p>
+    <p>His own purchase at Hugging Face was No Robots: 10,000 human-written demonstrations, released openly, which is rare. <a class="chip" href="#s79" title="Slides lec8-chap10-11-preferences § A dataset we bought: No Robots (L580-L582)">79</a> <a class="chip" href="#s80" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:14:41">80</a> The vendor market has changed. Scale AI once relied on "primarily overseas and low-skill workforces"; <a class="chip" href="#s81" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:13:27">81</a> now vendors "need high-skill workforce". <a class="chip" href="#s82" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:13:59">82</a> And preference comparison became a business: Arena reached about $100M in annualized revenue. <a class="chip" href="#s83" title="Slides lec8-chap10-11-preferences § Preference *evals* are now a standalone business (L591)">83</a> <a class="chip" href="#s84" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:30:36">84</a></p>
+  </section>
+
+  <section id="bias">
+    <h2>Bias: what to watch for</h2>
+    <p class="tag">In Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1898s">31:38</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1930s">32:10</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1961s">32:41</a> · <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1991s">33:11</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>Bias</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td>Prefix</td><td>The start of a completion drives the label <a class="chip" href="#s11" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)">11</a></td></tr>
+        <tr><td>Sycophancy</td><td>Agreeing with or flattering the user, even at the cost of truth <a class="chip" href="#s11" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)">11</a></td></tr>
+        <tr><td>Verbosity</td><td>Longer answers rated higher <a class="chip" href="#s11" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)">11</a> <a class="chip" href="#s85" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:10">85</a></td></tr>
+        <tr><td>Formatting</td><td>Lists and bold look better; the "markdownification" of chat answers <a class="chip" href="#s11" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)">11</a> <a class="chip" href="#s86" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:41">86</a></td></tr>
+        <tr><td>Flattery and fluff</td><td>Decorative language inflates scores <a class="chip" href="#s87" title="Slides lec8-chap10-11-preferences § Bias: What to watch for in data (L609-L618)">87</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Sycophancy reflects human tendencies outside any labeling criteria; verbosity and formatting are easier to detect and mitigate. <a class="chip" href="#s11" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)">11</a> Lambert blames "lazy labelers" in part. <a class="chip" href="#s86" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:41">86</a> These are what over-optimization amplifies, <a class="chip" href="#s87" title="Slides lec8-chap10-11-preferences § Bias: What to watch for in data (L609-L618)">87</a> and mitigating them separates "good and great preference data". <a class="chip" href="#s88" title="Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L255)">88</a> It is "an infinite problem": there will always be new biases. <a class="chip" href="#s89" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:41">89</a> Paid and unpaid annotators bring different issues. <a class="chip" href="#s90" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:33:11">90</a></p>
+  </section>
+
+  <section id="open">
+    <h2>Open questions</h2>
+    <p>A preference between two texts captures "a broad and diverse function via extremely limited interactions", mostly from professional workforces. <a class="chip" href="#s91" title="Ch. 11 Preference Data § Open Questions in RLHF Preference Data (L259-L264)">91</a> The chapter lists four questions: collection context, type of feedback, population demographics, and whether the preferences are expressed in the model at all. <a class="chip" href="#s47" title="Ch. 11 Preference Data § Open Questions in RLHF Preference Data (L269-L272)">47</a> The <a href="s11_ch10-preferences.html#open">Chapter 10 page</a> covers them with Lambert's lecture comments.</p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Do you still need human preference data?</strong></p><ul>
+      <li><strong>Talk (Jan 2025):</strong> open work will keep piling up AI feedback data, "but we don't know if we really need humans". <a class="chip" href="#s92" title="How language model post-training is done today @ 00:51:21">92</a></li>
+      <li><strong>Chapter:</strong> preference data is hard to replace, <a class="chip" href="#s13" title="Ch. 11 Preference Data (L25)">13</a> yet many teams skip human data, <a class="chip" href="#s18" title="Ch. 11 Preference Data § Collecting Preference Data (L44)">18</a> and the human versus AI balance at the frontier is unknown. <a class="chip" href="#s20" title="Ch. 11 Preference Data § Collecting Preference Data (L55-L56)">20</a></li>
+      <li><strong>Lecture 7 (Jun 2026):</strong> industry seems to use human data "in some capacity", but academic work "has struggled to show" its impact. <a class="chip" href="#s93" title="On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:05:40">93</a> Asked by Lambert's team, John Schulman said "I don't know the answer", noting humans are "high noise but low bias" and language models "low noise" but "high bias". <a class="chip" href="#s94" title="On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:38:52">94</a></li>
+      <li><strong>Lecture 8 (Jul 2026):</strong> it "is still definitely used to understand and improve the models today". <a class="chip" href="#s14" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:20:46">14</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>What does it cost?</strong></p><ul>
+      <li><strong>Lecture 1 (Apr 2026), on early 2023:</strong> "100,000 preference points from somebody like Scale AI". <a class="chip" href="#s95" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42">95</a></li>
+      <li><strong>Talk (Jan 2025):</strong> $5 to $20 per human data point, against under a cent for an LLM judge. <a class="chip" href="#s96" title="How language model post-training is done today @ 00:31:38">96</a></li>
+      <li><strong>Lecture 7 (Jun 2026):</strong> "dollars to tens of dollars to more per prompt". <a class="chip" href="#s97" title="On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:37:49">97</a></li>
+      <li><strong>Chapter:</strong> about $500K for a smaller contract, <a class="chip" href="#s73" title="Ch. 11 Preference Data § Sourcing and Contracts (L230)">73</a> and hundreds of thousands to millions overall. <a class="chip" href="#s3" title="Ch. 11 Preference Data § Collecting Preference Data (L40-L42)">3</a></li>
+      <li><span class="badge info">agent note</span> At $5 to $20 a comparison, $500K buys roughly 25,000 to 100,000 comparisons, before discarding early batches. My arithmetic, not Lambert's.</li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is the strength of a preference used?</strong></p><ul>
+      <li><strong>Chapter:</strong> Likert data is "still reduced to a binary signal". <a class="chip" href="#s7" title="Ch. 11 Preference Data § Rankings vs. Ratings (L132)">7</a></li>
+      <li><strong>Slides:</strong> almost everyone binarizes, and "keeps ratings on the side"; the scale is a design choice that "change[s] the data you collect". <a class="chip" href="#s39" title="Slides lec8-chap10-11-preferences § Rankings vs. ratings (L433-L437)">39</a> <a class="chip" href="#s45" title="Slides lec8-chap10-11-preferences § What exactly is a &quot;Likert scale&quot;? (L477-L491)">45</a></li>
+      <li><strong>Lecture 8:</strong> used for training "at times", but "it never really stuck". <a class="chip" href="#s46" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:24:55">46</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Are constraint-based pairs good data?</strong></p><ul>
+      <li><strong>Chapter:</strong> they bring "meaningful performance improvements", and in its example the unconstrained answer was also worse. <a class="chip" href="#s55" title="Ch. 11 Preference Data § Structured Preference Data (L183-L185)">55</a> <a class="chip" href="#s58" title="Ch. 11 Preference Data § Structured Preference Data (L169-L176)">58</a></li>
+      <li><strong>Slides:</strong> in narrow domains they "can beat quality-judged preferences". <a class="chip" href="#s54" title="Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L501-L505)">54</a></li>
+      <li><strong>Lecture 8:</strong> a "gray area": hard constraints can make the content "really contrived", though the Python check is "really useful". <a class="chip" href="#s59" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:25:56">59</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is feedback beyond pairs worth it?</strong></p><ul>
+      <li><strong>Chapter:</strong> such methods "have not been pursued in as much detail". <a class="chip" href="#s60" title="Ch. 11 Preference Data § Alternatives (L189-L191)">60</a> Slides: "not often used extensively in practice". <a class="chip" href="#s61" title="Slides lec8-chap10-11-preferences § Beyond pairwise preferences (L537-L543)">61</a></li>
+      <li><strong>Talk (Jan 2025):</strong> teams that switched from DPO to KTO on thumbs-up data said "it actually worked". <a class="chip" href="#s63" title="How to approach post-training for AI applications @ 00:10:22">63</a></li>
+      <li><strong>Lecture 8 (Jul 2026):</strong> KTO is "pretty effective in industry", <a class="chip" href="#s62" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:26:29">62</a> while token-level and written feedback "faded away". <a class="chip" href="#s64" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:27:01">64</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>What the InstructGPT instructions cover.</strong> The slides call them labeler instructions for ranking, <a class="chip" href="#s70" title="Slides lec8-chap10-11-preferences § Guiding data collection: Labeler instructions (L564-L567)">70</a> but Lambert is "not sure if it was for preferences or for completions". <a class="chip" href="#s71" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:29:05">71</a></li>
+      <li><strong>"Sentence" or line.</strong> The chapter's constraint says "each sentence", <a class="chip" href="#s53" title="Ch. 11 Preference Data § Structured Preference Data (L149-L154)">53</a> but its example poem is checked most naturally line by line; the widget checks lines. <a class="chip" href="#s56" title="Ch. 11 Preference Data § Structured Preference Data (L156-L167)">56</a></li>
+      <li><strong>Different examples.</strong> The chapter uses a goldfish and the letter g; the slides use the ocean and lowercase. <a class="chip" href="#s53" title="Ch. 11 Preference Data § Structured Preference Data (L149-L154)">53</a> <a class="chip" href="#s57" title="Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L507-L530)">57</a></li>
+      <li><strong>Captions mishear.</strong> "liyker" and "lyker" are Likert, "syphy" and "sycopency" are sycophancy, "conan traverski" is Kahneman-Tversky, "neatron" is Nemotron. <a class="chip" href="#s37" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:51">37</a> <a class="chip" href="#s62" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:26:29">62</a> <a class="chip" href="#s16" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:21:17">16</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>What does "on-policy" mean for preference data, and how is it softer than in RL?</summary>
+      <p>Data from the current family of models, not strictly the latest policy as in RL. <a class="chip" href="#s5" title="Ch. 11 Preference Data § Collecting Preference Data (L50-L53)">5</a></p>
+    </details>
+    <details><summary>Ratings or rankings: which do teams usually train on?</summary>
+      <p>Rankings, binarized to chosen and rejected; ratings stay as metadata. <a class="chip" href="#s6" title="Ch. 11 Preference Data § Rankings vs. Ratings (L100-L101)">6</a> <a class="chip" href="#s39" title="Slides lec8-chap10-11-preferences § Rankings vs. ratings (L433-L437)">39</a></p>
+    </details>
+    <details><summary>Why use an 8-point Likert scale instead of 5?</summary>
+      <p>An even scale has no tie, so every label has a direction. <a class="chip" href="#s44" title="Ch. 11 Preference Data § Rankings vs. Ratings (L122-L130)">44</a> <a class="chip" href="#s45" title="Slides lec8-chap10-11-preferences § What exactly is a &quot;Likert scale&quot;? (L477-L491)">45</a></p>
+    </details>
+    <details><summary>Must the chosen answer be correct?</summary>
+      <p>No. It only has to be better than the alternatives shown; all might be right, or all wrong. <a class="chip" href="#s23" title="Ch. 11 Preference Data § Collecting Preference Data (L59-L61)">23</a></p>
+    </details>
+    <details><summary>You build an IFEval-style pair but leave the constraint out of the prompt. What goes wrong?</summary>
+      <p>The chosen answer obeys a rule the prompt never asked for, so the model learns no link between instruction and behavior. The chapter says the prompt must include the constraint. <a class="chip" href="#s55" title="Ch. 11 Preference Data § Structured Preference Data (L183-L185)">55</a></p>
+    </details>
+    <details><summary>Your team has budget for human preference data but no settled post-training pipeline. What does Lambert advise?</summary>
+      <p>Wait. Without an established pipeline, bought data often does nothing and goes stale. <a class="chip" href="#s77" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:33">77</a> <a class="chip" href="#s76" title="Ch. 11 Preference Data § Sourcing and Contracts (L221-L224)">76</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>How the Likert widget reduces votes.</strong> Not Lambert. Each labeler's point counts as a vote for A, for B, or as a tie. The pair follows the majority of non-tie votes, and is dropped if those are even. Real pipelines may use one label per pair, average scores, or drop low-margin pairs. The chapter says only that the signal is reduced to binary. <a class="chip" href="#s7" title="Ch. 11 Preference Data § Rankings vs. Ratings (L132)">7</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Ties on a 5-point scale.</strong> Not Lambert. A tie cannot become a chosen/rejected pair, so on a 5-point scale tie votes are lost when the data is binarized. The 8-point scale avoids that by forcing a direction, <a class="chip" href="#s44" title="Ch. 11 Preference Data § Rankings vs. Ratings (L122-L130)">44</a> at the cost of turning genuine indifference into noise.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the interface screenshots themselves (linked, not copied)</li>
+      <li>the cited bias papers, which I describe only as the chapter does</li>
+      <li>the vendor business beyond what Lambert says</li>
+    </ul>
+    <p>Chapter 12 covers synthetic data and distillation, which now does much of this job. <a class="chip" href="#s18" title="Ch. 11 Preference Data § Collecting Preference Data (L44)">18</a></p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 12 (Synthetic Data &amp; Distillation) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 12&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 12</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 11 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 11&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 11</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L22-L23">
+      <blockquote style="margin:0">Preference data is the engine of preference fine-tuning and reinforcement learning from human feedback. The core problem we've been trying to solve with RLHF is that we cannot precisely model human rewards and preferences for AI models' outputs … so preference data is the proxy signal we use to tune our models.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L22-L23">Ch. 11 Preference Data (L22-L23)</a> · <a href="https://rlhfbook.com/c/11-preference-data#preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L27">
+      <blockquote style="margin:0">two main challenges exist around preference data that are intertwined with this chapter: 1) operational complexity and cost of collection, and 2) the need for preference data to be collected on the generations from the model being trained (called \"on-policy\").</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L27">Ch. 11 Preference Data (L27)</a> · <a href="https://rlhfbook.com/c/11-preference-data#preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L40-L42">
+      <blockquote style="margin:0">Getting the most out of human data involves iterative training of models, spending hundreds of thousands (or millions) of dollars, highly detailed data instructions, translating ideas through data foundry businesses … Among all of the public knowledge on RLHF, collecting this data well is also one of the most opaque pieces of the pipeline.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L40-L42">Ch. 11 Preference Data § Collecting Preference Data (L40-L42)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L33-L35">
+      <blockquote style="margin:0">directly capturing complex human values in a single reward function is effectively impossible … Collecting this data to train reward models is one of the original ideas behind RLHF … it is far easier, both for humans and AI models supervising data collection, to differentiate between a good and a bad answer for a prompt than it is to generate a good answer on its own.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L33-L35">Ch. 11 Preference Data § Why We Need Preference Data (L33-L35)</a> · <a href="https://rlhfbook.com/c/11-preference-data#why-we-need-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L50-L53">
+      <blockquote style="margin:0">In preference data, on-policy is used in a slightly softer manner, where it means that the data is collected from the current family of models. … Research has shown that using this on-policy data, rather than other popular datasets that aggregate completions from pools of popular models on platforms like Hugging Face, is particularly important for effective RLHF training</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L50-L53">Ch. 11 Preference Data § Collecting Preference Data (L50-L53)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L100-L101">
+      <blockquote style="margin:0">The largest decision on how to collect preference data is if the data should be rankings -- i.e. relative ordering of model completions -- or ratings -- i.e. scores assigned to each piece of text. Common practice is to train on rankings, but ratings are often used as metadata</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L100-L101">Ch. 11 Preference Data § Rankings vs. Ratings (L100-L101)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L132">
+      <blockquote style="margin:0">this information is still reduced to a binary signal for the training of a reward model.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L132">Ch. 11 Preference Data § Rankings vs. Ratings (L132)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L199-L202">
+      <blockquote style="margin:0">getting access to data providers in the peak of AI excitement is also a who-you-know game -- those who can provide data are supply-limited. … Discounts are often also given on the first batches of data to get training teams hooked.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L199-L202">Ch. 11 Preference Data § Sourcing and Contracts (L199-L202)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L226-L228">
+      <blockquote style="margin:0">The data is delivered in weekly batches with more data coming later in the contract. For example, a typical preference data contract might span a 6-week delivery period. The first weeks are for further calibration and the later weeks are when teams hope to most improve their model.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L226-L228">Ch. 11 Preference Data § Sourcing and Contracts (L226-L228)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L236-L240">
+      <blockquote style="margin:0">It's likely that millions of dollars spent on these datasets are \"wasted\" and not used in the final models, but that is just the cost of doing business. Not many organizations have the bandwidth and expertise to make full use of human data of this style.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L236-L240">Ch. 11 Preference Data § Sourcing and Contracts (L236-L240)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L250-L255">
+      <blockquote style="margin:0">prefix bias (where the beginning of a completion disproportionately drives the preference) … sycophancy (over-agreeing with the user’s stated beliefs or flattering them, even when it reduces truthfulness) … they reflect issues within humans that are often outside of the labeling criteria … Others, such as verbosity … or formatting habits … are easier to detect and mitigate in training.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L250-L255">Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L250-L255)</a> · <a href="https://rlhfbook.com/c/11-preference-data#bias-things-to-watch-out-for-in-data-collection">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L375-L379">
+      <blockquote style="margin:0">It is far easier to **judge** than to **generate** … But collecting (and processing) any data like this well is the most **opaque** part of the modern post-training pipeline. … the best examples are NVIDIA's **HelpSteer** datasets</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L375-L379">Slides lec8-chap10-11-preferences § Where we started -- why collect preference data (L375-L379)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L25">
+      <blockquote style="margin:0">The data is so rich a source that it is difficult to replace this style of optimization at all.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L25">Ch. 11 Preference Data (L25)</a> · <a href="https://rlhfbook.com/c/11-preference-data#preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="yt:Y2tv5vuaxFs@00:20:46-00:21:17">
+      <blockquote style="margin:0">It used to be more important when RHF was the final step, but this sort of human preference data is still definitely used to understand and improve the models today.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1246s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:20:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L43">
+      <blockquote style="margin:0">As of 2026, there are no open models with fully open human preference data released with the methods used to collect it (the largest recent human preference datasets released for models are in the HelpSteer line of work from NVIDIA's Nemotron team</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L43">Ch. 11 Preference Data § Collecting Preference Data (L43)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="yt:Y2tv5vuaxFs@00:21:17-00:21:49">
+      <blockquote style="margin:0">Nvidia has this help steer line of work. They've done a bunch of different data sets which is the closest to this … I still think this area was never fully solved.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1277s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:21:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="yt:Y2tv5vuaxFs@00:21:49-00:22:20">
+      <blockquote style="margin:0">is really a showcases like how parts of the literature can get left behind.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1309s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:21:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L44">
+      <blockquote style="margin:0">many who take up RLHF for new teams or projects omit human data and use AI feedback data, off-the-shelf reward models, or other methods to circumvent the need for curating data from scratch.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L44">Ch. 11 Preference Data § Collecting Preference Data (L44)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L46-L48">
+      <blockquote style="margin:0">the best data for your training process is \"on-policy\" with respect to the previous checkpoint(s) of your training process.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L46-L48">Ch. 11 Preference Data § Collecting Preference Data (L46-L48)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L55-L56">
+      <blockquote style="margin:0">This necessity for on-policy data is not well documented … the exact balance between human and AI preference data used for the latest AI models is unknown.</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L55-L56">Ch. 11 Preference Data § Collecting Preference Data (L55-L56)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:Y2tv5vuaxFs@00:30:06-00:30:36">
+      <blockquote style="margin:0">So you need to collect preference data from a model that's in your family. So like we were trying to do this and it was really hard for our small team to do it. But we also bought some SFT data which doesn't have this on policy constraint.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1806s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:30:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L242-L245">
+      <blockquote style="margin:0">this section *does not* mirror the experience for buying human-written instruction data … This stage of data is not subject to the on-policy restrictions … Today, the primary other focus of human data is in generating prompts for post-training</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L242-L245">Ch. 11 Preference Data § Sourcing and Contracts (L242-L245)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L59-L61">
+      <blockquote style="margin:0">the *chosen* answer in preference data is often not a globally *correct* answer. Instead, it is the answer that is better relative to the alternatives shown … There can be cases where every completion being compared to a given prompt is correct or incorrect, and the models can still learn from well-labeled data.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L59-L61">Ch. 11 Preference Data § Collecting Preference Data (L59-L61)</a> · <a href="https://rlhfbook.com/c/11-preference-data#collecting-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L65-L66">
+      <blockquote style="margin:0">it's more of an art than a science, as it's not well-studied how subtle changes in the interface impact how a user interacts with a model. An example of how a model's vibe can be changed by the user experience is *speed*</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L65-L66">Ch. 11 Preference Data § Interfaces (L65-L66)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L426">
+      <blockquote style="margin:0">Every interface shapes the preference it captures.</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L426">Slides lec8-chap10-11-preferences § Interface 5: Pick-from-many (default in image models) (L426)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:Y2tv5vuaxFs@00:22:51-00:23:24">
+      <blockquote style="margin:0">There's just pretty much every permutation here has been tried.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1371s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L68-L70">
+      <blockquote style="margin:0">a data labeler has a conversation with the model and must choose a preference between two possible answers … the labeler is given the potential to include more notes on the conversation or a general rating of the conversation quality</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L68-L70">Ch. 11 Preference Data § Interfaces (L68-L70)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:Y2tv5vuaxFs@00:22:20-00:22:51">
+      <blockquote style="margin:0">you choose between two responses A and B in the middle of a conversation and you can also submit metadata with the the task which they may or may not use to train or filter the data later.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1340s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L74-L76">
+      <blockquote style="margin:0">This first example is a *training-data only* interface … applications often expose interfaces for collecting preferences directly from users during everyday use … It depends on the application whether this preference data is used directly to train the future models, or if it is used just as an evaluation</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L74-L76">Ch. 11 Preference Data § Interfaces (L74-L76)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L79">
+      <blockquote style="margin:0">The actual completions are very close in content, showing how collecting preference data can be noisy and difficult to get exactly right.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L79">Ch. 11 Preference Data § Interfaces (L79)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L81-L82">
+      <blockquote style="margin:0">A popular public option to engage with models in this way is Arena (formerly Chatbot Arena) [@chiang2024chatbot], which includes the option of a \"tie\" between models</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L81-L82">Ch. 11 Preference Data § Interfaces (L81-L82)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L86-L87">
+      <blockquote style="margin:0">For models in the wild, one of the most common techniques is to collect feedback on if a specific response was positive or negative.</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L86-L87">Ch. 11 Preference Data § Interfaces (L86-L87)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="yt:Y2tv5vuaxFs@00:23:24-00:23:54">
+      <blockquote style="margin:0">thumbs up thumbs down which I think is closer to what like every model has this on it now and these are also used as evaluation and training training data at times.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1404s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:23:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L92-L93">
+      <blockquote style="margin:0">For every Midjourney generation (and most popular image generators) they expose multiple responses to users. These companies then use the data of which response was selected to fine-tune their models with RLHF.</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L92-L93">Ch. 11 Preference Data § Interfaces (L92-L93)</a> · <a href="https://rlhfbook.com/c/11-preference-data#interfaces">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:Y2tv5vuaxFs@00:23:54-00:24:24">
+      <blockquote style="margin:0">images are just so intuitive for human users to immediately know which one they like and then being able to plug that data immediately back into training was so useful.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1434s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:23:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L401">
+      <blockquote style="margin:0">The answers are very close -- a reminder that preference data is noisy and hard to get exactly right.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L401">Slides lec8-chap10-11-preferences § Interface 2: A/B testing in production (ChatGPT user data) (L401)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:Y2tv5vuaxFs@00:22:51-00:23:24">
+      <blockquote style="margin:0">there was famously this syphy blog post from open AAI which told us that they trained a reward model to understand which of these two responses were taken and then sycopency emerged when that reward model get got overoptimized in their training loop.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1371s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:22:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="yt:Y2tv5vuaxFs@00:24:24-00:24:55">
+      <blockquote style="margin:0">a rating is a score of a completion in isolation and a ranking is a relative comparison of two or more entities and most of the training data is reduced to rankings</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1464s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:24:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L433-L437">
+      <blockquote style="margin:0">**Ratings:** a score on one completion in isolation (e.g. 1-5). Good as metadata. … In practice almost everyone trains on pairwise rankings, binarized to chosen/rejected for the Bradley-Terry loss (lecture 2 / chapter 5) -- and keeps ratings on the side.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L433-L437">Slides lec8-chap10-11-preferences § Rankings vs. ratings (L433-L437)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L103-L109">
+      <blockquote style="margin:0">One simple way to collect ratings is to score a *single* completion on a 1-5 scale</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L103-L109">Ch. 11 Preference Data § Rankings vs. Ratings (L103-L109)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L111">
+      <blockquote style="margin:0">a simple way to make preference data would be to choose the highest rated completion and pair it randomly with a lower scored completion (as done for UltraFeedback and derivative works</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L111">Ch. 11 Preference Data § Rankings vs. Ratings (L111)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L113-L114">
+      <blockquote style="margin:0">the most common technique for collecting preferences is to use a Likert scale for relative rankings … a Likert scale uses a single integer to record the ranking, much like a rating, so it's how the data is structured that is the core difference</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L113-L114">Ch. 11 Preference Data § Rankings vs. Ratings (L113-L114)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L116-L120">
+      <blockquote style="margin:0">An example 5-point Likert scale between two responses, A and B.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L116-L120">Ch. 11 Preference Data § Rankings vs. Ratings (L116-L120)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L122-L130">
+      <blockquote style="margin:0">Some early RLHF for language modeling works use an 8-point Likert scale with levels of preference between the two responses … An even scale removes the possibility of ties</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L122-L130">Ch. 11 Preference Data § Rankings vs. Ratings (L122-L130)</a> · <a href="https://rlhfbook.com/c/11-preference-data#rankings-vs-ratings">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L477-L491">
+      <blockquote style="margin:0">not just which answer wins, but **by how much** … **5-point with a tie** (LMArena-style) … **8-point without a tie** (early Claude [@bai2022training]): forces a direction. … How many points, and whether ties are allowed, are both design choices that change the data you collect.</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L477-L491">Slides lec8-chap10-11-preferences § What exactly is a &quot;Likert scale&quot;? (L477-L491)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:Y2tv5vuaxFs@00:24:55-00:25:25">
+      <blockquote style="margin:0">It was at times it was used for training but it never really stuck.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1495s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:24:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L269-L272">
+      <blockquote style="margin:0">**Data collection contexts** … **Type of feedback** … **Population demographics** … **Are the Preferences Expressed in the Models?**</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L269-L272">Ch. 11 Preference Data § Open Questions in RLHF Preference Data (L269-L272)</a> · <a href="https://rlhfbook.com/c/11-preference-data#open-questions-in-rlhf-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L137-L140">
+      <blockquote style="margin:0">normally a piece of preference data is only collected on the \"final\" prompt … When preferences are given on every response, the conversation traditionally continues with the \"chosen\" answer. … This can effectively unroll longer conversations into many training prompts, but needs to be done carefully to not bias the training data.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L137-L140">Ch. 11 Preference Data § Multiturn Data (L137-L140)</a> · <a href="https://rlhfbook.com/c/11-preference-data#multiturn-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L143">
+      <blockquote style="margin:0">For training, all of the previous turns in the conversation are masked from the loss, as discussed with instruction fine-tuning.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L143">Ch. 11 Preference Data § Multiturn Data (L143)</a> · <a href="https://rlhfbook.com/c/11-preference-data#multiturn-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L141-L142">
+      <blockquote style="margin:0">whether the person labeling the preference on the generations should be the same as the person who creates the prompt (to avoid sycophancy). If the prompt creator cannot label the preference data, multi-turn is not really practical</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L141-L142">Ch. 11 Preference Data § Multiturn Data (L141-L142)</a> · <a href="https://rlhfbook.com/c/11-preference-data#multiturn-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L147-L148">
+      <blockquote style="margin:0">preference data can be created *automatically* due to innate structures of the data … in mathematical reasoning domains the chosen response can be a correct answer and the rejected response can be an incorrect answer.</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L147-L148">Ch. 11 Preference Data § Structured Preference Data (L147-L148)</a> · <a href="https://rlhfbook.com/c/11-preference-data#structured-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="yt:Y2tv5vuaxFs@00:25:25-00:25:56">
+      <blockquote style="margin:0">if you have a domain where you can u label a notion of correctness it's very easy to create a preference relation</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1525s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:25:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L149-L154">
+      <blockquote style="margin:0">Write me a short poem about a goldfish. **Start each sentence with the letter g.** … The second part of this query is called the constraint … involves prompting the same model (or multiple models) twice: once with the constraint included and once without.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L149-L154">Ch. 11 Preference Data § Structured Preference Data (L149-L154)</a> · <a href="https://rlhfbook.com/c/11-preference-data#structured-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L501-L505">
+      <blockquote style="margin:0">**Math**: a correct solution ≻ an incorrect one. … The constraint is checked with code, so the label is free. … In these narrow domains, structured pairs can beat quality-judged preferences</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L501-L505">Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L501-L505)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L183-L185">
+      <blockquote style="margin:0">Crucially, the prompt for the preference data will need to include the constraint. … These have been shown to enable preference fine-tuning to have meaningful performance improvements across related evaluations, such as instruction-following, math, etc.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L183-L185">Ch. 11 Preference Data § Structured Preference Data (L183-L185)</a> · <a href="https://rlhfbook.com/c/11-preference-data#structured-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L156-L167">
+      <blockquote style="margin:0">prompting GPT-4.5-Preview with the constraint gives the following. … Golden swimmer, circling slow,</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L156-L167">Ch. 11 Preference Data § Structured Preference Data (L156-L167)</a> · <a href="https://rlhfbook.com/c/11-preference-data#structured-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L507-L530">
+      <blockquote style="margin:0">Describe the ocean. **Respond in all lowercase.** … the ocean covers most of our planet, a restless sheet of salt water... … The ocean covers most of our planet. It is a restless sheet of salt water...</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L507-L530">Slides lec8-chap10-11-preferences § Structured (synthetic) preference data (L507-L530)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L169-L176">
+      <blockquote style="margin:0">And without the constraint (which, it turns out, is also a lower quality output): … In circles bright, the goldfish glides,</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L169-L176">Ch. 11 Preference Data § Structured Preference Data (L169-L176)</a> · <a href="https://rlhfbook.com/c/11-preference-data#structured-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="yt:Y2tv5vuaxFs@00:25:56-00:26:29">
+      <blockquote style="margin:0">That has some gray area because sometimes the constraints are so hard that they make the quality of the actual content really contrived. But as a simple heruristic understanding that you can do structured preference data and create these comparisons based on a simple Python check is really useful.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1556s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:25:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L189-L191">
+      <blockquote style="margin:0">There are multiple other ways to collect useful feedback data for RLHF that have not been pursued in as much detail. … Kahneman-Tversky Optimization (KTO) … fine-grained feedback, e.g. at the token level … or natural language feedback … to provide a richer learning signal in exchange for a more complicated data collection setup.</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L189-L191">Ch. 11 Preference Data § Alternatives (L189-L191)</a> · <a href="https://rlhfbook.com/c/11-preference-data#alternatives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L537-L543">
+      <blockquote style="margin:0">The pairwise comparison is a convention, not a law. … Richer signal, harder collection (and not often used extensively in practice).</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L537-L543">Slides lec8-chap10-11-preferences § Beyond pairwise preferences (L537-L543)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:Y2tv5vuaxFs@00:26:29-00:27:01">
+      <blockquote style="margin:0">this conan traverski optimization KTO is a really popular one that has heard it's actually pretty effective in industry.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1589s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:26:29</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:grpc-Wyy-Zg@00:10:22-00:11:24">
+      <blockquote style="margin:0">this KTO algorithm essentially takes data that is like a thumbs up. … I've heard from people that have switched from trying to do DPO or these kind of more complicated setups … this suits my endpoint better and what you the users are actually seeing and it actually worked.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=grpc-Wyy-Zg&amp;t=622s">How to approach post-training for AI applications @ 00:10:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="yt:Y2tv5vuaxFs@00:27:01-00:27:32">
+      <blockquote style="margin:0">All of these are super well motivated as being able to improve the quality of your data. But they've all faded away kind of like process reward models faded away as just being a bit too hard to collect in practice</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1621s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:27:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L195-L197">
+      <blockquote style="margin:0">Getting human preference data is an involved and costly process. … Over time, these processes will become far more automated and efficient</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L195-L197">Ch. 11 Preference Data § Sourcing and Contracts (L195-L197)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L204-L206">
+      <blockquote style="margin:0">Data vendors are known to prioritize large budget line-items and new customers that have an influential brand or potential for large future revenue.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L204-L206">Ch. 11 Preference Data § Sourcing and Contracts (L204-L206)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L554-L556">
+      <blockquote style="margin:0">Access is relationship-driven: vendors are supply-limited and favor big budgets and known brands. Millions get spent and partly wasted; few teams have the bandwidth to fully use human data. … you need a robust, existing post-training recipe to plug it into.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L554-L556">Slides lec8-chap10-11-preferences § Sourcing &amp; contracts (L554-L556)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L208-L211">
+      <blockquote style="margin:0">data companies have not delivered data as contracted without the customer threatening legal or financial action against them for breach of contract. … the default terms on the contracts often prohibit the open sourcing of artifacts after acquisition in some fine print.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L208-L211">Ch. 11 Preference Data § Sourcing and Contracts (L208-L211)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L213-L215">
+      <blockquote style="margin:0">There are intricate documents with extensive details, corner cases, and priorities for the data. A popular example of data instructions is the one that [OpenAI released for InstructGPT]</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L213-L215">Ch. 11 Preference Data § Sourcing and Contracts (L213-L215)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L564-L567">
+      <blockquote style="margin:0">OpenAI released the full **InstructGPT** labeler instructions (2022) … This was later deleted, but I recovered it. … Pages of guidance on ranking **helpful, truthful, harmless** -- the spec that actually shapes the labels.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L564-L567">Slides lec8-chap10-11-preferences § Guiding data collection: Labeler instructions (L564-L567)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="yt:Y2tv5vuaxFs@00:29:05-00:29:36">
+      <blockquote style="margin:0">One of the first ones and only instructions that was public and documented were the full instructions for the instruct labelers. And I think I'm not sure if it was for preferences or for completions, but it was actually deleted at one point</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1745s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:29:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L217-L219">
+      <blockquote style="margin:0">High-demand areas like mathematical reasoning or coding must be locked into a schedule weeks out. … Scale AI et al. are managing their workforces like AI research labs manage the compute-intensive jobs on their clusters</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L217-L219">Ch. 11 Preference Data § Sourcing and Contracts (L217-L219)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L230">
+      <blockquote style="margin:0">It is expected that a larger proportion of the data from the earlier batches will have to be thrown out due to quality issues. This is one timeline example for a smaller data contract (~$500K)</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L230">Ch. 11 Preference Data § Sourcing and Contracts (L230)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="yt:Y2tv5vuaxFs@00:28:02-00:28:33">
+      <blockquote style="margin:0">the beginning you're getting a little bit of data and then you slowly ramp up as your alignment with the data you are collecting improves.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1682s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L232-L234">
+      <blockquote style="margin:0">The goal is that by week 4 or 5 the data is visibly improving the model. This is something some frontier models have mentioned, such as the 14 stages in the Llama 2 data collection … but it doesn't always go well.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L232-L234">Ch. 11 Preference Data § Sourcing and Contracts (L232-L234)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L221-L224">
+      <blockquote style="margin:0">the actual collection process is a high-stakes time for post-training teams. All the training infrastructure, evaluation tools, and plans for how to use the data and make downstream decisions must be in place. … Collecting data that cannot be seamlessly integrated into training pipelines often becomes stale and a waste of resources.</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L221-L224">Ch. 11 Preference Data § Sourcing and Contracts (L221-L224)</a> · <a href="https://rlhfbook.com/c/11-preference-data#sourcing-and-contracts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:Y2tv5vuaxFs@00:28:33-00:29:05">
+      <blockquote style="margin:0">a lot of times people buy data and nothing happens. … do not go into the data buying side for your training unless you're internal expertise and methodology is very established.</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1713s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="yt:Y2tv5vuaxFs@00:28:02-00:28:33">
+      <blockquote style="margin:0">you need to have a really established organization of post training to be able to</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1682s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:28:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L580-L582">
+      <blockquote style="margin:0">On Hugging Face's **H4 team**, we commissioned human data the same way the labs did. … 10K expert human-written demonstrations, matching InstructGPT distribution, paid for from a vendor and then released **openly** (rare for commissioned data)</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L580-L582">Slides lec8-chap10-11-preferences § A dataset we bought: No Robots (L580-L582)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:4gIwiSPmQkU@00:14:41-00:15:13">
+      <blockquote style="margin:0">Instruct GPT only used 10,000 samples. Um when I was at Hugging Face we tried to replicate this with the no robots data set.</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=881s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:14:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:x-MqKBzoxkI@00:13:27-00:13:59">
+      <blockquote style="margin:0">Scale AI was like the most prominent company. And they were doing a lot of preference data and aggregation of things like this with primarily overseas and low-skill workforces.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=807s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:13:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="yt:x-MqKBzoxkI@00:13:59-00:14:30">
+      <blockquote style="margin:0">they now need high-skill workforce</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=839s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:13:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L591">
+      <blockquote style="margin:0">**Arena** (formerly, the LMArena leaderboard, formerly Chatbot Arena) reached a **~$100M annualized revenue run-rate within ~8 months** of launching its enterprise A/B testing offering</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L591">Slides lec8-chap10-11-preferences § Preference *evals* are now a standalone business (L591)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="yt:Y2tv5vuaxFs@00:30:36-00:31:07">
+      <blockquote style="margin:0">So they have 100 million ARR, which is mostly charging fees from language model companies to test their models in front of real users.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1836s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:30:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="yt:Y2tv5vuaxFs@00:32:10-00:32:41">
+      <blockquote style="margin:0">verbosity is that many people for whatever reason RHF and preference models tend to extract the longer answer as being better.</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1930s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="yt:Y2tv5vuaxFs@00:32:41-00:33:11">
+      <blockquote style="margin:0">So like lazy labelers is definitely a huge and repeated problem. Um formatting. So RLHF and preference data is where this like markdownification of chatbt responses came for.</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1961s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L609-L618">
+      <blockquote style="margin:0">Subtle, systematic biases sail straight from the data into the model: … **Prefix bias** … **Sycophancy** … **Verbosity** … **Formatting** … **Flattery / fluff** … they are exactly what over-optimization amplifies into model behavior</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L609-L618">Slides lec8-chap10-11-preferences § Bias: What to watch for in data (L609-L618)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L255">
+      <blockquote style="margin:0">Mitigating these subtle biases in data is the difference between good and great preference data, and therefore good and great RLHF training.</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L255">Ch. 11 Preference Data § Bias: Things to Watch Out For in Data Collection (L255)</a> · <a href="https://rlhfbook.com/c/11-preference-data#bias-things-to-watch-out-for-in-data-collection">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:Y2tv5vuaxFs@00:32:41-00:33:44">
+      <blockquote style="margin:0">doing all of this well and avoiding all of these things is kind of an infinite problem because depending on your domain and the strength of the model, there will always be new types of bias.</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1961s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:32:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="yt:Y2tv5vuaxFs@00:33:11-00:33:44">
+      <blockquote style="margin:0">if you're using paid versus unpaid annotators they will have very different issues</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=1991s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:33:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L259-L264">
+      <blockquote style="margin:0">This data, representing a preference between two pieces of text in an individual instance, is capturing a broad and diverse function via extremely limited interactions. … Currently, datasets for the most popular LLMs are being generated by professional workforces.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L259-L264">Ch. 11 Preference Data § Open Questions in RLHF Preference Data (L259-L264)</a> · <a href="https://rlhfbook.com/c/11-preference-data#open-questions-in-rlhf-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:6yIMb0K-aS4@00:51:21-00:51:52">
+      <blockquote style="margin:0">we are going to continue to pile AI feedback data in open resources on hugging phase but we don't know if we really need humans</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=3081s">How language model post-training is done today @ 00:51:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="yt:6nyJ8y8ghsE@00:05:40-00:06:41">
+      <blockquote style="margin:0">when I talk to industry, it seems like they all use human data in some capacity to make sure their models are like well aligned with human preferences, but a lot of the academic work has struggled to show that this human preference data was as impactful on evaluations</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=340s">On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:05:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:6nyJ8y8ghsE@00:38:52-00:39:53">
+      <blockquote style="margin:0">he was like, I'm not sure. I don't know the answer. … in industry what they see is that humans are high noise but low bias. … when you use a language model, they're very low noise. … they have pretty high bias based on the language model you're using to label your data.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=2332s">On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:38:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="yt:o6l6tJQgUg4@00:31:42-00:32:12">
+      <blockquote style="margin:0">we need to get 100,000 preference points from somebody like Scale AI, and we need to train on those prompts after we had a reward model. This has all scaled up a lot.</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1902s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="yt:6yIMb0K-aS4@00:31:38-00:32:40">
+      <blockquote style="margin:0">I think LM as a judge costs less than a scent to do a preference comparison on an instruction whereas one human preference data point can cost $5 to $20</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=1898s">How language model post-training is done today @ 00:31:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:6nyJ8y8ghsE@00:37:49-00:38:22">
+      <blockquote style="margin:0">If you were to buy human preference data and we'll talk about this a bit in the next lecture, some of my experiences in doing this, it could cost dollars to tens of dollars to more per prompt.</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=2269s">On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:37:49</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  const CS_PRESETS = {"goldfish": ["Golden swimmer, circling slow,\nGleaming scales in water's glow.\nGentle fins dance softly by,\nGazing out with quiet eye.\nGlass-bound world, a simple sphere,\nGliding calmly, free of fear.\nGraceful turns in endless roam,\nGoldfish finds a crystal home.", "In circles bright, the goldfish glides,\nA spark of sun that gently rides\nThrough waters clear, in endless spins\u2014\nA golden whisper, scales like fins.\n\nIts world confined, yet vast within,\nEach bubble breathed, a tale begins.\nIn silent waves, content to roam,\nThe goldfish dreams its bowl as home."], "ocean": ["the ocean covers most of our planet, a restless sheet of salt water...", "The ocean covers most of our planet. It is a restless sheet of salt water..."]};
+
+  // Likert votes reduced to one binary pair: majority of non-tie votes; dropped if even.
+  (() => {
+    const LABELS = { 5: ['A ≫ B', 'A > B', 'Tie', 'B > A', 'B ≫ A'], 8: ['A ⋙ B', '', '', 'A > B', 'B > A', '', '', 'B ⋙ A'] };
+    const PRESET = { clear: { 5: [6, 3, 1, 0, 0], 8: [5, 2, 1, 1, 1, 0, 0, 0] }, split: { 5: [3, 2, 1, 1, 3], 8: [3, 1, 0, 1, 1, 0, 1, 2] }, close: { 5: [0, 2, 7, 1, 0], 8: [0, 0, 0, 6, 4, 0, 0, 0] }, clearall: { 5: [0, 0, 0, 0, 0], 8: [0, 0, 0, 0, 0, 0, 0, 0] } };
+    let scale = 5, votes = [...PRESET.clear[5]], preset = 'clear';
+    const box = document.getElementById('lk-scale');
+    const side = i => scale === 5 ? (i < 2 ? 'A' : i > 2 ? 'B' : 'tie') : (i < 4 ? 'A' : 'B');
+    const strength = i => scale === 5 ? [2, 1, 0, 1, 2][i] : [4, 3, 2, 1, 1, 2, 3, 4][i];
+    const show = () => {
+      box.style.setProperty('--n', scale);
+      box.innerHTML = votes.map((v, i) => '<button class="lk-pt" type="button" data-i="' + i + '" data-lavish-action aria-label="Add a vote at point ' + (i + 1) + '"><b>' + (i + 1) + '</b><span>' + (LABELS[scale][i] || '&nbsp;') + '</span><span class="dots">' + '●'.repeat(v) + '</span></button>').join('');
+      box.querySelectorAll('.lk-pt').forEach(b => b.addEventListener('click', () => { if (votes.reduce((a, c) => a + c, 0) < 10) { votes[+b.dataset.i]++; preset = ''; show(); } }));
+      const n = votes.reduce((a, c) => a + c, 0);
+      let a = 0, bb = 0, tie = 0, sA = 0, sB = 0;
+      votes.forEach((v, i) => { const sd = side(i); if (sd === 'A') { a += v; sA += v * strength(i); } else if (sd === 'B') { bb += v; sB += v * strength(i); } else tie += v; });
+      document.getElementById('lk-n').textContent = n + ' of 10';
+      document.getElementById('lk-split').textContent = a + ', ' + tie + ', ' + bb;
+      const max = scale === 5 ? 2 : 4;
+      const win = a > bb ? 'A' : bb > a ? 'B' : null;
+      document.getElementById('lk-str').textContent = win ? (((win === 'A' ? sA : sB) - (win === 'A' ? sB : sA)) / n).toFixed(2) + ' of ' + max : '—';
+      document.getElementById('lk-bin').textContent = n === 0 ? 'no votes yet' : win ? 'chosen = ' + win + ', rejected = ' + (win === 'A' ? 'B' : 'A') : 'no pair (dropped)';
+      let msg = '';
+      if (n && win) {
+        const minority = Math.min(a, bb);
+        const lost = [];
+        if (minority) lost.push(minority + ' labeler' + (minority > 1 ? 's' : '') + ' who preferred the other answer');
+        if (tie) lost.push(tie + ' tie vote' + (tie > 1 ? 's' : ''));
+        lost.push('how strong the preference was');
+        msg = 'Kept as one chosen/rejected pair. Lost: ' + (lost.length > 1 ? lost.slice(0, -1).join(', ') + ' and ' + lost[lost.length - 1] : lost[0]) + '.';
+      } else if (n) msg = 'The non-tie votes are even, so this comparison yields no training pair at all.';
+      document.getElementById('lk-msg').textContent = msg;
+    };
+    document.querySelectorAll('#lk-demo button[data-scale]').forEach(btn => btn.addEventListener('click', () => {
+      scale = +btn.dataset.scale; votes = [...PRESET[preset || 'clearall'][scale]];
+      document.querySelectorAll('#lk-demo button[data-scale]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      show();
+    }));
+    document.querySelectorAll('#lk-demo button[data-p]').forEach(btn => btn.addEventListener('click', () => { preset = btn.dataset.p; votes = [...PRESET[preset][scale]]; show(); }));
+    show();
+  })();
+
+  // Structured pair: check each response against a code-checkable constraint.
+  (() => {
+    let constraint = 'g';
+    const A = document.getElementById('cs-a'), B = document.getElementById('cs-b');
+    const check = txt => {
+      const lines = txt.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return [false, 'empty'];
+      if (constraint === 'g') { const bad = lines.filter(l => !/^g/i.test(l.replace(/^[^A-Za-z]+/, ''))); return [bad.length === 0, bad.length ? bad.length + ' of ' + lines.length + ' lines do not start with g' : 'all ' + lines.length + ' lines start with g']; }
+      const caps = (txt.match(/[A-Z]/g) || []).length;
+      return [caps === 0, caps ? caps + ' capital letter' + (caps > 1 ? 's' : '') : 'no capitals'];
+    };
+    const show = () => {
+      const [pa, ra] = check(A.value), [pb, rb] = check(B.value);
+      document.getElementById('cs-pa').textContent = (pa ? 'yes, ' : 'no, ') + ra;
+      document.getElementById('cs-pb').textContent = (pb ? 'yes, ' : 'no, ') + rb;
+      document.getElementById('cs-pair').textContent = pa && !pb ? 'chosen = first, rejected = second' : pb && !pa ? 'chosen = second, rejected = first' : 'no pair: ' + (pa ? 'both pass' : 'neither passes');
+    };
+    const load = p => { A.value = CS_PRESETS[p][0]; B.value = CS_PRESETS[p][1]; show(); };
+    document.querySelectorAll('#cs-demo button[data-c]').forEach(btn => btn.addEventListener('click', () => {
+      constraint = btn.dataset.c;
+      document.querySelectorAll('#cs-demo button[data-c]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      load(constraint === 'g' ? 'goldfish' : 'ocean');
+    }));
+    document.querySelectorAll('#cs-demo button[data-p]').forEach(btn => btn.addEventListener('click', () => {
+      const c = btn.dataset.p === 'goldfish' ? 'g' : 'lower';
+      constraint = c;
+      document.querySelectorAll('#cs-demo button[data-c]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === c)));
+      load(btn.dataset.p);
+    }));
+    [A, B].forEach(x => x.addEventListener('input', show));
+    load('goldfish');
+  })();
+</script>
+</body>
+</html>
