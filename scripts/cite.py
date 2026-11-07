@@ -378,11 +378,14 @@ class _ArtifactParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.sources: list[_SourceElement] = []
         self.references: set[str] = set()
+        self.scripts: set[str] = set()
         self._open: _SourceElement | None = None
         self._quote_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
+        if tag == "script" and (src := values.get("src")):
+            self.scripts.add(src)
         href = values.get("href")
         if tag == "a" and href and re.fullmatch(r"#s\d+", href):
             self.references.add(href[1:])
@@ -423,6 +426,8 @@ class Report:
 def _check_artifact(path: Path, report: Report) -> None:
     parser = _ArtifactParser()
     parser.feed(path.read_text())
+    if "page.js" not in parser.scripts:
+        report.errors.append(f"{path}: must load page.js, or its links do nothing inside Lavish")
     ids = {source.element_id for source in parser.sources}
     for reference in sorted(parser.references - ids):
         report.errors.append(f"{path}: #{reference} has no source element")

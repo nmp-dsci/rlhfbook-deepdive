@@ -90,6 +90,9 @@ this exact shape:
 </figure>
 ```
 
+- Every page must load `<script defer src="page.js"></script>`; `make check` enforces it. Inside
+  Lavish a click on a plain link opens an annotation card and does not follow the link, and
+  `page.js` makes links work.
 - Ids are `s1`, `s2`, and so on. Every source must be referenced at least once.
 - The source must contain a `<blockquote>` and link to the canonical URL from `make resolve`.
 - Book ids carry a full commit sha, so old pages stay valid after the pin moves.

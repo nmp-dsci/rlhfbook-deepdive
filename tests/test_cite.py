@@ -129,6 +129,7 @@ def test_quote_matching(quote: str, expected: bool) -> None:
 def _artifact(tmp_path: Path, citation: str, url: str, quote: str, ref: str = "#s1") -> Path:
     page = tmp_path / "s00_page.html"
     page.write_text(
+        '<script defer src="page.js"></script>'
         f'<p>Claim <a href="{ref}">1</a></p>'
         f'<figure id="s1" data-cite="{citation}"><blockquote>{quote}</blockquote>'
         f'<figcaption><a href="{url}">source</a></figcaption></figure>'
@@ -142,6 +143,14 @@ def test_check_passes_a_good_artifact(sha: str, tmp_path: Path) -> None:
     report = cite.check([str(page)])
     assert report.errors == []
     assert report.verified == 1
+
+
+def test_check_fails_a_page_that_does_not_load_page_js(sha: str, tmp_path: Path) -> None:
+    # Regression: inside Lavish, plain links open an annotation card and are never followed.
+    citation = _book_id(sha)
+    page = _artifact(tmp_path, citation, cite.resolve(citation).url, "The KL penalty keeps")
+    page.write_text(page.read_text().replace('<script defer src="page.js"></script>', ""))
+    assert any("must load page.js" in error for error in cite.check([str(page)]).errors)
 
 
 def test_check_fails_a_quote_that_is_not_in_the_cited_range(sha: str, tmp_path: Path) -> None:

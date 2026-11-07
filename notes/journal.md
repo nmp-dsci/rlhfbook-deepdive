@@ -7,3 +7,4 @@ written anywhere under `notes/` is checked by `make check`.
 |---|---|---|
 | 2026-11-07 | Set up: course map of chapters, lectures, slides, Q&A and talks | [s00](../.lavish/s00_course-map.html) |
 | 2026-11-07 | Why does RLVR often omit the KL penalty? (reference example) | [s01](../.lavish/s01_q-rlvr-kl-penalty.html) |
+| 2026-11-07 | Walk me through Chapter 1 | [s02](../.lavish/s02_ch01-introduction.html) |
