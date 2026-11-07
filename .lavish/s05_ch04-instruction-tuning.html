@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 4: Instruction Fine-Tuning</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  table.terms td:first-child{white-space:nowrap}
+  .mk{margin-top:var(--s3)}
+  .mk-btns{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s2)}
+  .mk-btns button{background:var(--panel);border:1px solid var(--line-3);color:var(--ink)}
+  .mk-btns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  #run p code{white-space:nowrap}
+  .mk pre,#run pre{overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+  .mk mark{background:none;color:inherit}
+  .mk[data-mode="final"] mark.turn-2,.mk[data-mode="all"] mark{background:var(--accent-soft);color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+  .dg-pair2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:var(--s3);margin-top:var(--s3)}
+  .dg-pair2>div{min-width:0}
+  #code-excerpt{margin-top:var(--s3)}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s04_ch03-training-overview.html">Chapter 3</a></p>
+  <h1>Chapter 4: Instruction Fine-Tuning</h1>
+  <p class="lede">Instruction fine-tuning turns a model that continues text into one that answers. <a class="chip" href="#s1" title="Ch. 4 Instruction Fine-Tuning (L24-L25)">1</a> The method is ordinary supervised learning, so the chapter spends its time on what matters for RLHF: how the training data is formatted and structured. <a class="chip" href="#s2" title="Ch. 4 Instruction Fine-Tuning (L38-L39)">2</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>It comes first.</strong> Most of the pipelines in the book, from collecting preferences to online RLHF, cannot run without basic instruction following. <a class="chip" href="#s3" title="Ch. 4 Instruction Fine-Tuning (L34-L36)">3</a></li>
+      <li><strong>The chat template is the format.</strong> All post-training stages rely on it to mark who is speaking and when to generate. <a class="chip" href="#s4" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L53-L54)">4</a> The lecture spends most of its time here because it is the most often neglected part. <a class="chip" href="#s5" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:08:53">5</a></li>
+      <li><strong>Same loss, masked prompts.</strong> The loss matches pretraining, <a class="chip" href="#s6" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L187)">6</a> but prompt tokens are masked, so the model learns responses and not user queries. <a class="chip" href="#s7" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L185)">7</a></li>
+      <li><strong>Gentler settings.</strong> Batches are substantially smaller <a class="chip" href="#s8" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)">8</a> and the learning rate is one to two orders of magnitude lower. <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></li>
+      <li><strong>The data grew up.</strong> About 10K human samples were once state of the art, and large synthetic datasets now work best. <a class="chip" href="#s10" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L169-L170)">10</a> Around 1M prompts is the chapter's rule of thumb, <a class="chip" href="#s11" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L175)">11</a> though <a href="#differ">Lambert's sources differ</a> on how far that holds. The prompts should match the tasks you care about. <a class="chip" href="#s12" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L176)">12</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Render a conversation through a chat template by hand, and say why generation stops.</li>
+      <li>Say which tokens are in the loss under each multi-turn masking strategy.</li>
+      <li>Explain why SFT uses a smaller batch and a lower learning rate than pretraining.</li>
+      <li>Plan an SFT dataset: where prompts and completions come from, and how to mix them.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/04-instruction-tuning">Chapter 4</a></td><td>Four sections</td><td>Templates, best practices, implementation details and two experiments.</td></tr>
+        <tr><td>Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=124s">2:04</a> to <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1225s">20:25</a></td><td>18 min</td><td>Adds the pain of Jinja, Harmony, self-instruct and how to design an SFT mix. The rest of the lecture covers Chapters 5 and 9.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L146-L533">Lecture 2 slides</a>, L146 to L533</td><td>23 slides</td><td>The token counts and data budgets are clearest here.</td></tr>
+        <tr><td>Q&amp;A 1: <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=124s">2:04</a> to <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=309s">5:09</a></td><td>3 min</td><td>Why the newest model may not be the best teacher, and balancing domains.</td></tr>
+        <tr><td>Q&amp;A 3: <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">5:46</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=503s">8:23</a></td><td>3 min</td><td>Whether the 1M prompt budget still holds.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="why">
+    <h2>Why instruction tuning exists</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=155s">2:35</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=219s">3:39</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=282s">4:42</a></p>
+    <p>Ask a base model "What is the capital of France?" and it may continue with more questions. An instruction-tuned model answers "The capital of France is Paris." <a class="chip" href="#s1" title="Ch. 4 Instruction Fine-Tuning (L24-L25)">1</a> The chapter says this took off when two lines of work converged: a unified text-to-text framing of tasks, and evidence from scaling and prompting that one model could generalize across tasks. <a class="chip" href="#s13" title="Ch. 4 Instruction Fine-Tuning (L27-L31)">13</a> The slides add that SFT took off after ChatGPT, with Alpaca, OpenAssistant and Tulu. <a class="chip" href="#s14" title="Slides lec2-chap4-5-9 § Two lines of work converged (L186-L191)">14</a></p>
+    <p>Lambert's 2025 talk calls SFT "the base of all of this", the stage where normal chat models still get most of their performance. <a class="chip" href="#s15" title="How language model post-training is done today @ 00:08:18">15</a> The slides say to start any post-training by seeing how far IFT can go. <a class="chip" href="#s16" title="Slides lec2-chap4-5-9 § What does instruction tuning do? (L167-L171)">16</a> Later stages now blur into it: the lecture mentions overlap with mid-training, <a class="chip" href="#s17" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:02:35">17</a> and Q&amp;A 3 says the two are becoming indistinguishable. <a class="chip" href="#s18" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:06:50">18</a></p>
+  </section>
+
+  <section id="templates">
+    <h2>Chat templates</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=313s">5:13</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=471s">7:51</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=533s">8:53</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=627s">10:27</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 90" role="img" aria-label="A list of messages goes through the chat template to become rendered text, then tokens and labels with the prompt masked, so the loss covers only the reply tokens.">
+  <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <g><title>Messages</title><rect class="n" x="2" y="6" width="144" height="78" rx="7"/><text class="st" x="74.0" y="32">Messages</text><text class="sd" x="74.0" y="52">list of role and content</text><text class="sd" x="74.0" y="68">model-agnostic</text></g>
+  <path class="e" d="M147 45H163" marker-end="url(#ah1)"/>
+  <g><title>Chat template</title><rect class="n" x="164" y="6" width="144" height="78" rx="7"/><text class="st" x="236.0" y="32">Chat template</text><text class="sd" x="236.0" y="52">apply_chat_template</text><text class="sd" x="236.0" y="68">tokenizer-specific</text></g>
+  <path class="e" d="M309 45H325" marker-end="url(#ah1)"/>
+  <g><title>Rendered text</title><rect class="n" x="326" y="6" width="144" height="78" rx="7"/><text class="st" x="398.0" y="32">Rendered text</text><text class="sd" x="398.0" y="52">special tokens around</text><text class="sd" x="398.0" y="68">each message</text></g>
+  <path class="e" d="M471 45H487" marker-end="url(#ah1)"/>
+  <g><title>Tokens and labels</title><rect class="n" x="488" y="6" width="144" height="78" rx="7"/><text class="st" x="560.0" y="32">Tokens and labels</text><text class="sd" x="560.0" y="52">prompt labels set to -100</text><text class="sd" x="560.0" y="68">reply labels kept</text></g>
+  <path class="e" d="M633 45H649" marker-end="url(#ah1)"/>
+  <g><title>Loss</title><rect class="na" x="650" y="6" width="144" height="78" rx="7"/><text class="st" x="722.0" y="32">Loss</text><text class="sd" x="722.0" y="52">cross-entropy, on the</text><text class="sd" x="722.0" y="68">reply tokens only</text></g>
+</svg></div>
+      <figcaption>Figure 1. From a stored conversation to the loss. Mine, assembled from the slides <a class="chip" href="#s19" title="Slides lec2-chap4-5-9 § A conversation gets rendered into template text (L221-L248)">19</a> and the book's code. <a class="chip" href="#s20" title="Code code/instruction_tuning/utils.py (L179-L188)">20</a> <a class="chip" href="#s21" title="Code code/instruction_tuning/utils.py (L137-L144)">21</a></figcaption>
+    </figure>
+    <p>A pretrained model knows only a few special tokens, and it generates until its context runs out or it emits end-of-sequence. <a class="chip" href="#s22" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L44-L51)">22</a> The chat template adds structure on top of that. Data is stored as model-agnostic messages, and the template renders them in a tokenizer-specific form, <a class="chip" href="#s19" title="Slides lec2-chap4-5-9 § A conversation gets rendered into template text (L221-L248)">19</a> using a Jinja snippet stored in the tokenizer configuration. <a class="chip" href="#s23" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L94)">23</a> <a class="chip" href="#s24" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L135-L138)">24</a></p>
+    <div class="tablewrap"><table class="kt">
+      <thead><tr><th>Role</th><th>Holds <a class="chip" href="#s25" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L96-L103)">25</a></th></tr></thead>
+      <tbody>
+        <tr><td><code>system</code></td><td>Instructions for the agent, not exposed to the user. Only in the first message.</td></tr>
+        <tr><td><code>user</code></td><td>Messages from the person using the AI.</td></tr>
+        <tr><td><code>assistant</code></td><td>Responses from the model.</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Generation works by ending the prompt with an open assistant tag. The model continues from there until it emits its end token. <a class="chip" href="#s26" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L117)">26</a> Templates differ across models, and many also carry tokens for tool use. <a class="chip" href="#s27" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L140-L159)">27</a> <a class="chip" href="#s28" title="Slides lec2-chap4-5-9 § The pain of Jinja chat templates (L312-L315)">28</a></p>
+    <h3>What the lecture adds</h3>
+    <ul>
+      <li><strong>This is where things break.</strong> Jinja is "extremely ugly and hard to read", <a class="chip" href="#s29" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:07:51">29</a> and a mismatch with the tokenizer can break training. <a class="chip" href="#s28" title="Slides lec2-chap4-5-9 § The pain of Jinja chat templates (L312-L315)">28</a> Lambert: "it has caused me so much pain in my life." <a class="chip" href="#s5" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:08:53">5</a></li>
+      <li><strong>Harmony is an alternative.</strong> OpenAI's format splits output into <code>analysis</code>, <code>commentary</code> and <code>final</code> channels, because Jinja cannot cleanly handle tool calls. <a class="chip" href="#s30" title="Slides lec2-chap4-5-9 § An alternative: OpenAI&#x27;s Harmony format (L369-L382)">30</a> Lambert thinks it is a bit better, but many people have not switched. <a class="chip" href="#s31" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:10:57">31</a></li>
+    </ul>
+  </section>
+
+  <section id="practices">
+    <h2>Best practices</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=720s">12:00</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=881s">14:41</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1009s">16:49</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1071s">17:51</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1164s">19:24</a></p>
+    <p>The chapter's four principles, with what the talks add:</p>
+    <ul>
+      <li><strong>Quality.</strong> Completions are what the model learns from. <a class="chip" href="#s32" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L174)">32</a> The lecture agrees, then warns that completions are only as good as the prompts, and calls prompts "the fundamental unit of post-training". <a class="chip" href="#s33" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:12:00">33</a></li>
+      <li><strong>Scale.</strong> Around 1M prompts is enough for excellent RLHF. <a class="chip" href="#s11" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L175)">11</a> It is not a magic number: you need about 1 to 10K prompts per domain, and mixing domains adds up to a million. <a class="chip" href="#s34" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:16:49">34</a></li>
+      <li><strong>Distribution.</strong> The best prompts resemble your downstream tasks. <a class="chip" href="#s12" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L176)">12</a> Excellent completions to the wrong prompts will not give you a good model. <a class="chip" href="#s35" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:13:05">35</a></li>
+      <li><strong>Forgiveness.</strong> Later stages can recover from some noise, so the overall optimization matters more than any one stage. <a class="chip" href="#s36" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L177)">36</a></li>
+    </ul>
+    <h3>How the data changed</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:480px">
+      <thead><tr><th>Dataset</th><th>Prompts</th><th>Completions</th><th>Tokens</th></tr></thead>
+      <tbody>
+        <tr><td>InstructGPT, No Robots</td><td>About 10K <a class="chip" href="#s37" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:14:41">37</a></td><td>Human <a class="chip" href="#s38" title="Code code/instruction_tuning/README.md (L120-L125)">38</a></td><td>Not given</td></tr>
+        <tr><td>Tülu 3</td><td>About 1M <a class="chip" href="#s39" title="Slides lec2-chap4-5-9 § Ingredients for post-training: Prompts (L495-L497)">39</a></td><td>Synthetic, from strong teachers <a class="chip" href="#s40" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:15:13">40</a></td><td>About 300M <a class="chip" href="#s41" title="Slides lec2-chap4-5-9 § Data scaling for IFT (L482-L484)">41</a></td></tr>
+        <tr><td>Olmo 3 (reasoning)</td><td>A couple million <a class="chip" href="#s42" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:15:06">42</a></td><td>Filtered from teachers, longer context <a class="chip" href="#s43" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:34">43</a></td><td>About 20B <a class="chip" href="#s41" title="Slides lec2-chap4-5-9 § Data scaling for IFT (L482-L484)">41</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The token column is why the lecture says it stopped being as useful to count prompts, <a class="chip" href="#s44" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:15:46">44</a> and why Q&amp;A 1 talks about balancing a mix by flops. <a class="chip" href="#s45" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:38">45</a></p>
+    <h3>Building a dataset</h3>
+    <ol>
+      <li><strong>Mix first.</strong> Combine existing datasets for your tasks and measure. <a class="chip" href="#s46" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:19:24">46</a> Often this just works, and it fails when language conflicts across subdomains. <a class="chip" href="#s47" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:06">47</a></li>
+      <li><strong>Expand prompts with self-instruct.</strong> Start with good prompts, have a strong model modify them, then generate completions. This easily gives 10 times more data. <a class="chip" href="#s48" title="Slides lec2-chap4-5-9 § Building SFT data: Synthetic completions (L506-L515)">48</a></li>
+      <li><strong>Go human where models fall short.</strong> Human data is still needed for novel tasks, <a class="chip" href="#s48" title="Slides lec2-chap4-5-9 § Building SFT data: Synthetic completions (L506-L515)">48</a> which at recording meant knowledge work. <a class="chip" href="#s49" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:18:53">49</a></li>
+      <li><strong>Repeat.</strong> Expect tens or hundreds of training runs. Developing the process is most of the compute. <a class="chip" href="#s46" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:19:24">46</a></li>
+    </ol>
+    <p>You can reuse some prompts across stages, though stages often have different goals. <a class="chip" href="#s50" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:17:20">50</a> <a class="chip" href="#s39" title="Slides lec2-chap4-5-9 § Ingredients for post-training: Prompts (L495-L497)">39</a></p>
+  </section>
+
+  <section id="implementation">
+    <h2>Implementation details</h2>
+    <p class="tag">In Lecture 2: <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=690s">11:30</a> · <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=816s">13:36</a></p>
+    <p>The loss is the pretraining cross-entropy, <a class="chip" href="#s6" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L187)">6</a> written here over demonstration pairs: <a class="chip" href="#s51" title="Slides lec1-chap1-3 § Step 1/3: Instruction fine-tuning (IFT) (L615-L620)">51</a></p>
+    <div class="fig" style="overflow-x:auto">$$\mathcal{L}_{\mathrm{SFT}}(\theta) = - \sum_{(x, y^\star)} \sum_{t=1}^{|y^\star|} \log \pi_\theta \!\left(y^\star_t \mid x, y^\star_{&lt;t}\right)$$</div>
+    <div class="tablewrap"><table class="kt terms">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$(x, y^\star)$</td><td>A prompt and its target response from the dataset. <a class="chip" href="#s51" title="Slides lec1-chap1-3 § Step 1/3: Instruction fine-tuning (IFT) (L615-L620)">51</a></td></tr>
+        <tr><td>$y^\star_t$</td><td>Token $t$ of the target response.</td></tr>
+        <tr><td>$x,\ y^\star_{&lt;t}$</td><td>What the model sees: the prompt and the response so far.</td></tr>
+        <tr><td>$\pi_\theta$</td><td>The model's probability for the next token. Prompt tokens never appear as targets, which is the masking. <a class="chip" href="#s7" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L185)">7</a></td></tr>
+      </tbody>
+    </table></div>
+    <h3>Masking, interactively</h3>
+    <p>Multi-turn conversations have two common choices. <a class="chip" href="#s52" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L186)">52</a> Switch between them to see which tokens count toward the loss. System and user tokens are usually both masked. <a class="chip" href="#s53" title="Slides lec2-chap4-5-9 § What does the model actually learn? (L417-L419)">53</a> The prompt distribution differs from the assistant's, which is why this detail matters. <a class="chip" href="#s54" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:12:00">54</a></p>
+    <div class="mk" id="mask-demo" data-mode="final">
+      <div class="mk-btns" role="group" aria-label="Masking strategy">
+        <button class="btn btn-sm" type="button" data-lavish-action data-mode="final" aria-pressed="true">Final-turn only</button>
+        <button class="btn btn-sm" type="button" data-lavish-action data-mode="all" aria-pressed="false">Mask user turns only</button>
+      </div>
+<pre><code>&lt;|im_start|&gt;system
+You are a friendly chatbot who always responds in the style of a pirate&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+How many helicopters can a human eat in one sitting?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+<mark class="turn-1">Oh just 6.&lt;|im_end|&gt;</mark>
+&lt;|im_start|&gt;user
+Are you sure about that?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+<mark class="turn-2">(the next reply)&lt;|im_end|&gt;</mark></code></pre>
+      <p class="sub" id="mask-note" aria-live="polite">Only the last reply is in the loss. Everything before it is context.</p>
+    </div>
+    <p class="sub">The conversation is the book's example, with a placeholder I added for the reply it leaves open. <span class="badge info">agent note</span> The highlighted span in the first mode follows the code; I extended the same boundary to the second mode.</p>
+    <h3>Hyperparameters</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:540px">
+      <thead><tr><th></th><th>OLMo 2 pretraining <a class="chip" href="#s55" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)">55</a> <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></th><th>OLMo 2 SFT <a class="chip" href="#s55" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)">55</a> <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></th><th>Olmo 3 SFT <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></th><th>The book's example <a class="chip" href="#s56" title="Code code/instruction_tuning/configs/sft_olmo2_1b.yaml (L12-L15)">56</a></th></tr></thead>
+      <tbody>
+        <tr><td>Batch</td><td>1024 or 2048 packed rows</td><td>256 prompts</td><td>Not given</td><td>32 effective</td></tr>
+        <tr><td>Peak learning rate</td><td>$3 \times 10^{-4}$</td><td>$1 \times 10^{-5}$</td><td>$5\text{-}8 \times 10^{-5}$</td><td>$5 \times 10^{-6}$</td></tr>
+      </tbody>
+    </table></div>
+    <ul style="margin-top:var(--s3)">
+      <li><strong>Why smaller and slower.</strong> To optimize well on a narrower distribution while keeping the generalization from pretraining. <a class="chip" href="#s8" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)">8</a> The lecture puts it as worry about overfitting. <a class="chip" href="#s57" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:13:36">57</a></li>
+      <li><strong>Why Olmo 3 runs higher.</strong> Sequence packing raises the effective batch, which supports a higher learning rate. Teams also warm up, decay linearly and sweep. <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></li>
+      <li><strong>Seeds.</strong> Post-training needs multiple seeds for the best final performance. <a class="chip" href="#s55" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)">55</a></li>
+    </ul>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>The book's script trains OLMo-2 1B on No Robots, and every 50 steps prints samples for a fixed prompt pool. <a class="chip" href="#s58" title="Ch. 4 Instruction Fine-Tuning § Suggested Experiments (L203-L205)">58</a> <strong>I did not run it:</strong> the transcripts below are from the README's reference run. The default config is sized for a 24 GB GPU. <a class="chip" href="#s59" title="Code code/instruction_tuning/README.md (L137-L138)">59</a> No Robots is non-commercial, so the checkpoint is for learning. <a class="chip" href="#s38" title="Code code/instruction_tuning/README.md (L120-L125)">38</a></p>
+    <pre><code>cd code/ &amp;&amp; uv sync
+uv run python -m instruction_tuning.train --config instruction_tuning/configs/sft_olmo2_1b.yaml</code></pre>
+    <p class="sub"><a class="chip" href="#s60" title="Code code/README.md (L13-L17)">60</a> <a class="chip" href="#s61" title="Code code/README.md (L26)">61</a></p>
+    <div class="dg-pair2">
+      <div><p class="label">Step 100: keeps going <a class="chip" href="#s62" title="Code code/instruction_tuning/README.md (L22-L39)">62</a></p><pre><code>&lt;|user|&gt;
+What is the capital of France?
+&lt;|assistant|&gt;
+Paris
+What is the capital of Germany?
+&lt;|assistant|&gt;&gt;
+Berlin
+...</code></pre></div>
+      <div><p class="label">Step 650: answers and stops <a class="chip" href="#s63" title="Code code/instruction_tuning/README.md (L43-L52)">63</a></p><pre><code>&lt;|user|&gt;
+What is the capital of France?
+&lt;|assistant|&gt;
+The capital of France is Paris.&lt;|endoftext|&gt;</code></pre></div>
+    </div>
+    <p style="margin-top:var(--s3)">In that run, loss drops sharply through the first 150 or so steps as the model locks onto the template. <a class="chip" href="#s64" title="Code code/instruction_tuning/README.md (L60-L65)">64</a> Watch for this transition, <a class="chip" href="#s58" title="Ch. 4 Instruction Fine-Tuning § Suggested Experiments (L203-L205)">58</a> then sweep <code>lr</code> over <code>1e-6</code>, <code>5e-6</code> and <code>5e-5</code> and find where it stops cleanly versus where it overfits. <a class="chip" href="#s65" title="Ch. 4 Instruction Fine-Tuning § Suggested Experiments (L208-L210)">65</a></p>
+    <h3>Where masking happens</h3>
+    <p>This code uses final-turn masking. <a class="chip" href="#s66" title="Code code/instruction_tuning/utils.py (L153)">66</a> It renders the conversation with and without the last reply. The difference is the reply, and everything before it gets label <code>-100</code>, <a class="chip" href="#s20" title="Code code/instruction_tuning/utils.py (L179-L188)">20</a> which the loss ignores. <a class="chip" href="#s21" title="Code code/instruction_tuning/utils.py (L137-L144)">21</a></p>
+    <div id="code-excerpt"><pre><code>    input_ids, labels = [], []
+    for prompt_ids, full_ids in zip(prompt_ids_batch, full_ids_batch, strict=True):
+        prompt_length = min(len(prompt_ids), len(full_ids))
+        if prompt_length == len(full_ids):
+            continue
+
+        input_ids.append(full_ids)
+        labels.append([IGNORE_INDEX] * prompt_length + full_ids[prompt_length:])
+
+    return {"input_ids": input_ids, "labels": labels}
+</code></pre></div>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter is dated by the pinned commit, November 2026. All of these are open.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How much does scaling past 1M help?</strong></p><ul>
+      <li><strong>Chapter (Nov 2026):</strong> further scaling can help, "but returns diminish quickly". <a class="chip" href="#s11" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L175)">11</a></li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> at the frontier, "still a lot of returns to basic scaling", <a class="chip" href="#s67" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:17:51">67</a> while its slides say "often still showing strong gains" <a class="chip" href="#s16" title="Slides lec2-chap4-5-9 § What does instruction tuning do? (L167-L171)">16</a> and also "diminishing returns". <a class="chip" href="#s68" title="Slides lec2-chap4-5-9 § Best practices for instruction tuning (L446-L451)">68</a></li>
+      <li><strong>Q&amp;A 3 (Aug 2026):</strong> the rule of thumb is a little outdated and bigger models need less data, <a class="chip" href="#s69" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46">69</a> with a guess of "well more than a million" counted across mid-training and SFT, and also the possibility that prompt counts have fallen. <a class="chip" href="#s70" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:07:21">70</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How much did tokens grow from Tülu 3 to Olmo 3?</strong></p><ul>
+      <li><strong>Dec 2025 talk:</strong> "about like 20 times". <a class="chip" href="#s42" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:15:06">42</a></li>
+      <li><strong>Lecture 2 slides:</strong> about 300M to about 20B, <a class="chip" href="#s41" title="Slides lec2-chap4-5-9 § Data scaling for IFT (L482-L484)">41</a> which I work out as about 67 times.</li>
+      <li><strong>Lecture 2 (Apr 2026):</strong> "hundreds of millions" to "10 to 20 billion". <a class="chip" href="#s44" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:15:46">44</a></li>
+      <li>The <a href="s04_ch03-training-overview.html#recipes">Chapter 3 page</a> quotes the 20 times figure.</li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does a small dataset get you far? LIMA.</strong></p><ul>
+      <li><strong>Chapter:</strong> cites LIMA for small, focused datasets doing well, but only in narrow domains such as chat alignment. <a class="chip" href="#s71" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L167)">71</a></li>
+      <li><strong>Slides:</strong> IFT "can work with as little as 1-10K" samples in your domain. <a class="chip" href="#s16" title="Slides lec2-chap4-5-9 § What does instruction tuning do? (L167-L171)">16</a></li>
+      <li><strong>Lecture 1 (Apr 2026):</strong> papers like LIMA were "fundamentally misguided". <a class="chip" href="#s72" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:34:47">72</a></li>
+      <li><span class="badge info">agent note</span> The difference may be scope: narrow chat versus all of post-training.</li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Are strong models good teachers?</strong></p><ul>
+      <li><strong>Slides:</strong> response quality is the simpler part, and strong models generate good completions to most instructions. <a class="chip" href="#s48" title="Slides lec2-chap4-5-9 § Building SFT data: Synthetic completions (L506-L515)">48</a></li>
+      <li><strong>Q&amp;A 1 (Jun 2026):</strong> the latest models seem the obvious teachers, but research repeatedly finds otherwise. <a class="chip" href="#s73" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:02:04">73</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Which papers belong to which line of work?</strong></p><ul>
+      <li><strong>Chapter:</strong> T5, FLAN, T0 and Natural Instructions are all examples of the first line, the unified framing. The second line is scaling and prompting. <a class="chip" href="#s13" title="Ch. 4 Instruction Fine-Tuning (L27-L31)">13</a></li>
+      <li><strong>Slides:</strong> T5 alone is the first line, and FLAN, T0 and Natural Instructions are the second. <a class="chip" href="#s14" title="Slides lec2-chap4-5-9 § Two lines of work converged (L186-L191)">14</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>Role markers are not always special tokens.</strong> The chapter describes special tokens separating messages. <a class="chip" href="#s74" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L106)">74</a> In OLMo-2, the role markers are plain text pieces, and <code>&lt;|endoftext|&gt;</code> doubles as start, end and unknown. <a class="chip" href="#s75" title="Code code/instruction_tuning/README.md (L99-L116)">75</a> That tokenizer also ships without a template, so the script borrows one. <a class="chip" href="#s76" title="Code code/instruction_tuning/README.md (L84-L87)">76</a></li>
+      <li><strong>Harmony: Python or Rust?</strong> The lecture says "they make it all a Python", <a class="chip" href="#s31" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:10:57">31</a> and the slide says a Rust-based renderer. <a class="chip" href="#s30" title="Slides lec2-chap4-5-9 § An alternative: OpenAI&#x27;s Harmony format (L369-L382)">30</a> The slide's own example is called from Python, so both may hold.</li>
+      <li><strong>The example config is not the guidance.</strong> It uses a batch of 32 and $5 \times 10^{-6}$, <a class="chip" href="#s56" title="Code code/instruction_tuning/configs/sft_olmo2_1b.yaml (L12-L15)">56</a> smaller than the OLMo 2 numbers the chapter quotes. <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></li>
+      <li><strong>Two sweep suggestions.</strong> The chapter sweeps <code>1e-6</code>, <code>5e-6</code> and <code>5e-5</code>; <a class="chip" href="#s65" title="Ch. 4 Instruction Fine-Tuning § Suggested Experiments (L208-L210)">65</a> the code README compares <code>5e-6</code> and <code>1e-5</code>. <a class="chip" href="#s77" title="Code code/README.md (L36)">77</a></li>
+      <li><strong>Keys are not dates.</strong> <code>wei2021finetuned</code> has a different year in its entry. <a class="chip" href="#s78" title="book/chapters/bib.bib (L531-L537)">78</a></li>
+      <li><strong>Captions mishear.</strong> "Valve suites" in Lecture 2 <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1164s">19:24</a> is evaluation suites, and "super provis" in the 2025 talk <a class="chip" href="#s15" title="How language model post-training is done today @ 00:08:18">15</a> is supervised. Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Why does a partly trained model still invent new user questions after answering?</summary>
+      <p>It has not yet internalized the template or the convention of stopping after one answer. <a class="chip" href="#s62" title="Code code/instruction_tuning/README.md (L22-L39)">62</a> It stops only by generating the end token, which is what training teaches. <a class="chip" href="#s26" title="Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L117)">26</a></p>
+    </details>
+    <details><summary>A conversation has three assistant replies. Which are in the loss under each strategy?</summary>
+      <p>Final-turn only: the last one. Mask user turns only: all three. With final-turn, you can unroll the conversation into several samples so each reply gets trained. <a class="chip" href="#s52" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L186)">52</a></p>
+    </details>
+    <details><summary>Why does Olmo 3 use a higher SFT learning rate than OLMo 2?</summary>
+      <p>Partly because sequence packing raises the effective batch, and lower-variance gradients support a higher learning rate. <a class="chip" href="#s9" title="Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)">9</a></p>
+    </details>
+    <details><summary>Your completions are excellent but the model is weak on your task. What do you check first?</summary>
+      <p>The prompts. Excellent completions to the wrong prompts will not be enough, <a class="chip" href="#s35" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:13:05">35</a> and the best prompts resemble your downstream tasks. <a class="chip" href="#s12" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L176)">12</a></p>
+    </details>
+    <details><summary>You want math, code and chat skills. Where does a figure like 1M prompts come from?</summary>
+      <p>You need about 1 to 10K prompts in a domain to start seeing improvement, and mixing chunks for many domains reaches that range. <a class="chip" href="#s34" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:16:49">34</a></p>
+    </details>
+    <details><summary>Is it reasonable to ship a model after SFT alone?</summary>
+      <p>Sometimes. Q&amp;A 3 says more models could get by with just SFT than people think, especially small ones, <a class="chip" href="#s79" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26">79</a> and the Olmo 3 talk calls SFT the foundation, needing mainly high-quality data. <a class="chip" href="#s80" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:03">80</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Completions versus prompts is emphasis, not conflict.</strong> Not Lambert: the chapter says the model learns from completions, <a class="chip" href="#s32" title="Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L174)">32</a> and the lecture says prompts define what you train on. <a class="chip" href="#s33" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:12:00">33</a> I read these as two halves of one point: prompts choose the distribution, and completions supply the targets.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Test your template before you train.</strong> Not Lambert: this is my inference from how often the lecture returns to template bugs. <a class="chip" href="#s5" title="RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:08:53">5</a> Rendering one example and reading it would catch a mismatch cheaply. I have not tried this against the book's code.</p>
+      <p style="margin-top:var(--s2)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;On the Chapter 4 page: load the OLMo-2 SFT tokenizer the book&#x27;s code uses, render one No Robots example through _encode_batch without training, and show me which tokens have label -100. Say first if it needs downloads or a GPU.&quot;,{tag:&#x27;next&#x27;,text:&quot;Render template&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Render a template with the book's code</button></p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out the <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L58-L93">full Jinja listing</a> line by line, the Harmony Python example, and the rest of Lecture 2, which covers Chapters 5 and 9. I describe papers only through Lambert. The slides at this pin may be newer than the April 2026 recording.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 5 (Reward Modeling) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 5&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 5</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 4 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 4&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 4</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L24-L25">
+      <blockquote style="margin:0">A practical next step was instruction fine-tuning, which teaches the model to respond in an instruction-response format rather than just continuing text. For example, given the prompt "What is the capital of France?", a base model might continue with "What is the capital of Germany? What is the capital of Italy?..." — simply extending the pattern of questions — while an instruction-tuned model would respond with "The capital of France is Paris."</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L24-L25">Ch. 4 Instruction Fine-Tuning (L24-L25)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#instruction-fine-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L38-L39">
+      <blockquote style="margin:0">this chapter focuses on the practical details that matter most for RLHF practitioners: how training data is formatted and structured.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L38-L39">Ch. 4 Instruction Fine-Tuning (L38-L39)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#instruction-fine-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L34-L36">
+      <blockquote style="margin:0">At its core, IFT is the simplest method for adapting language models to a desired task distribution. … Without a basic level of instruction-following abilities, most of the pipelines we discuss in this book—from preference data collection to online RLHF optimization—cannot be performed.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L34-L36">Ch. 4 Instruction Fine-Tuning (L34-L36)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#instruction-fine-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L53-L54">
+      <blockquote style="margin:0">All post-training stages, from instruction tuning to RLHF and other methods, rely on this formatting to train the model. The tool that handles the structure of the interaction with the user is called the chat template.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L53-L54">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L53-L54)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="yt:4gIwiSPmQkU@00:08:53-00:09:25">
+      <blockquote style="margin:0">it has caused me so much pain in my life that you need to change a chat template at the last minute to fix a system prompt, that tools aren't being handled right. … if I spent most of my instruction tuning lecture on chat templates, that is because it just is the thing that's most often neglected.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=533s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:08:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L187">
+      <blockquote style="margin:0">Instruction tuning uses the same autoregressive loss function used in pretraining language models, but with substantially different data and masking</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L187">Ch. 4 Instruction Fine-Tuning § Implementation Details (L187)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L185">
+      <blockquote style="margin:0">For instruction tuning, the prompt tokens are masked out so the model isn't learning to accurately predict user queries -- just responses. The same applies to other post-training algorithms.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L185">Ch. 4 Instruction Fine-Tuning § Implementation Details (L185)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L184">
+      <blockquote style="margin:0">use substantially smaller batch sizes to optimize well on a narrower data distribution while preserving the model's generalization from pretraining.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L184">Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L188">
+      <blockquote style="margin:0">SFT typically uses a learning rate one to two orders of magnitude smaller than pretraining … OLMo 2 uses a peak learning rate of $3 \times 10^{-4}$ for pretraining but $1 \times 10^{-5}$ for SFT. Olmo 3 uses a higher SFT learning rate of $5\text{-}8 \times 10^{-5}$, in part because its training infrastructure uses sequence packing … The learning rate is commonly warmed up over a small fraction of training steps before decaying linearly. In practice, teams often sweep over multiple learning rates and select the best checkpoint on a held-out evaluation suite</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L188">Ch. 4 Instruction Fine-Tuning § Implementation Details (L188)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L169-L170">
+      <blockquote style="margin:0">Soon after the release of ChatGPT, human datasets with as few as 10K samples such as No Robots were state-of-the-art. Years later, large-scale synthetic datasets work best on most tasks.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L169-L170">Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L169-L170)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#best-practices-for-instruction-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L175">
+      <blockquote style="margin:0">Around 1M prompts can be used to create a model capable of excellent RLHF and post-training. Further scaling can still help, but returns diminish quickly.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L175">Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L175)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#best-practices-for-instruction-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L176">
+      <blockquote style="margin:0">The best prompts are those in a similar distribution to downstream tasks of interest.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L176">Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L176)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#best-practices-for-instruction-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L27-L31">
+      <blockquote style="margin:0">Instruction fine-tuning took off when two lines of work converged. First, NLP shifted from bespoke fine-tuning task setups to a unified "text-to-text" or instruction framing … Prominent examples … (T5 models), … (FLAN dataset), … (T0 models), and … (Natural Instructions dataset). Second, scaling pretrained LMs and the rise of prompting/in-context learning showed that a single model could generalize across tasks</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L27-L31">Ch. 4 Instruction Fine-Tuning (L27-L31)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#instruction-fine-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L186-L191">
+      <blockquote style="margin:0">Unified text-to-text frameworks: T5 showed that framing every NLP task as "text in, text out" worked surprisingly well … Scaling + instruction following: FLAN, T0, and Natural Instructions showed that training on diverse tasks with explicit instructions improved zero-shot generalization … SFT took off after ChatGPT: Alpaca, OpenAssistant, Tulu, and many others</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L186-L191">Slides lec2-chap4-5-9 § Two lines of work converged (L186-L191)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="yt:6yIMb0K-aS4@00:08:18-00:08:48">
+      <blockquote style="margin:0">the base of all of this is super provis fine tuning we still get most for our performance there on normal chat models it teaches the template of question answering</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=498s">How language model post-training is done today @ 00:08:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L167-L171">
+      <blockquote style="margin:0">Can work with as little as 1-10K high-quality samples in your domain … Can be scaled to millions of prompts, often still showing strong gains … all post-training should begin by seeing how far IFT can go!</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L167-L171">Slides lec2-chap4-5-9 § What does instruction tuning do? (L167-L171)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="yt:4gIwiSPmQkU@00:02:35-00:03:07">
+      <blockquote style="margin:0">There's some discussion now with mid-training and how these different stages overlap</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=155s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:02:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:6StK9ttLNbQ@00:06:50-00:07:21">
+      <blockquote style="margin:0">mid-training and SFT are really starting to be indistinguishable</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=410s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:06:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L221-L248">
+      <blockquote style="margin:0">How most post-training data is stored (model-agnostic): … What the data looks like to a model (tokenizer-specific): … `tokenizer.apply_chat_template(messages)` performs this conversion before tokenization.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L221-L248">Slides lec2-chap4-5-9 § A conversation gets rendered into template text (L221-L248)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/utils.py#L179-L188">
+      <blockquote style="margin:0">labels.append([IGNORE_INDEX] * prompt_length + full_ids[prompt_length:])</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/utils.py#L179-L188">Code code/instruction_tuning/utils.py (L179-L188)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/utils.py#L137-L144">
+      <blockquote style="margin:0">Causal-LM cross-entropy with prompt-masked labels (-100 ignored). … ignore_index=IGNORE_INDEX</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/utils.py#L137-L144">Code code/instruction_tuning/utils.py (L137-L144)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L44-L51">
+      <blockquote style="margin:0">The model only knows a few tokens: a beginning-of-sequence token (e.g., `&lt;bos_token&gt;`), an end-of-sequence token (e.g., `&lt;eos_token&gt;`), and a padding token … the model would generate tokens until it runs out of its context window, or it generates the end-of-sequence token.</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L44-L51">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L44-L51)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L94">
+      <blockquote style="margin:0">This is the raw code for transforming a list of dictionaries in Python containing messages and roles into tokens that a language model can predict from.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L94">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L94)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L135-L138">
+      <blockquote style="margin:0">the standard method for applying the chat template to a list of messages uses a Jinja snippet stored in the tokenizer configuration, as `apply_chat_template`. The above chat template is a derivative of OpenAI's Chat Markup Language (ChatML) … OpenAI and other model providers use a hierarchical system where the user can configure a system message, yet there are higher-level instructions that may or may not be revealed to the user</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L135-L138">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L135-L138)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L96-L103">
+      <blockquote style="margin:0">The traditional three roles are `system`, `user`, and `assistant`. The `system` tag is only used for the first message of the conversation; it holds instructions for the agent in text that will not be received from or exposed to the user. … user holds the messages from the person using the AI, and assistant holds the responses from the model</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L96-L103">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L96-L103)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L117">
+      <blockquote style="margin:0">Notice how the final tokens in the sequence are `&lt;|im_start|&gt;assistant`. This is how the model knows to continue generating tokens until it finally generates its end-of-sequence token</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L117">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L117)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L140-L159">
+      <blockquote style="margin:0">Many other chat templates exist. … Or Tülu's: … many chat templates include formatting and other tokens for tasks such as tool-use.</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L140-L159">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L140-L159)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L312-L315">
+      <blockquote style="margin:0">Not easily human-interpretable … Minor issues, or mismatch to the tokenizer can break training … Increasing in complexity with reasoning models and tool-use</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L312-L315">Slides lec2-chap4-5-9 § The pain of Jinja chat templates (L312-L315)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:4gIwiSPmQkU@00:07:51-00:08:23">
+      <blockquote style="margin:0">it is also extremely ugly and hard to read.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=471s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:07:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L369-L382">
+      <blockquote style="margin:0">replacing Jinja with a Rust-based renderer that separates output into channels: `analysis` — internal reasoning / chain-of-thought (hidden from user) `commentary` — tool calls go here `final` — user-facing response … Jinja can't cleanly handle tool calls</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L369-L382">Slides lec2-chap4-5-9 § An alternative: OpenAI&#x27;s Harmony format (L369-L382)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="yt:4gIwiSPmQkU@00:10:57-00:11:30">
+      <blockquote style="margin:0">a lot of people haven't switched to this even though it's a bit better … Essentially what harmony is doing is they make it all a Python</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=657s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:10:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L174">
+      <blockquote style="margin:0">High-quality data is key to performance. The completions are what the model actually learns from (in many cases the prompts are not predicted over so the model does not learn to predict prompts).</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L174">Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L174)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#best-practices-for-instruction-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="yt:4gIwiSPmQkU@00:12:00-00:13:05">
+      <blockquote style="margin:0">I think generally the most important thing is getting high-quality completions. … the completions are only as good as the prompts. The prompts are the fundamental unit of post-training.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=720s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:12:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:4gIwiSPmQkU@00:16:49-00:17:51">
+      <blockquote style="margin:0">I don't think a million is a magic number. … you need about 1 to 10,000 prompts in a specific domain … when you mix them together is when you get to this million range.</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1009s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:16:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:4gIwiSPmQkU@00:13:05-00:13:36">
+      <blockquote style="margin:0">you can very easily like get excellent completions to the wrong prompts and your model won't be good enough. For a lot of models for your instruction tuning you won't need much more than a million prompts and it's like but that number is decreasing a bit</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=785s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:13:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L177">
+      <blockquote style="margin:0">the models can recover from some noise in the instruction-tuning data. Crafting the overall optimization is more important than fixating on each individual stage.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L177">Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L177)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#best-practices-for-instruction-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:4gIwiSPmQkU@00:14:41-00:15:13">
+      <blockquote style="margin:0">Instruct GPT only used 10,000 samples. Um when I was at Hugging Face we tried to replicate this with the no robots data set.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=881s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:14:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L120-L125">
+      <blockquote style="margin:0">9.5K human-written instruction-response rows … License caveat: No Robots is non-commercial.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L120-L125">Code code/instruction_tuning/README.md (L120-L125)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L495-L497">
+      <blockquote style="margin:0">Supervised fine-tuning: ~1 million prompts … Preference fine-tuning: ~1 million (partial overlap with SFT can be useful)</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L495-L497">Slides lec2-chap4-5-9 § Ingredients for post-training: Prompts (L495-L497)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="yt:4gIwiSPmQkU@00:15:13-00:15:46">
+      <blockquote style="margin:0">We shifted from like 10K samples to a million samples and we shifted from mostly human completions because the models weren't good enough yet to now most of the instruction tuning data is synthetic completions that are heavily filtered from a strong teacher model.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=913s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:15:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L482-L484">
+      <blockquote style="margin:0">Tülu 3 creates a state-of-the-art SFT dataset which was about 300M tokens. About a year later, Olmo 3's state-of-the-art reasoning SFT dataset was about 20B tokens.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L482-L484">Slides lec2-chap4-5-9 § Data scaling for IFT (L482-L484)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:uaZ3yRdYg8A@00:15:06-00:15:37">
+      <blockquote style="margin:0">It's a couple million prompts. It ends up being in token count because these are long context about like 20 times the tokens of our old SFT data sets like Tulu-3 or Olmo 2 SFT</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=906s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:15:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:uaZ3yRdYg8A@00:14:34-00:15:06">
+      <blockquote style="margin:0">we extended it to 32K length. We trained with SFT in a longer context and the performance went up a lot.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=874s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:4gIwiSPmQkU@00:15:46-00:16:17">
+      <blockquote style="margin:0">it would be hundreds of millions of tokens where the Olmo 3 SFT set for doing this thinking model was order of about 10 to 20 billion tokens.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=946s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:15:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="yt:x-MqKBzoxkI@00:04:38-00:05:09">
+      <blockquote style="margin:0">So you start to balance your post-training mix by flops rather than prompts</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=278s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:4gIwiSPmQkU@00:19:24-00:20:25">
+      <blockquote style="margin:0">You should always start with data mixing … you end up doing tens or hundreds of training runs in order to get the final recipe. And it is actually developing the post-training process that is most of the compute</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1164s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:19:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:x-MqKBzoxkI@00:04:06-00:05:09">
+      <blockquote style="margin:0">you get a bunch of good data sets of different domains and you mix them together and a lot of times it works. When it doesn't work it's because there's language in the subdomains that conflicts</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=246s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:04:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L506-L515">
+      <blockquote style="margin:0">Start with $N$ high-quality (often human-written) prompts … Ask a strong LM to create modified versions of these instructions … Generate completions with another (or same) strong LM … Result: easily 10x more training data … strong models (e.g. GPT-4o, Llama 3.1 405B) generate good completions to most instructions. … Human data is still needed for out-of-distribution or novel tasks.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L506-L515">Slides lec2-chap4-5-9 § Building SFT data: Synthetic completions (L506-L515)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:4gIwiSPmQkU@00:18:53-00:19:24">
+      <blockquote style="margin:0">all the labs are really interested in knowledge work as these frontier tasks</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1133s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:18:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="yt:4gIwiSPmQkU@00:17:20-00:17:51">
+      <blockquote style="margin:0">you can reuse some of these prompts in different stages but generally you might have different goals for each stage</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1040s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:17:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L615-L620">
+      <blockquote style="margin:0">$$\mathcal{L}_{\mathrm{SFT}}(\theta) = - \sum_{(x, y^\star)} \sum_{t=1}^{|y^\star|} \log \pi_\theta \!\left(y^\star_t \mid x, y^\star_{&lt;t}\right)$$</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L615-L620">Slides lec1-chap1-3 § Step 1/3: Instruction fine-tuning (IFT) (L615-L620)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L186">
+      <blockquote style="margin:0">(1) Final-turn only: only the tokens in the final assistant turn are included in the loss, while all earlier context (including earlier assistant turns) is masked. Long conversations can still be "unrolled" into multiple training samples … (2) Mask user turns only: all user turns are masked, but every assistant turn is included in the loss.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L186">Ch. 4 Instruction Fine-Tuning § Implementation Details (L186)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L417-L419">
+      <blockquote style="margin:0">System and user tokens (usually) are masked from the loss … Only assistant completion tokens contribute to gradient updates</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L417-L419">Slides lec2-chap4-5-9 § What does the model actually learn? (L417-L419)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="yt:4gIwiSPmQkU@00:12:00-00:12:33">
+      <blockquote style="margin:0">This is the sort of implementation detail that um ends up being important to getting things to work nicely cuz the prompt distribution is very different than assistance</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=720s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:12:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L184">
+      <blockquote style="margin:0">OLMo 2 uses a batch size of 1024 packed-rows for the 7B and 2048 for the 13B pretraining … For post-training, both these models only use a batch size of 256 prompts … training for multiple seeds is needed in post-training to obtain the best final performance.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L184">Ch. 4 Instruction Fine-Tuning § Implementation Details (L184)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/configs/sft_olmo2_1b.yaml#L12-L15">
+      <blockquote style="margin:0">lr: 5.0e-6 num_epochs: 3 batch_size: 4 gradient_accumulation_steps: 8 # effective batch = 32</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/configs/sft_olmo2_1b.yaml#L12-L15">Code code/instruction_tuning/configs/sft_olmo2_1b.yaml (L12-L15)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:4gIwiSPmQkU@00:13:36-00:14:41">
+      <blockquote style="margin:0">this is generally to prevent overfitting where you're on a narrower task distribution. … losing some of the generalization for pre-training.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=816s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:13:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L203-L205">
+      <blockquote style="margin:0">At step 0 the base model rambles, repeats the prompt, and emits malformed role markers; after a few hundred steps the same prompts produce concise answers that terminate at `&lt;|endoftext|&gt;`.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L203-L205">Ch. 4 Instruction Fine-Tuning § Suggested Experiments (L203-L205)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L137-L138">
+      <blockquote style="margin:0">These fit a 24 GB consumer/workstation GPU. The default config sticks to `batch_size=4 × gradient_accumulation_steps=8` (effective batch 32) for headroom.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L137-L138">Code code/instruction_tuning/README.md (L137-L138)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L13-L17">
+      <blockquote style="margin:0">All commands below assume: … cd code/ uv sync</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L13-L17">Code code/README.md (L13-L17)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L26">
+      <blockquote style="margin:0">uv run python -m instruction_tuning.train --config instruction_tuning/configs/sft_olmo2_1b.yaml</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L26">Code code/README.md (L26)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L22-L39">
+      <blockquote style="margin:0">Early in training the base model has not yet internalized the chat template or the convention of stopping after one answer, so it keeps continuing past the assistant turn and invents more user questions: … Samples @ step 100 … What is the capital of France? … Paris What is the capital of Germany?</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L22-L39">Code code/instruction_tuning/README.md (L22-L39)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L43-L52">
+      <blockquote style="margin:0">A few hundred steps later, the model has learned to give one coherent assistant reply … Samples @ step 650 … The capital of France is Paris.&lt;|endoftext|&gt;</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L43-L52">Code code/instruction_tuning/README.md (L43-L52)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L60-L65">
+      <blockquote style="margin:0">3 epochs, default config). Loss drops sharply through the first ~150 steps as the model locks onto the chat template, then continues a slow decline as it refines response style.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L60-L65">Code code/instruction_tuning/README.md (L60-L65)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L208-L210">
+      <blockquote style="margin:0">try `lr` values of `1e-6`, `5e-6`, and `5e-5` while holding everything else fixed. Inspect at which learning rate the model first answers and stops cleanly versus when it overfits and starts producing template-shaped slop.</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L208-L210">Ch. 4 Instruction Fine-Tuning § Suggested Experiments (L208-L210)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/utils.py#L153">
+      <blockquote style="margin:0">Render each conversation with the chat template and mask all but the final assistant turn.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/utils.py#L153">Code code/instruction_tuning/utils.py (L153)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="yt:4gIwiSPmQkU@00:17:51-00:18:21">
+      <blockquote style="margin:0">there are still a lot of returns to basic scaling. So if you 10x the data set size you might get more performance.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://www.youtube.com/watch?v=4gIwiSPmQkU&amp;t=1071s">RLHF Foundations, IFT, Reward Modeling, Rejection Sampling | Post-Training Course Lecture 2 @ 00:17:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec2-chap4-5-9.md#L446-L451">
+      <blockquote style="margin:0">Data quality matters more than quantity: … SFT prompt quantity has decreased a bit with reasoning models. Open research problem</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L446-L451">Slides lec2-chap4-5-9 § Best practices for instruction tuning (L446-L451)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="yt:6StK9ttLNbQ@00:05:46-00:06:50">
+      <blockquote style="margin:0">this rule of thumb is okay and that bigger models tend to need less data.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="yt:6StK9ttLNbQ@00:07:21-00:08:23">
+      <blockquote style="margin:0">I'm guessing this is going to be well more than a million prompts … I think this is a little bit outdated. … the number of prompts has decreased</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=441s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:07:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L167">
+      <blockquote style="margin:0">in narrow domains such as chat alignment, i.e., without harder skills such as math or code, small, focused datasets can achieve strong performance</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L167">Ch. 4 Instruction Fine-Tuning § Best Practices for Instruction Tuning (L167)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#best-practices-for-instruction-tuning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="yt:o6l6tJQgUg4@00:34:47-00:35:18">
+      <blockquote style="margin:0">there was papers on this like LIMA, less is more for alignment, that I think were kind of fundamentally misguided.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=2087s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:34:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="yt:x-MqKBzoxkI@00:02:04-00:03:05">
+      <blockquote style="margin:0">it seems like it would be so intuitive that the latest models off the shelf, the latest Clauds, the latest GPTs are the best teacher models for doing post training, but research is repeatedly finding that to be not true.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=124s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:02:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/04-instruction-tuning.md#L106">
+      <blockquote style="margin:0">The model has a series of special tokens that separate the various messages from each other.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L106">Ch. 4 Instruction Fine-Tuning § Chat Templates and the Structure of Instructions (L106)</a> · <a href="https://rlhfbook.com/c/04-instruction-tuning#chat-templates-and-the-structure-of-instructions">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L99-L116">
+      <blockquote style="margin:0">The OLMo-2 tokenizer overloads `&lt;|endoftext|&gt;` (id `100257`) as BOS, EOS, and UNK … The `&lt;|user|&gt;` / `&lt;|assistant|&gt;` / `&lt;|system|&gt;` role markers are not special tokens in OLMo-2's vocabulary; they're tokenized as plain BPE pieces</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L99-L116">Code code/instruction_tuning/README.md (L99-L116)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/instruction_tuning/README.md#L84-L87">
+      <blockquote style="margin:0">The base tokenizer has no `chat_template`, so we lift the canonical one from `allenai/OLMo-2-0425-1B-SFT`</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/instruction_tuning/README.md?plain=1#L84-L87">Code code/instruction_tuning/README.md (L84-L87)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L36">
+      <blockquote style="margin:0">keep `sft_olmo2_1b.yaml` fixed and vary `lr` (5e-6 vs 1e-5), `num_epochs`, or `max_samples`</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L36">Code code/README.md (L36)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/bib.bib#L531-L537">
+      <blockquote style="margin:0">wei2021finetuned, … year={2022}</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L531-L537">book/chapters/bib.bib (L531-L537)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="yt:6StK9ttLNbQ@00:09:26-00:10:28">
+      <blockquote style="margin:0">models today could get what by with just SFT, especially small models, than people think.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=566s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:uaZ3yRdYg8A@00:14:03-00:14:34">
+      <blockquote style="margin:0">the foundation is in SFT which is also like fairly straightforward. You just need high-quality data.</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=843s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:14:03</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  const demo = document.getElementById('mask-demo');
+  const notes = { final: 'Only the last reply is in the loss. Everything before it is context.', all: 'Every assistant reply is in the loss. User and system turns are masked.' };
+  demo.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
+    demo.dataset.mode = button.dataset.mode;
+    demo.querySelectorAll('button').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+    document.getElementById('mask-note').textContent = notes[button.dataset.mode];
+  }));
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/instruction_tuning/utils.py (L179-L188)", contents: "    input_ids, labels = [], []\n    for prompt_ids, full_ids in zip(prompt_ids_batch, full_ids_batch, strict=True):\n        prompt_length = min(len(prompt_ids), len(full_ids))\n        if prompt_length == len(full_ids):\n            continue\n\n        input_ids.append(full_ids)\n        labels.append([IGNORE_INDEX] * prompt_length + full_ids[prompt_length:])\n\n    return {\"input_ids\": input_ids, \"labels\": labels}\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>

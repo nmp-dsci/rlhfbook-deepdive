@@ -128,6 +128,8 @@ npx -y lavish-axi playbook <id>   # explanation, diagram, table, comparison, cod
   an editable whiteboard.
 - A KaTeX formula in a scrolling table can widen the whole page on a phone, because its hidden copy is
   absolutely positioned. Give the scroller `position:relative`.
+- Write `<` as `&lt;` inside math on a page. A bare `<t` is parsed as a tag and breaks the formula, and
+  `make check` does not catch it, so look at the render.
 - `.lavish/house.css` and `fonts/` are byte-identical copies from
   `nmp-central-ai/agent/house/`. This project has no hue because none is left, so `project.css` holds
   only a comment. Refresh by copying them, since `make install-house-ui` skips projects with no hue.
