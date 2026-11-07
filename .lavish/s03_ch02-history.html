@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 2: A Tiny History of RLHF</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:600px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .ng{fill:none;stroke:var(--line-3);stroke-width:1.5;stroke-dasharray:5 4}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ed{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .era{fill:var(--band);stroke:var(--line)}
+  .dg .eran{fill:var(--ink-2);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .axis{fill:none;stroke:var(--line-3);stroke-width:2}
+  .dg .tick,.dg .lead{fill:none;stroke:var(--line-3);stroke-width:1}
+  .dg .ev{fill:var(--accent)}
+  .dg .evt{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .yr{fill:var(--muted);font-size:12px;text-anchor:middle;paint-order:stroke;stroke:var(--band);stroke-width:4px}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td:nth-child(2){overflow-wrap:normal}
+  #origins table.kt td:nth-child(2){min-width:7.5em}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole timeline.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  table.refs th,table.refs td:first-child,table.refs td:nth-child(3){white-space:nowrap}
+  table.refs td:first-child{min-width:0}
+  table.refs td:last-child a{white-space:nowrap}
+  table.refs th[scope=colgroup]{background:var(--band);text-align:left}
+  table.refs code{font-size:var(--t-2);overflow-wrap:anywhere}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s02_ch01-introduction.html">Chapter 1</a></p>
+  <h1>Chapter 2: A Tiny History of RLHF</h1>
+  <p class="lede">Why does the RLHF recipe look the way it does? Because some of its seminal papers were built for applications far from language models. Lambert tells this history to show how new the methods are, and to warn you that details will keep changing. <a class="chip" href="#s1" title="Ch. 2 A Tiny History of RLHF (L24-L27)">1</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The story in five moves</p>
+    <ol class="tight">
+      <li><strong>2008: a person scores each action.</strong> TAMER learns a reward model from those scores. <a class="chip" href="#s2" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L42-L43)">2</a></li>
+      <li><strong>2017: a person picks between two behaviours.</strong> Christiano et al. train a reward predictor from comparisons, and the agent maximizes its predictions. <a class="chip" href="#s3" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L50)">3</a></li>
+      <li><strong>2018: reward models become a way to study alignment.</strong> <a class="chip" href="#s4" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L54)">4</a> The bet is that judging an outcome is easier than producing it. <a class="chip" href="#s5" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:45">5</a></li>
+      <li><strong>2019 to 2022: the method moves onto language models.</strong> Ziegler et al. come first in the book, <a class="chip" href="#s6" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)">6</a> though <a href="#differ">one talk disagrees</a>. InstructGPT makes the three-stage recipe canonical. <a class="chip" href="#s7" title="Slides lec1-chap1-3 § The early days: InstructGPT (L919-L921)">7</a></li>
+      <li><strong>From ChatGPT on: RLHF gets famous, and the original recipe's pieces get swapped out.</strong> OpenAI credits RLHF in the announcement, <a class="chip" href="#s8" title="Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L76-L78)">8</a> and by 2026 he says almost all the canonical pieces have moved on, at least in what is known openly. <a class="chip" href="#s9" title="The State of Frontier Post-Training Recipes | Conversation with Finbarr Timbers @ 00:09:19">9</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Say what changed between TAMER, Christiano et al. and InstructGPT.</li>
+      <li>Explain what the method lost when it moved from games and robots to language models.</li>
+      <li>Say why Lambert calls RLHF necessary but not sufficient for ChatGPT.</li>
+      <li>Find where his own tellings of this history differ, and check them.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/02-related-works">Chapter 2</a></td><td>Three short sections</td><td>The list of papers and the order he puts them in.</td></tr>
+        <tr><td>Lecture 1, <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1155s">19:15</a> to <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1435s">23:55</a></td><td>5 min</td><td>The backflip, his reading list, and what the setup loses on language models.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L446-L525">Lecture 1 slides</a>, L446 to L525</td><td>6 slides</td><td>One-line summaries of each paper, plus the backflip clips and the timeline figure.</td></tr>
+        <tr><td><a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA">15min History of RLHF</a> (Dec 2023)</td><td>17 min</td><td>His fullest telling. It is older than the course, and it goes back further, to philosophy and economics.</td></tr>
+      </tbody>
+    </table></div>
+    <figure class="fig" style="margin-top:var(--s5)">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 60 800 212" role="img" aria-label="Timeline of RLHF from TAMER in 2008 to DeepSeek R1 in 2025, in three eras: RL on preferences, early RLHF on language models, and the ChatGPT era">
+  <g id="tl-era-1"><title>RL on preferences</title><rect class="era" x="6" y="118" width="262" height="66" rx="8"/><text class="eran" x="137" y="262">RL on preferences</text></g>
+  <g id="tl-era-2"><title>Early RLHF on language models</title><rect class="era" x="274" y="118" width="254" height="66" rx="8"/><text class="eran" x="401" y="262">Early RLHF on language models</text></g>
+  <g id="tl-era-3"><title>The ChatGPT era</title><rect class="era" x="534" y="118" width="260" height="66" rx="8"/><text class="eran" x="664" y="262">ChatGPT era</text></g>
+  <path class="axis" d="M6 150H93L105 140L115 160L127 140L137 150H794"/>
+  <path class="tick" d="M252 144V156"/><path class="tick" d="M315 144V156"/><path class="tick" d="M378 144V156"/><path class="tick" d="M441 144V156"/><path class="tick" d="M504 144V156"/><path class="tick" d="M567 144V156"/><path class="tick" d="M630 144V156"/><path class="tick" d="M693 144V156"/><path class="tick" d="M756 144V156"/>
+  <g id="tl-tamer"><title>2008: a person scores each action</title><path class="lead" d="M31 110V144"/><text class="evt" x="31" y="104" text-anchor="middle">TAMER</text><circle class="ev" cx="31" cy="150" r="6"/></g>
+  <g id="tl-christiano"><title>2017: a person picks the better of two trajectories</title><path class="lead" d="M189 110V144"/><text class="evt" x="189" y="104" text-anchor="middle">Christiano et al.</text><circle class="ev" cx="189" cy="150" r="6"/></g>
+  <g id="tl-ziegler"><title>2019: the first RLHF on language models, in the book's telling</title><path class="lead" d="M357 110V144"/><text class="evt" x="357" y="104" text-anchor="middle">Ziegler et al.</text><circle class="ev" cx="357" cy="150" r="6"/></g>
+  <g id="tl-summarize"><title>2020: summarization with human feedback</title><path class="lead" d="M420 156V193"/><text class="evt" x="420" y="206" text-anchor="middle">Learning to</text><text class="evt" x="420" y="221" text-anchor="middle">summarize</text><circle class="ev" cx="420" cy="150" r="6"/></g>
+  <g id="tl-instructgpt"><title>2022: the three-step recipe becomes canonical</title><path class="lead" d="M514 110V144"/><text class="evt" x="528" y="104" text-anchor="end">InstructGPT</text><circle class="ev" cx="514" cy="150" r="6"/></g>
+  <g id="tl-chatgpt"><title>ChatGPT: the announcement credits RLHF</title><path class="lead" d="M562 84V144"/><text class="evt" x="562" y="78" text-anchor="middle">ChatGPT</text><circle class="ev" cx="562" cy="150" r="6"/></g>
+  <g id="tl-dpo"><title>Direct Preference Optimization: alignment without a reward model</title><path class="lead" d="M588 110V144"/><text class="evt" x="588" y="104" text-anchor="middle">DPO</text><circle class="ev" cx="588" cy="150" r="6"/></g>
+  <g id="tl-cai"><title>Constitutional AI: AI feedback in Claude</title><path class="lead" d="M572 156V193"/><text class="evt" x="594" y="206" text-anchor="end">Constitutional AI</text><circle class="ev" cx="572" cy="150" r="6"/></g>
+  <g id="tl-llama2"><title>Llama 2</title><path class="lead" d="M604 156V193"/><text class="evt" x="600" y="206" text-anchor="start">Llama 2</text><circle class="ev" cx="604" cy="150" r="6"/></g>
+  <g id="tl-o1"><title>OpenAI o1: online reasoning methods</title><path class="lead" d="M677 110V144"/><text class="evt" x="677" y="104" text-anchor="middle">OpenAI o1</text><circle class="ev" cx="677" cy="150" r="6"/></g>
+  <g id="tl-r1"><title>DeepSeek R1: popularized RLVR</title><path class="lead" d="M698 156V193"/><text class="evt" x="698" y="206" text-anchor="middle">DeepSeek R1</text><circle class="ev" cx="698" cy="150" r="6"/></g>
+  <text class="yr" x="31" y="175">2008</text><text class="yr" x="189" y="175">2017</text><text class="yr" x="252" y="175">2018</text><text class="yr" x="315" y="175">2019</text><text class="yr" x="378" y="175">2020</text><text class="yr" x="441" y="175">2021</text><text class="yr" x="504" y="175">2022</text><text class="yr" x="567" y="175">2023</text><text class="yr" x="630" y="175">2024</text><text class="yr" x="693" y="175">2025</text><text class="yr" x="756" y="175">2026</text>
+</svg></div>
+      <figcaption>Figure 1. Redrawn from his timeline, with positions read off his figure, so treat them as approximate. <a class="chip" href="#s10" title="Ch. 2 A Tiny History of RLHF (L35)">10</a> The break in the line skips 2009 to 2016.</figcaption>
+    </figure>
+  </section>
+
+  <section id="origins">
+    <h2>Origins to 2018: RL on preferences</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1155s">19:15</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1216s">20:16</a></p>
+    <p>The lecture states the problem the chapter leaves implied: for many tasks a reward is hard to write down, but the result is easy to judge. <a class="chip" href="#s11" title="Slides lec1-chap1-3 § Why did people make RLHF? (L449-L455)">11</a> He opens with two backflip clips and asks which is better. <a class="chip" href="#s12" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:19:15">12</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>Year</th><th>Work</th><th>What it changed</th></tr></thead>
+      <tbody>
+        <tr><td>2008</td><td>TAMER</td><td>Humans score an agent's actions. A reward model learns from the scores and is used to learn the policy. <a class="chip" href="#s2" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L42-L43)">2</a></td></tr>
+        <tr><td>2017</td><td>COACH</td><td>Positive and negative human feedback tunes the advantage function of an actor-critic algorithm. <a class="chip" href="#s13" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L44)">13</a></td></tr>
+        <tr><td>2017</td><td>Christiano et al.</td><td>Humans choose between trajectories. The chapter calls this "the primary reference" and says it can beat directly interacting with the environment in some domains, under "some clever conditions". <a class="chip" href="#s14" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L46-L48)">14</a></td></tr>
+        <tr><td>2018</td><td>Ibarz et al., Deep TAMER</td><td>More direct reward modeling, and TAMER rebuilt with neural networks. <a class="chip" href="#s15" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L52)">15</a></td></tr>
+        <tr><td>2018</td><td>Leike et al.</td><td>Reward models become a method for studying alignment, beyond a tool for solving RL problems. <a class="chip" href="#s4" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L54)">4</a></td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout" style="margin-top:var(--s4)">
+      <p class="label">The assumption the rest rests on</p>
+      <p>His 2023 talk picks out one assumption from Leike et al. and calls it crucial: <q>valuation of outcomes is easier than producing the correct Behavior</q>. <a class="chip" href="#s5" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:45">5</a> Chapter 11 says the same about preference data today: it is far easier to tell a good answer from a bad one than to generate a good one. <a class="chip" href="#s16" title="Ch. 11 Preference Data § Why We Need Preference Data (L35)">16</a></p>
+    </div>
+
+    <h3>What his talks add</h3>
+    <ul>
+      <li><strong>TAMER's scores were single numbers.</strong> A person gave every action a score from zero to one, with no comparisons yet. <a class="chip" href="#s17" title="15min History of Reinforcement Learning and Human Feedback @ 00:03:40">17</a></li>
+      <li><strong>Comparison arrives with Christiano et al.</strong> He calls it the first paper with pairwise preference models, <a class="chip" href="#s18" title="15min History of Reinforcement Learning and Human Feedback @ 00:04:11">18</a> and says the Bradley-Terry math used in reward modeling came in through it. <a class="chip" href="#s19" title="15min History of Reinforcement Learning and Human Feedback @ 00:13:00">19</a></li>
+      <li><strong>Why read a paper from before language models?</strong> Because it shows that preferences can carry information beyond any one action or word. <a class="chip" href="#s20" title="15min History of Reinforcement Learning and Human Feedback @ 00:04:41">20</a></li>
+      <li><strong>The same people kept going.</strong> He describes Leike et al. as a heavily overlapping author group, <a class="chip" href="#s21" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:12">21</a> and later as "a bunch of the core people in RHF". <a class="chip" href="#s22" title="Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:02:05">22</a></li>
+    </ul>
+
+    <figure class="fig" style="margin-top:var(--s4)">
+      <div class="dg-pair">
+<svg class="dg" style="flex:420 1 300px" viewBox="0 0 420 250" role="img" aria-label="The Christiano loop: an RL algorithm acts in an environment, trajectories and human feedback train a reward predictor, and predicted reward drives the RL algorithm.">
+  <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <text class="ph" x="210" y="22">Christiano et al. 2017</text>
+  <g id="loop-predicted"><title>The agent optimizes the predicted reward</title><path class="e" d="M130 72C100 90 84 130 84 184" marker-end="url(#ah2)"/><text class="l" x="78" y="118" text-anchor="end">Predicted</text><text class="l" x="78" y="133" text-anchor="end">reward</text></g>
+  <g id="loop-trajectories"><title>Trajectory segments are compared by a person</title><path class="e" d="M336 184C336 130 320 90 292 74" marker-end="url(#ah2)"/><text class="l" x="338" y="128" text-anchor="start">Trajectories</text></g>
+  <g id="loop-human"><title>Human feedback trains the reward predictor</title><path class="ed" d="M346 52H292" marker-end="url(#ah2)"/><text class="l" x="350" y="47" text-anchor="start">Human</text><text class="l" x="350" y="62" text-anchor="start">feedback</text></g>
+  <g id="loop-action"><title>The agent acts in the environment</title><path class="e" d="M154 203H264" marker-end="url(#ah2)"/><text class="l" x="210" y="196" text-anchor="middle">Action</text></g>
+  <g id="loop-observation"><title>The environment returns an observation</title><path class="e" d="M266 221H156" marker-end="url(#ah2)"/><text class="l" x="210" y="240" text-anchor="middle">Observation</text></g>
+  <g id="loop-predictor"><title>Reward predictor: trained asynchronously</title><rect class="na" x="130" y="36" width="160" height="50" rx="8"/><text class="t" x="210" y="66">Reward predictor</text></g>
+  <g id="loop-rl"><title>RL algorithm</title><rect class="n" x="14" y="186" width="140" height="50" rx="8"/><text class="t" x="84" y="216">RL algorithm</text></g>
+  <g id="loop-env"><title>Environment</title><rect class="n" x="266" y="186" width="140" height="50" rx="8"/><text class="t" x="336" y="216">Environment</text></g>
+</svg>
+<svg class="dg" style="flex:366 1 260px" viewBox="434 0 366 250" role="img" aria-label="On a language model there is no environment: the model produces a completion, and a reward model trained on human preferences gives one reward per sequence.">
+  <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+  <text class="ph" x="615" y="22">On a language model</text>
+  <g id="lm-reward"><title>One reward for the whole sequence</title><path class="e" d="M562 88C530 110 515 140 510 184" marker-end="url(#ah3)"/><text class="l" x="520" y="120" text-anchor="end">One reward</text><text class="l" x="520" y="135" text-anchor="end">per sequence</text></g>
+  <g id="lm-completion"><title>The model generates a completion and stops</title><path class="e" d="M560 184C570 140 590 110 620 88" marker-end="url(#ah3)"/><text class="l" x="598" y="150" text-anchor="start">Completion</text></g>
+  <g id="lm-human"><title>Human preferences train the reward model</title><path class="ed" d="M726 52H697" marker-end="url(#ah3)"/><text class="l" x="796" y="47" text-anchor="end">Human</text><text class="l" x="796" y="62" text-anchor="end">preferences</text></g>
+  <g id="lm-rm"><title>Reward model: a proxy, not a ground truth reward</title><rect class="na" x="535" y="36" width="160" height="50" rx="8"/><text class="t" x="615" y="66">Reward model</text></g>
+  <g id="lm-model"><title>The agent is the language model</title><rect class="n" x="450" y="186" width="150" height="50" rx="8"/><text class="t" x="525" y="216">Language model</text></g>
+  <g id="lm-noenv"><title>There is no environment</title><rect class="ng" x="650" y="186" width="140" height="50" rx="8"/><text class="l" x="720" y="216" text-anchor="middle">No environment</text></g>
+</svg>
+</div>
+      <figcaption>Figure 2. First panel: redrawn from his figure of the Christiano et al. loop. <a class="chip" href="#s3" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L50)">3</a> Second panel: this page's drawing of how he describes the language model version. <a class="chip" href="#s23" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54">23</a> Keep the missing box in mind for the next section.</figcaption>
+    </figure>
+  </section>
+
+  <section id="language-models">
+    <h2>2019 to 2022: RL from human preferences on language models</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1247s">20:47</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1309s">21:49</a> · <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1374s">22:54</a></p>
+    <p>Labs scaling up language models adopted the method quickly, and much of this work began between GPT-2 in 2019 and GPT-3 in 2020. <a class="chip" href="#s24" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L58-L59)">24</a></p>
+    <p><strong>Ziegler et al. 2019 is the chapter's earliest paper here.</strong> Learning reward models, KL distances and feedback diagrams were all formalized in it, though its tasks and model capabilities differ from today's. <a class="chip" href="#s6" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)">6</a> The lecture calls it underrated: the terms of art were there, "but it was much less known". <a class="chip" href="#s25" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:20:47">25</a> In Lecture 10 he adds a detail the chapter skips: the paper did not fix the KL weight, and instead picked a target KL and let a controller chase it. <a class="chip" href="#s26" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L190-L197)">26</a></p>
+    <p><strong>What moving to language models changed.</strong> The setup he calls "pretty contrived": no environment, a completion that just stops, and one reward per sequence from a proxy. <a class="chip" href="#s23" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54">23</a> He calls it "the magic" that RL methods still work once the setup is pruned down like this. <a class="chip" href="#s27" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:23:24">27</a></p>
+
+    <h3>Where it was applied</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Task</th><th>Paper</th><th>What he says about it</th></tr></thead>
+      <tbody>
+        <tr><td>Summarization</td><td>Stiennon et al. 2020</td><td>Extended Ziegler et al. to long-form summarization with PPO. <a class="chip" href="#s28" title="Slides lec1-chap1-3 § Other prominent, early RLHF work on language models (L520-L525)">28</a> His 2023 talk calls it the first paper where "people went oh crap". <a class="chip" href="#s29" title="15min History of Reinforcement Learning and Human Feedback @ 00:06:48">29</a> His example is a Reddit post about grad school: the base model repeats itself, and the tuned model stays faithful to the text. <a class="chip" href="#s30" title="15min History of Reinforcement Learning and Human Feedback @ 00:07:21">30</a></td></tr>
+        <tr><td>Summarizing books</td><td>Wu et al. 2021</td><td>Named in the chapter's list only. <a class="chip" href="#s31" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L62-L63)">31</a></td></tr>
+        <tr><td>Browsing to answer questions</td><td>WebGPT 2021</td><td>It "seems super ahead of its time", and is one of the few papers that detailed RLHF at scale. <a class="chip" href="#s32" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:48">32</a></td></tr>
+        <tr><td>Answers with citations</td><td>GopherCite 2022</td><td>DeepMind's work on supporting answers with verified quotes. <a class="chip" href="#s28" title="Slides lec1-chap1-3 § Other prominent, early RLHF work on language models (L520-L525)">28</a></td></tr>
+        <tr><td>Dialogue</td><td>Sparrow 2022</td><td>DeepMind again, adding rule-based constraints. <a class="chip" href="#s28" title="Slides lec1-chap1-3 § Other prominent, early RLHF work on language models (L520-L525)">28</a> He says both DeepMind papers look like OpenAI's work and "just weren't as popular". <a class="chip" href="#s33" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:21:49">33</a></td></tr>
+        <tr><td>Instruction following</td><td>InstructGPT 2022</td><td>The seminal one. <a class="chip" href="#s33" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:21:49">33</a> It appeared in March 2022, <a class="chip" href="#s34" title="Slides conversation-01 § InstructGPT (Mar. 2022) — the canonical 3 steps (L75)">34</a> and Chapter 3 covers its recipe. <a class="chip" href="#s35" title="Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L183-L185)">35</a></td></tr>
+        <tr><td>A helpful, harmless assistant</td><td>Anthropic HH 2022</td><td>Used for early versions of Claude. <a class="chip" href="#s36" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L71-L72)">36</a> Its dataset is one of the earliest RLHF datasets you can study. <a class="chip" href="#s37" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:09:15">37</a></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Three areas these years opened</h3>
+    <ul>
+      <li><strong>Over-optimization:</strong> RL optimizers can over-fit to models trained on preference data. <a class="chip" href="#s38" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L65-L69)">38</a> Chapter 14 returns to it, measuring performance against KL distance. <a class="chip" href="#s39" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L131)">39</a></li>
+      <li><strong>Language models as a place to study alignment.</strong> <a class="chip" href="#s38" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L65-L69)">38</a> Lecture 13 adds that this paper, Askell et al. 2021, discusses the helpful, honest and harmless traits. <a class="chip" href="#s40" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:08:44">40</a></li>
+      <li><strong>Red teaming:</strong> assessing a model's safety. <a class="chip" href="#s38" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L65-L69)">38</a> After ChatGPT, he recalls, people were still learning "what is red teaming". <a class="chip" href="#s41" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:12:00">41</a></li>
+    </ul>
+
+    <h3>Open tools came early and struggled</h3>
+    <p>The chapter only says early open-source tools emerged. <a class="chip" href="#s36" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L71-L72)">36</a> Lecture 6 is blunter about 2023: most open efforts at full RLHF pipelines "just kind of crashed and burned", trlX was the most successful, and DPO then made post-training far more accessible. <a class="chip" href="#s42" title="Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:01:00">42</a> Chapter 1 adds that doubt about RLHF lasted, especially in the open, where groups can't afford data budgets of $100K to $1M. <a class="chip" href="#s43" title="Ch. 1 Introduction § How We Got Here (L255-L260)">43</a></p>
+  </section>
+
+  <section id="chatgpt-era">
+    <h2>2023 to the present: the ChatGPT era</h2>
+    <p class="tag">In Lecture 1: <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=378s">6:18</a></p>
+    <p>The chapter's evidence is one sentence from OpenAI's announcement:</p>
+    <blockquote>We trained this model using Reinforcement Learning from Human Feedback (RLHF), using the same methods as InstructGPT, but with slight differences in the data collection setup. <a class="chip" href="#s8" title="Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L76-L78)">8</a></blockquote>
+    <p>RLHF being linked to ChatGPT is why he and many others got excited. He was at Hugging Face at the time, and that is when he started working on language models. <a class="chip" href="#s44" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:06:18">44</a> He also points out that OpenAI doesn't say what the changes were. <a class="chip" href="#s45" title="Early stages of the reinforcement learning era of language models @ 00:02:06">45</a></p>
+
+    <div class="callout" style="margin-top:var(--s4)">
+      <p class="label">How much credit does RLHF get?</p>
+      <p>His consistent line is <strong>necessary but not sufficient</strong>. In 2024 he says you can't build a ChatGPT without something like it, yet "pre-training is still most of the work". <a class="chip" href="#s46" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:05:17">46</a> He repeats the phrase in 2025, <a class="chip" href="#s47" title="Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:03:41">47</a> and that year also says it "wasn't the leading thing" people were thinking about, "just a cherry on top". <a class="chip" href="#s48" title="Early stages of the reinforcement learning era of language models @ 00:02:37">48</a> In December 2023 he adds a warning: RLHF is "not even robust to fine tuning". <a class="chip" href="#s49" title="15min History of Reinforcement Learning and Human Feedback @ 00:01:05">49</a></p>
+    </div>
+
+    <p style="margin-top:var(--s4)"><strong>Then the labs used it.</strong> The chapter lists Constitutional AI, Llama 2 and 3, Nemotron and Tülu 3. <a class="chip" href="#s50" title="Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L80-L81)">50</a> He finds a line in the Llama 2 report "really entertaining": it calls RL "some shadowy field" that proved highly effective. He reads it as a snapshot of July 2023, when it wasn't clear RLHF would take off. <a class="chip" href="#s51" title="Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:06:20">51</a></p>
+    <div class="callout">
+      <p><strong>A catch in that list.</strong> Constitutional AI appears as a use of RLHF, but Chapter 12 explains that a language model produces its pairwise preferences, hence the name RLAIF. <a class="chip" href="#s52" title="Ch. 12 Synthetic Data &amp; Distillation § Constitutional AI (L361-L367)">52</a> Those comparisons come from a model, and the rest of RLHF proceeds as normal.</p>
+    </div>
+    <p style="margin-top:var(--s4)"><strong>Today the field is wider than RLHF.</strong> He calls it preference fine-tuning (PreFT), and the chapter ends by pointing forward: <a class="chip" href="#s53" title="Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L83)">53</a></p>
+    <ul>
+      <li>Process rewards for intermediate reasoning steps: Chapter 5.</li>
+      <li>Direct alignment algorithms inspired by DPO: Chapter 8.</li>
+      <li>Learning from execution feedback on code or math, and online reasoning methods inspired by o1: Chapter 7.</li>
+    </ul>
+    <p>The opening warning that details will change has already come true. His slides sketch 2023 to 2026 as simple SFT, then DPO, then RLVR, then agentic training, with RLHF becoming "one tool (that you may not even need)". <a class="chip" href="#s54" title="Slides lec1-chap1-3 § From RLHF to &quot;post-training&quot; (L950-L956)">54</a> Presenting his own deck in June 2026, he says that, at least in what is known openly, little human demonstration data goes into SFT, he guesses synthetic data has a much bigger role, and reward models aren't the key RL target any more. <a class="chip" href="#s9" title="The State of Frontier Post-Training Recipes | Conversation with Finbarr Timbers @ 00:09:19">9</a> As he puts it in Q&amp;A 1, "it became a post-training book". <a class="chip" href="#s55" title="Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:00:31">55</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where his tellings differ</h2>
+    <p class="sub">Each side carries its date. A later source isn't automatically a correction, so these stay open unless he settles them.</p>
+
+    <div class="callout warn"><p><span class="badge warn">unresolved</span> <strong>What was the first RLHF on language models?</strong></p>
+      <ul class="tight">
+        <li><strong>Ziegler et al. 2019:</strong> the book, <a class="chip" href="#s6" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)">6</a> the slides, <a class="chip" href="#s56" title="Slides lec1-chap1-3 § RLHF before language models (L475-L477)">56</a> his December 2023 talk <a class="chip" href="#s57" title="15min History of Reinforcement Learning and Human Feedback @ 00:06:17">57</a> and Lecture 10 in July 2026, which hedges with "probably". <a class="chip" href="#s58" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:20">58</a></li>
+        <li><strong>Stiennon et al. 2020:</strong> his January 2025 talk says "the first example was really like learning to summarize". <a class="chip" href="#s59" title="How language model post-training is done today @ 00:04:09">59</a> Chapter 1's list of early breakthroughs also omits Ziegler. <a class="chip" href="#s60" title="Ch. 1 Introduction § RLHF in Three Steps (L40)">60</a></li>
+      </ul>
+      <p>Most sources say Ziegler, and I found nowhere that he takes back the 2025 line.</p></div>
+
+    <div class="callout warn"><p><span class="badge warn">unresolved</span> <strong>What did Christiano et al. run on?</strong></p>
+      <ul class="tight">
+        <li><strong>Atari:</strong> the book <a class="chip" href="#s14" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L46-L48)">14</a> and the slides. <a class="chip" href="#s56" title="Slides lec1-chap1-3 § RLHF before language models (L475-L477)">56</a></li>
+        <li><strong>Simulated robots:</strong> "a walking robot" in December 2023, <a class="chip" href="#s61" title="15min History of Reinforcement Learning and Human Feedback @ 00:04:41">61</a> "actually for control of simulated robotic agents" in March 2025, <a class="chip" href="#s62" title="Early stages of the reinforcement learning era of language models @ 00:01:35">62</a> and the backflip clips in Lecture 1, which he credits to this paper. <a class="chip" href="#s63" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:19:45">63</a></li>
+      </ul>
+      <p>See the agent note below.</p></div>
+
+    <div class="callout warn"><p><span class="badge warn">unresolved</span> <strong>How strong was that result?</strong></p>
+      <ul class="tight">
+        <li><strong>Hedged:</strong> the book says "in some domains", under "some clever conditions". <a class="chip" href="#s14" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L46-L48)">14</a></li>
+        <li><strong>Unhedged:</strong> "even more powerful than the reward signal from the environment" in December 2023, <a class="chip" href="#s61" title="15min History of Reinforcement Learning and Human Feedback @ 00:04:41">61</a> and "it's clear that this human feedback worked better" in April 2026. <a class="chip" href="#s64" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:20:16">64</a></li>
+      </ul>
+      <p>They also compare different things. The lecture's rival is a reward function a human wrote, <a class="chip" href="#s65" title="Slides lec1-chap1-3 § Left: Human feedback; Right: Hand-designed reward function (L487)">65</a> while the book and the 2023 talk compare against the environment.</p></div>
+
+    <div class="callout warn"><p><span class="badge warn">unresolved</span> <strong>What made RLHF matter?</strong></p>
+      <ul class="tight">
+        <li><strong>2020 summarization:</strong> "the first paper where people went oh crap" (December 2023), though he adds it took almost three more years for people to realize. <a class="chip" href="#s29" title="15min History of Reinforcement Learning and Human Feedback @ 00:06:48">29</a></li>
+        <li><strong>InstructGPT and Constitutional AI:</strong> "the work that popularized RLHF" (April 2026). <a class="chip" href="#s66" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:21:17">66</a></li>
+        <li><strong>The ChatGPT post itself:</strong> RLHF "really became popular" with that quote (January 2025). <a class="chip" href="#s67" title="How language model post-training is done today @ 00:03:07">67</a></li>
+      </ul></div>
+
+    <div class="callout warn"><p><span class="badge warn">unresolved</span> <strong>Who came up with the three-step recipe?</strong></p>
+      <ul class="tight">
+        <li><strong>InstructGPT:</strong> "defined" it (April 2026) <a class="chip" href="#s33" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:21:49">33</a> and "coined" it (June 2026). <a class="chip" href="#s68" title="The State of Frontier Post-Training Recipes | Conversation with Finbarr Timbers @ 00:06:48">68</a></li>
+        <li><strong>Earlier:</strong> the 2020 summarization work was "the same three-stage approach" (January 2025). <a class="chip" href="#s59" title="How language model post-training is done today @ 00:04:09">59</a></li>
+      </ul>
+      <p>His slides say InstructGPT made the recipe "canonical". <a class="chip" href="#s7" title="Slides lec1-chap1-3 § The early days: InstructGPT (L919-L921)">7</a></p></div>
+
+    <div class="callout"><p><span class="badge ok">settled by Lambert, for KL</span> <strong>Where did the KL penalty and feedback diagrams come from?</strong></p>
+      <ul class="tight">
+        <li><strong>The chapter:</strong> Ziegler et al. formalized KL distances and feedback diagrams. <a class="chip" href="#s6" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)">6</a> His 2023 talk also says 2019 is where those diagrams first appear. <a class="chip" href="#s57" title="15min History of Reinforcement Learning and Human Feedback @ 00:06:17">57</a></li>
+        <li><strong>KL is older, and he says so:</strong> Natasha Jaques's work on dialogue agents came before language models were popular, <a class="chip" href="#s69" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:39">69</a> as Chapter 15 confirms. <a class="chip" href="#s70" title="Ch. 15 Regularization § Reference Model to Generations (L68)">70</a> Ziegler's controller is itself "older than RLHF". <a class="chip" href="#s26" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L190-L197)">26</a></li>
+        <li><strong>Diagrams stay open:</strong> the chapter's own figure is a 2017 loop, <a class="chip" href="#s3" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L50)">3</a> and an April 2025 talk says the 2018 reward modeling paper has "one of these first" diagrams. <a class="chip" href="#s22" title="Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:02:05">22</a></li>
+      </ul></div>
+
+    <div class="callout warn" style="margin-top:var(--s5)"><p><span class="badge warn">small</span> <strong>Dates in this chapter are loose.</strong></p>
+      <ul class="tight">
+        <li>COACH comes right after TAMER as "concurrently or soon after", <a class="chip" href="#s13" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L44)">13</a> yet the bibliography dates it 2017 and TAMER 2008. <a class="chip" href="#s71" title="book/chapters/bib.bib (L266-L281)">71</a></li>
+        <li>The heading "2023 to the Present" holds ChatGPT and Constitutional AI, both 2022 in the table below, and he says "ChatGPT in 2022". <a class="chip" href="#s72" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:05:44">72</a> Likewise Gao et al., 2023, sits under "2019 to 2022".</li>
+        <li>A citation key isn't a date. <code>rafailov2024direct</code> is 2023, <code>vonwerra2022trl</code> is 2020 and <code>lightman2023let</code> is 2024. <a class="chip" href="#s73" title="book/chapters/bib.bib (L195-L409)">73</a></li>
+      </ul></div>
+  </section>
+
+  <section id="papers">
+    <h2>Every paper in the chapter</h2>
+    <p class="sub">Use this to track a paper down. The year links to its bibliography entry, the line links to Chapter 2, and "comes back in" links to the first citation in up to five later chapters and two slide decks.</p>
+    <details><summary>All 34 papers</summary>
+      <div class="tablewrap" style="margin-top:var(--s3)"><table class="kt refs" style="min-width:620px">
+        <thead><tr><th>Year</th><th>Paper</th><th>Ch. 2</th><th>Comes back in</th></tr></thead>
+        <tbody>
+        <tr><th colspan="4" scope="colgroup">Further reading he names</th></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L242">2017</a></td><td><strong>Wirth et al.</strong><br><span class="tag">A survey of preference-based reinforcement learning methods</span><br><code>wirth2017survey</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L32">L32</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L252">2025</a></td><td><strong>Kaufmann et al.</strong><br><span class="tag">A survey of reinforcement learning from human feedback</span><br><code>kaufmann2023survey</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L33">L33</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L259">2023</a></td><td><strong>Casper et al.</strong><br><span class="tag">Open problems and fundamental limitations of reinforcement learning from human feedback</span><br><code>casper2023open</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L33">L33</a></td><td>Only here</td></tr>
+        <tr><th colspan="4" scope="colgroup">Origins to 2018</th></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L266">2008</a></td><td><strong>TAMER</strong><br><span class="tag">Tamer: Training an agent manually via evaluative reinforcement</span><br><code>knox2008tamer</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L43">L43</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L475">Lec. 1 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L275">2017</a></td><td><strong>COACH</strong><br><span class="tag">Interactive learning from policy-dependent human feedback</span><br><code>macglashan2017interactive</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L44">L44</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L3">2017</a></td><td><strong>Christiano et al.</strong><br><span class="tag">Deep reinforcement learning from human preferences</span><br><code>christiano2017deep</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L46">L46</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L40">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L446">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L546">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L284">2018</a></td><td><strong>Ibarz et al.</strong><br><span class="tag">Reward learning from human preferences and demonstrations in atari</span><br><code>ibarz2018reward</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L52">L52</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L292">2018</a></td><td><strong>Deep TAMER</strong><br><span class="tag">Deep tamer: Interactive agent shaping in high-dimensional state spaces</span><br><code>warnell2018deep</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L52">L52</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L301">2018</a></td><td><strong>Leike et al.</strong><br><span class="tag">Scalable agent alignment via reward modeling: a research direction</span><br><code>leike2018scalable</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L54">L54</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L29">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L34">Ch. 11</a></td></tr>
+        <tr><th colspan="4" scope="colgroup">2019 to 2022</th></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L308">2019</a></td><td><strong>Ziegler et al.</strong><br><span class="tag">Fine-tuning language models from human preferences</span><br><code>ziegler2019fine</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L60">L60</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L446">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L187">Lec. 10 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L11">2020</a></td><td><strong>Stiennon et al.</strong><br><span class="tag">Learning to summarize with human feedback</span><br><code>stiennon2020learning</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L63">L63</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L40">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L520">Lec. 1 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L315">2021</a></td><td><strong>Wu et al.</strong><br><span class="tag">Recursively summarizing books with human feedback</span><br><code>wu2021recursively</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L63">L63</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L20">2022</a></td><td><strong>InstructGPT</strong><br><span class="tag">Training language models to follow instructions with human feedback</span><br><code>ouyang2022training</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L63">L63</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L40">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L185">Ch. 3</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L94">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L768">Ch. 6</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L215">Ch. 11</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L446">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L413">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L29">2021</a></td><td><strong>WebGPT</strong><br><span class="tag">Webgpt: Browser-assisted question-answering with human feedback</span><br><code>nakano2021webgpt</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L63">L63</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L40">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L33">Ch. 9</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L79">Ch. 13</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L521">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1132">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L322">2022</a></td><td><strong>GopherCite</strong><br><span class="tag">Teaching language models to support answers with verified quotes</span><br><code>menick2022teaching</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L63">L63</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L523">Lec. 1 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L329">2022</a></td><td><strong>Sparrow</strong><br><span class="tag">Improving alignment of dialogue agents via targeted human judgements</span><br><code>glaese2022improving</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L63">L63</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/12-synthetic-data.md?plain=1#L393">Ch. 12</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L524">Lec. 1 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L336">2023</a></td><td><strong>Gao et al.</strong><br><span class="tag">Scaling laws for reward model overoptimization</span><br><code>gao2023scaling</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L67">L67</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L131">Ch. 14</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L882">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L167">Lec. 9 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L181">2021</a></td><td><strong>Askell et al.</strong><br><span class="tag">A general language assistant as a laboratory for alignment</span><br><code>askell2021general</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L68">L68</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L261">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L97">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L768">Lec. 2 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L185">Lec. 13 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L345">2022</a></td><td><strong>Ganguli et al.</strong><br><span class="tag">Red teaming language models to reduce harms: Methods, scaling behaviors, and lessons learned</span><br><code>ganguli2022red</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L69">L69</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L36">2022</a></td><td><strong>Anthropic HH</strong><br><span class="tag">Training a helpful and harmless assistant with reinforcement learning from human feedback</span><br><code>bai2022training</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L72">L72</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L40">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L185">Ch. 3</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L33">Ch. 9</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L68">Ch. 11</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L135">Ch. 14</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L522">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L1132">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L352">2023</a></td><td><strong>Ramamurthy et al.</strong><br><span class="tag">Is reinforcement learning (not) for natural language processing: Benchmarks, baselines, and building blocks for natural language policy optimization</span><br><code>ramamurthy2022reinforcement</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L72">L72</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L359">2023</a></td><td><strong>trlX</strong><br><span class="tag">trlX: A Framework for Large Scale Reinforcement Learning from Human Feedback</span><br><code>havrilla-etal-2023-trlx</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L72">L72</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L379">2020</a></td><td><strong>TRL</strong><br><span class="tag">TRL: Transformer Reinforcement Learning</span><br><code>vonwerra2022trl</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L72">L72</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L328">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L189">Ch. 7</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L893">Lec. 4 slides</a></td></tr>
+        <tr><th colspan="4" scope="colgroup">2023 to the present</th></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L388">2022</a></td><td><strong>ChatGPT post</strong><br><span class="tag">ChatGPT: Optimizing Language Models for Dialogue</span><br><code>openai2022chatgpt</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L76">L76</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L152">Lec. 1 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L188">2022</a></td><td><strong>Constitutional AI</strong><br><span class="tag">Constitutional ai: Harmlessness from ai feedback</span><br><code>bai2022constitutional</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L81">L81</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L261">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/12-synthetic-data.md?plain=1#L337">Ch. 12</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L508">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec7-chap12-synthetic-data.md?plain=1#L694">Lec. 7 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L396">2023</a></td><td><strong>Llama 2</strong><br><span class="tag">Llama 2: Open foundation and fine-tuned chat models</span><br><code>touvron2023llama</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L81">L81</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L198">Ch. 3</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L575">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L33">Ch. 9</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L233">Ch. 11</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L95">Ch. 14</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L865">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L837">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L224">2024</a></td><td><strong>Llama 3</strong><br><span class="tag">The llama 3 herd of models</span><br><code>dubey2024llama</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L81">L81</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L275">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L34">Ch. 8</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L32">App. B</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L513">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L336">Lec. 9 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L231">2024</a></td><td><strong>Nemotron</strong><br><span class="tag">Nemotron-4 340B Technical Report</span><br><code>adler2024nemotron</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L81">L81</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L275">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L575">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L34">Ch. 8</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L163">Ch. 15</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L43">2024</a></td><td><strong>Tülu 3</strong><br><span class="tag">Tulu 3: Pushing Frontiers in Open Language Model Post-Training</span><br><code>lambert2024t</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L81">L81</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L46">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L171">Ch. 3</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/04-instruction-tuning.md?plain=1#L170">Ch. 4</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L768">Ch. 6</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L25">Ch. 7</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L513">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L333">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L403">2024</a></td><td><strong>Let's Verify</strong><br><span class="tag">Let&#x27;s verify step by step</span><br><code>lightman2023let</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L83">L83</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/05-reward-models.md?plain=1#L219">Ch. 5</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/09-rejection-sampling.md?plain=1#L33">Ch. 9</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec2-chap4-5-9.md?plain=1#L988">Lec. 2 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L195">2023</a></td><td><strong>DPO</strong><br><span class="tag">Direct preference optimization: Your language model is secretly a reward model</span><br><code>rafailov2024direct</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L83">L83</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L264">Ch. 1</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/08-direct-alignment.md?plain=1#L29">Ch. 8</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L512">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec6-chap8-dpo.md?plain=1#L48">Lec. 6 slides</a></td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L410">2025</a></td><td><strong>Kumar et al.</strong><br><span class="tag">Training language models to self-correct via reinforcement learning</span><br><code>kumar2024training</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L83">L83</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L417">2024</a></td><td><strong>Singh et al.</strong><br><span class="tag">Beyond human data: Scaling self-training for problem-solving with language models</span><br><code>singh2023beyond</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L83">L83</a></td><td>Only here</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L424">2024</a></td><td><strong>OpenAI o1</strong><br><span class="tag">Introducing OpenAI o1-preview</span><br><code>openai2024o1</code></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L83">L83</a></td><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L109">Ch. 7</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L189">Lec. 1 slides</a> · <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L189">Lec. 3 slides</a></td></tr>
+        </tbody>
+      </table></div>
+    </details>
+  </section>
+
+  <section id="run">
+    <h2>Run it</h2>
+    <p>Chapter 2 has no code of its own: his reader experiment table starts at Chapter 4, <a class="chip" href="#s74" title="Code code/README.md (L24-L32)">74</a> and exercises start there too. <a class="chip" href="#s75" title="Code code/README.md (L43)">75</a> Two starter runs connect to this history. From <code>code/</code>, after <code>uv sync</code>:</p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Idea from this chapter</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr><td>Pairwise comparisons train a reward model (Bradley-Terry, Chapter 5) <a class="chip" href="#s74" title="Code code/README.md (L24-L32)">74</a></td><td><code>uv run python -m reward_models.train_preference_rm --config reward_models/configs/preference_rm.yaml</code></td></tr>
+        <tr><td>DPO, the branch that came after this recipe (Chapter 8) <a class="chip" href="#s74" title="Code code/README.md (L24-L32)">74</a></td><td><code>uv run python -m direct_alignment.train --loss dpo --max_samples 1000</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>TAMER and Christiano et al. both learn a reward from people. What changed, and why does it matter for language models?</summary>
+      <p>TAMER's humans give each action a score, <a class="chip" href="#s17" title="15min History of Reinforcement Learning and Human Feedback @ 00:03:40">17</a> and Christiano's choose between two trajectories. <a class="chip" href="#s18" title="15min History of Reinforcement Learning and Human Feedback @ 00:04:11">18</a> Comparison is what he calls the fundamental assumption of RLHF, because comparing two things is easier than generating one. <a class="chip" href="#s5" title="15min History of Reinforcement Learning and Human Feedback @ 00:05:45">5</a> Comparing two answers is how preference data works today. <a class="chip" href="#s16" title="Ch. 11 Preference Data § Why We Need Preference Data (L35)">16</a></p>
+    </details>
+    <details><summary>What is the "environment" when RLHF runs on a language model?</summary>
+      <p>There isn't one. The model generates a completion and stops, and a reward model gives one reward per sequence. <a class="chip" href="#s23" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54">23</a> That is why he calls the setup contrived, and why it is striking that RL methods carry over. <a class="chip" href="#s27" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:23:24">27</a></p>
+    </details>
+    <details><summary>Ziegler et al. published in 2019. Why does he date the excitement to around ChatGPT?</summary>
+      <p>He gives no single cause. The paper was "much less known". <a class="chip" href="#s25" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:20:47">25</a> Its tasks and model capabilities differ from today's. <a class="chip" href="#s6" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)">6</a> He says people reacted to the 2020 summarization work, yet it took almost three more years before they really realized it was a big thing. <a class="chip" href="#s29" title="15min History of Reinforcement Learning and Human Feedback @ 00:06:48">29</a> What got him and many others excited was RLHF being linked to ChatGPT. <a class="chip" href="#s44" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:06:18">44</a></p>
+    </details>
+    <details><summary>A colleague says ChatGPT is basically RLHF on top of GPT-3.5. What would Lambert correct?</summary>
+      <p>RLHF was necessary but not sufficient, and pre-training is still most of the work. <a class="chip" href="#s46" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:05:17">46</a> OpenAI also says only that it used InstructGPT's methods with slight differences in data collection, <a class="chip" href="#s8" title="Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L76-L78)">8</a> and he points out it doesn't say which. <a class="chip" href="#s45" title="Early stages of the reinforcement learning era of language models @ 00:02:06">45</a></p>
+    </details>
+    <details><summary>Which parts of InstructGPT's recipe are still standard?</summary>
+      <p>Fewer than you might expect, at least in what is known openly. He says little human demonstration data goes into SFT, guesses that synthetic data has a much bigger role, and says reward models aren't the key RL target any more. <a class="chip" href="#s9" title="The State of Frontier Post-Training Recipes | Conversation with Finbarr Timbers @ 00:09:19">9</a></p>
+    </details>
+    <details><summary>Someone says the first RLHF on language models was 2020 summarization. How do you check?</summary>
+      <p>Lambert has said so himself, in January 2025. <a class="chip" href="#s59" title="How language model post-training is done today @ 00:04:09">59</a> The book, slides and Lecture 10 say Ziegler et al. 2019. <a class="chip" href="#s6" title="Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)">6</a> <a class="chip" href="#s56" title="Slides lec1-chap1-3 § RLHF before language models (L475-L477)">56</a> <a class="chip" href="#s58" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:20">58</a> Report both with their dates, then open the two papers from the table above.</p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Christiano's domains may not conflict.</strong> Not Lambert: one paper can report several experiments, and he credits both the Atari line and the backflip clips to the same paper. <a class="chip" href="#s14" title="Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L46-L48)">14</a> <a class="chip" href="#s63" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:19:45">63</a> None of his sources says this, and I haven't read the paper. Its entry is <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L3"><code>christiano2017deep</code></a>.</p>
+      <p style="margin-top:var(--s2)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;On the Chapter 2 page: Lambert&#x27;s sources disagree on whether Christiano et al. 2017 ran on Atari or simulated robots. Read the paper and tell me which domains it used, labelling the answer clearly as outside Lambert&#x27;s material.&quot;,{tag:&#x27;next&#x27;,text:&quot;Christiano domains&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Check the paper, outside Lambert's material</button></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Most of these look like compression.</strong> Not Lambert: a one-line history has to pick one paper, so I read most of the differences above as shortening, with no change of mind behind them. "Made canonical" on his slides would fit both sides of the three-step question. He doesn't say either of these.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>He was there.</strong> Not Lambert: this is an insider's history. He was at Hugging Face when ChatGPT launched, <a class="chip" href="#s44" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:06:18">44</a> Tülu 3 on the adoption list is from Ai2, <a class="chip" href="#s50" title="Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L80-L81)">50</a> and he works at Ai2. <a class="chip" href="#s76" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:03:38">76</a> The chapter says it isn't comprehensive, <a class="chip" href="#s77" title="Ch. 2 A Tiny History of RLHF (L29-L33)">77</a> so read its "who mattered" as one informed view.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Captions to watch for.</strong> Not Lambert: "Cristiano" is Christiano, "Gopher site" is GopherCite, "Ziggler" is Ziegler, "Natasha Jax" is Natasha Jaques, "Karper AI" is probably CarperAI, and "rhf" is RLHF. The 2023 and 2025 talks have rougher captions than the 2026 course. Quotes above keep them as they are.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>What I checked and didn't.</strong> Not Lambert: the chapter's header also lists Lecture 0, <a class="chip" href="#s78" title="Ch. 2 A Tiny History of RLHF (L15-L19)">78</a> but its captions name none of this chapter's main papers, and none of Q&amp;A 1's eight questions concerns this history, so both are left out. I did not run the two commands above. The slides are at the pinned commit, so they may be newer than the April 2026 recording.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out the longer intellectual history behind RLHF. Chapter 10 covers it, drawing on quantifying human values, optimality and behavioral economics, <a class="chip" href="#s79" title="Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L91-L93)">79</a> and his 2023 talk walks through what he calls the minimum tree of ideas behind modern RLHF. <a class="chip" href="#s80" title="15min History of Reinforcement Learning and Human Feedback @ 00:08:53">80</a> For a fuller list of papers, the chapter points you to survey papers. <a class="chip" href="#s77" title="Ch. 2 A Tiny History of RLHF (L29-L33)">77</a> Chapter 3 picks up InstructGPT's recipe in detail.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 3 (Training Overview) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 3&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 3</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 2 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 2&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 2</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L24-L27">
+      <blockquote style="margin:0">RLHF and its related methods are very new. We highlight history to show how recently the procedures were formalized … so the chapter sets the stage for a book that will express uncertainty over certain methods and an expectation that some details can change … showcase why many pieces of the RLHF pipeline are what they are, as some of the seminal papers were for applications totally distinct from modern language models.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L24-L27">Ch. 2 A Tiny History of RLHF (L24-L27)</a> · <a href="https://rlhfbook.com/c/02-related-works#a-tiny-history-of-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L42-L43">
+      <blockquote style="margin:0">One of the first papers with an approach similar to modern RLHF was TAMER. … humans iteratively scored an agent’s actions to learn a reward model, which was used to learn the action policy</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L42-L43">Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L42-L43)</a> · <a href="https://rlhfbook.com/c/02-related-works#origins-to-2018-rl-on-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L50">
+      <blockquote style="margin:0">The core RLHF loop from Christiano et al. (2017): the reward predictor is trained asynchronously from comparisons of trajectory segments, and the agent maximizes predicted reward.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L50">Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L50)</a> · <a href="https://rlhfbook.com/c/02-related-works#origins-to-2018-rl-on-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L54">
+      <blockquote style="margin:0">reward models as a general notion were proposed as a method for studying alignment, rather than just a tool for solving RL problems</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L54">Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L54)</a> · <a href="https://rlhfbook.com/c/02-related-works#origins-to-2018-rl-on-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="yt:Mu_-FWIuhDA@00:05:45-00:06:17">
+      <blockquote style="margin:0">the second one is crucial to how rhf works for many tasks we want to solve valuation of outcomes is easier than producing the correct Behavior this essentially means it's easier to compare two things than it is to generate … this is the fundamental assumption to what rhf is built upon now</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=345s">15min History of Reinforcement Learning and Human Feedback @ 00:05:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L60-L61">
+      <blockquote style="margin:0">The earliest work in 2019, Fine-Tuning Language Models from Human Preferences has many striking similarities to modern work on RLHF … Many canonical terms, such as learning reward models, KL distances, feedback diagrams, etc., were formalized in this paper, though the evaluation tasks for the final models and their capabilities were different from what people are doing today.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L60-L61">Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L60-L61)</a> · <a href="https://rlhfbook.com/c/02-related-works#2019-to-2022-rl-from-human-preferences-on-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L919-L921">
+      <blockquote style="margin:0">InstructGPT made the classic three-stage recipe canonical: SFT, reward modeling, then RL against the reward model. OpenAI even hinted that the original ChatGPT used this! … This became the intellectual template for much of modern post-training.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L919-L921">Slides lec1-chap1-3 § The early days: InstructGPT (L919-L921)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L76-L78">
+      <blockquote style="margin:0">We trained this model using Reinforcement Learning from Human Feedback (RLHF), using the same methods as InstructGPT, but with slight differences in the data collection setup.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L76-L78">Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L76-L78)</a> · <a href="https://rlhfbook.com/c/02-related-works#2023-to-the-present-the-chatgpt-era">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="yt:sbXEPxIazqY@00:09:19-00:10:23">
+      <blockquote style="margin:0">at least in terms of what we know openly, where there we don't use that much human demonstration data for SFT. … I would guess that synthetic has a much bigger role. And there are reward models, but they're like not the key RL target anymore. So, in 4 years, most almost all the canonical pieces have been moved on.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://www.youtube.com/watch?v=sbXEPxIazqY&amp;t=559s">The State of Frontier Post-Training Recipes | Conversation with Finbarr Timbers @ 00:09:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L35">
+      <blockquote style="margin:0">Timeline of key developments in RLHF discussed in this chapter, from early work on RL from preferences through the adoption of RLHF in large language models.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L35">Ch. 2 A Tiny History of RLHF (L35)</a> · <a href="https://rlhfbook.com/c/02-related-works#a-tiny-history-of-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L449-L455">
+      <blockquote style="margin:0">In classical RL, the reward function is known — CartPole gives +1 per step. But for many tasks the reward is hard to write down: … It's easy to judge which poem is better, but hard to write a masterpiece … RLHF lets us optimize for behavior we can evaluate even when we cannot easily specify the reward.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L449-L455">Slides lec1-chap1-3 § Why did people make RLHF? (L449-L455)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="yt:o6l6tJQgUg4@00:19:15-00:19:45">
+      <blockquote style="margin:0">in the history of RLHF I would ask you which is a better backflip? If I present you with two options, which is better?</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1155s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:19:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L44">
+      <blockquote style="margin:0">Other work, concurrently or soon after, proposed an actor-critic algorithm, COACH, where human feedback (both positive and negative) is used to tune the advantage function</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L44">Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L44)</a> · <a href="https://rlhfbook.com/c/02-related-works#origins-to-2018-rl-on-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L46-L48">
+      <blockquote style="margin:0">The primary reference, Christiano et al. 2017, is an application of RLHF applied to preferences between trajectories of agents within Atari games … The work shows that humans choosing between trajectories can be more effective in some domains than directly interacting with the environment. This uses some clever conditions, but is impressive nonetheless.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L46-L48">Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L46-L48)</a> · <a href="https://rlhfbook.com/c/02-related-works#origins-to-2018-rl-on-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L52">
+      <blockquote style="margin:0">This method was expanded upon with more direct reward modeling and the adoption of deep learning within early RLHF work was capped by an extension to TAMER with neural network models just one year later</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L52">Ch. 2 A Tiny History of RLHF § Origins to 2018: RL on Preferences (L52)</a> · <a href="https://rlhfbook.com/c/02-related-works#origins-to-2018-rl-on-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/11-preference-data.md#L35">
+      <blockquote style="margin:0">it is far easier, both for humans and AI models supervising data collection, to differentiate between a good and a bad answer for a prompt than it is to generate a good answer on its own.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/11-preference-data.md?plain=1#L35">Ch. 11 Preference Data § Why We Need Preference Data (L35)</a> · <a href="https://rlhfbook.com/c/11-preference-data#why-we-need-preference-data">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="yt:Mu_-FWIuhDA@00:03:40-00:04:41">
+      <blockquote style="margin:0">called Tamer that I highlight in most of my talks where a human assigned a score from zero to one to every action … this reward model that humans gave basic scalers no comparisons yet</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=220s">15min History of Reinforcement Learning and Human Feedback @ 00:03:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:Mu_-FWIuhDA@00:04:11-00:05:12">
+      <blockquote style="margin:0">the Cristiano at all deep RL from Human preferences newspaper is the first one where these kind of um pairwise preference models came in so the humans were shown two trajectories they chose the best trajectory with respect to a task</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=251s">15min History of Reinforcement Learning and Human Feedback @ 00:04:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:Mu_-FWIuhDA@00:13:00-00:13:32">
+      <blockquote style="margin:0">the link back in time to the 50s is something called the Bradley Terry model which is a probable a probability that one preference will beat another in a parz fashion this is the math that is used in the reward modeling of rhf and it was brought in in this Cristiano at all paper</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=780s">15min History of Reinforcement Learning and Human Feedback @ 00:13:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="yt:Mu_-FWIuhDA@00:04:41-00:05:45">
+      <blockquote style="margin:0">recommend looking at it even if you're just working on language models today it shows how human preferences can Encompass information outside the context of a specific action or a specific word</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=281s">15min History of Reinforcement Learning and Human Feedback @ 00:04:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:Mu_-FWIuhDA@00:05:12-00:05:45">
+      <blockquote style="margin:0">in 2018 a very overlapping group of auth from this Cristiano at all paper proposed scalable agent alignment via reward modeling this is where reward modeling really became a thing</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=312s">15min History of Reinforcement Learning and Human Feedback @ 00:05:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="yt:zYeIqzULzr0@00:02:05-00:03:08">
+      <blockquote style="margin:0">a bunch of the core people in RHF when they were at DeepMind um kind of proposing reward modeling as a research direction … it has one of these first kind of RHF system diagrams</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://www.youtube.com/watch?v=zYeIqzULzr0&amp;t=125s">Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:02:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:o6l6tJQgUg4@00:22:54-00:23:24">
+      <blockquote style="margin:0">RLHF is pretty contrived because there's no environment. The agent is the language model. It generates a completion and it just does that and then it stops. That completion is rated by a reward model, which is a proxy rather than a ground truth reward. And then it's like kind of just one reward per sequence.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1374s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:22:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L58-L59">
+      <blockquote style="margin:0">was quickly adopted by AI labs increasingly turning to scaling large language models. A large portion of this work began between GPT-2, in 2019, and GPT-3, in 2020.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L58-L59">Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L58-L59)</a> · <a href="https://rlhfbook.com/c/02-related-works#2019-to-2022-rl-from-human-preferences-on-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="yt:o6l6tJQgUg4@00:20:47-00:21:49">
+      <blockquote style="margin:0">I think that an underrated paper is the Ziegler et al. 2019 paper. … a lot of the terms of art for what was being done today, like preference models, how you fine-tune was actually done, but it was much less known.</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1247s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:20:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L190-L197">
+      <blockquote style="margin:0">The first RLHF-on-LMs paper did not fix β. It picked a target KL and let a controller chase it … The idea is older than RLHF</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L190-L197">Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L190-L197)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="yt:o6l6tJQgUg4@00:23:24-00:23:55">
+      <blockquote style="margin:0">the magic is that the methods we designed for reinforcement learning algorithms worked when we kind of prune the setup down here. And there's another KL penalty</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1404s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:23:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L520-L525">
+      <blockquote style="margin:0">Extended Ziegler et al. to long-form summarization with PPO … GopherCite — Teaching language models to support answers with verified quotes (DeepMind) … Sparrow — Improving alignment of dialogue agents via targeted human judgements (DeepMind). Added rule-based constraints to RLHF</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L520-L525">Slides lec1-chap1-3 § Other prominent, early RLHF work on language models (L520-L525)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:Mu_-FWIuhDA@00:06:48-00:07:21">
+      <blockquote style="margin:0">the open AI summarization experiments which was really the first paper where people went oh crap this is doing a ton to the language models … in 2020 and this is almost three years later before people really realized it was a big thing</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=408s">15min History of Reinforcement Learning and Human Feedback @ 00:06:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:Mu_-FWIuhDA@00:07:21-00:08:22">
+      <blockquote style="margin:0">asking to summarize a long Reddit post looking for advice so this is about if someone should go to grad school in CS and if you look at the base model in this paper it's going to be repetitive … the outputs of the model really end up becoming much more faithful to the text</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=441s">15min History of Reinforcement Learning and Human Feedback @ 00:07:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L62-L63">
+      <blockquote style="margin:0">Important examples include general summarization, recursive summarization of books, instruction following (InstructGPT), browser-assisted question-answering (WebGPT), supporting answers with citations (GopherCite), and general dialogue (Sparrow).</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L62-L63">Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L62-L63)</a> · <a href="https://rlhfbook.com/c/02-related-works#2019-to-2022-rl-from-human-preferences-on-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="yt:GMry2DzC304@00:10:48-00:11:19">
+      <blockquote style="margin:0">in 2021 a foundational post training paper is web GPT where they used reinforce learning from human feedback to train a model to browse the web and synthesize information. It seems super ahead of its time and it's referenced a lot in this book as one of the few papers that detailed how they do RLHF at scale.</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=648s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="yt:o6l6tJQgUg4@00:21:49-00:22:22">
+      <blockquote style="margin:0">DeepMind had Gopher site and Sparrow, which are works that look really similar to OpenAI's RLHF work … They just weren't as popular, but the the seminal work ended up being InstructGPT, which defined this three-step recipe for RLHF in early post-training</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1309s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:21:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/conversation-01.md#L75">
+      <blockquote style="margin:0">InstructGPT (Mar. 2022) — the canonical 3 steps</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/conversation-01.md?plain=1#L75">Slides conversation-01 § InstructGPT (Mar. 2022) — the canonical 3 steps (L75)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/03-training-overview.md#L183-L185">
+      <blockquote style="margin:0">Around the time ChatGPT first came out, the widely accepted ("canonical") method for post-training an LM had three major steps, with RLHF being the central piece</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/03-training-overview.md?plain=1#L183-L185">Ch. 3 Training Overview § InstructGPT: Foundational RLHF Tools (L183-L185)</a> · <a href="https://rlhfbook.com/c/03-training-overview#instructgpt-foundational-rlhf-tools">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L71-L72">
+      <blockquote style="margin:0">Anthropic continued to use it extensively for early versions of Claude and early RLHF open-source tools emerged</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L71-L72">Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L71-L72)</a> · <a href="https://rlhfbook.com/c/02-related-works#2019-to-2022-rl-from-human-preferences-on-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:xECWRYBxq1E@00:09:15-00:09:46">
+      <blockquote style="margin:0">the helpful harmless RLHF data set. This is one of the earliest RLHF data sets that you can study in any form.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=555s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:09:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L65-L69">
+      <blockquote style="margin:0">a number of seminal papers defined key areas for the future of RLHF … Reward model over-optimization: The ability for RL optimizers to over-fit to models trained on preference data, … Language models as a general area of study for alignment, and … Red teaming -- the process of assessing the safety of a language model.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L65-L69">Ch. 2 A Tiny History of RLHF § 2019 to 2022: RL from Human Preferences on Language Models (L65-L69)</a> · <a href="https://rlhfbook.com/c/02-related-works#2019-to-2022-rl-from-human-preferences-on-language-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L131">
+      <blockquote style="margin:0">Over-optimization is also a technical field of study where relationships between model performance and KL optimization distance are studied</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L131">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L131)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="yt:xECWRYBxq1E@00:08:44-00:09:15">
+      <blockquote style="margin:0">Anthropic had this paper, A General Language Assistant as a Laboratory for Alignment. And in this paper they discuss three traits, helpful, honest, and harmless</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=524s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:08:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="yt:AdLgPmcrXwQ@00:12:00-00:12:31">
+      <blockquote style="margin:0">this land grab where people are learning the basic things like what is red teaming</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=720s">Stanford CS25: V4 I Aligning Open Language Models @ 00:12:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:6g6b4gvO-y0@00:01:00-00:02:02">
+      <blockquote style="margin:0">there were a lot of efforts to get full RHF pipelines going with open tooling and scaled models and most of them just kind of crashed and burned. I think the most prominent and successful one was project TRLX from Karper AI … DPO was the catalyst for making post-raining far more accessible.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=6g6b4gvO-y0&amp;t=60s">Direct Preference Optimization (DPO) and Friends | Post-Training Course, Lecture 6 @ 00:01:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/01-introduction.md#L255-L260">
+      <blockquote style="margin:0">was one defined by skepticism and doubt about reinforcement learning from human feedback (RLHF) … Many companies doubted that they needed to do RLHF. … This doubt about RLHF lasted, especially in the open where groups cannot afford data budgets on the order of $100K to $1M. The companies that embraced it early ended up winning out.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L255-L260">Ch. 1 Introduction § How We Got Here (L255-L260)</a> · <a href="https://rlhfbook.com/c/01-introduction#how-we-got-here">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:o6l6tJQgUg4@00:06:18-00:06:50">
+      <blockquote style="margin:0">I was at Hugging Face and this is when I started working with language models. … reinforcement learning from human feedback was cited as the key capability that helped push GPT-3.5 over the edge … this key insight of like RLHF being linked to ChatGPT's viability was why I and many other people got very excited</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=378s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:06:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="yt:J1APR8Bo9dE@00:02:06-00:03:08">
+      <blockquote style="margin:0">we trained this model using reinforced learning from Human feedback with the same methods as instruct GPT with different some subtle changes that they don't tell us</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://www.youtube.com/watch?v=J1APR8Bo9dE&amp;t=126s">Early stages of the reinforcement learning era of language models @ 00:02:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:AdLgPmcrXwQ@00:05:17-00:06:20">
+      <blockquote style="margin:0">rhf seems to be necessary but it's not sufficient you can't do something like chat PT or gemini or Claude with a technique that without something like rhf but it's not the thing like pre-training is still most of the work</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=317s">Stanford CS25: V4 I Aligning Open Language Models @ 00:05:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:zYeIqzULzr0@00:03:41-00:04:12">
+      <blockquote style="margin:0">RHF was necessary but not sufficient for models like chat GPT</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=zYeIqzULzr0&amp;t=221s">Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:03:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="yt:J1APR8Bo9dE@00:02:37-00:03:08">
+      <blockquote style="margin:0">it really wasn't sufficient and it wasn't the leading thing that people were thinking about when they're talking about language models um in the last few years it was really just a cherry on top</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://www.youtube.com/watch?v=J1APR8Bo9dE&amp;t=157s">Early stages of the reinforcement learning era of language models @ 00:02:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:Mu_-FWIuhDA@00:01:05-00:02:07">
+      <blockquote style="margin:0">reinforce learning from Human feedback was the last necessary component to make something like trup PT a reality … something that we should know in relation to this meme is that rlf is not even robust to fine tuning</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=65s">15min History of Reinforcement Learning and Human Feedback @ 00:01:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L80-L81">
+      <blockquote style="margin:0">Since then, RLHF has been used extensively in leading language models. It is well known to be used in Anthropic's Constitutional AI for Claude, Meta's Llama 2 and Llama 3, NVIDIA's Nemotron, Ai2's Tülu 3, and more.</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L80-L81">Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L80-L81)</a> · <a href="https://rlhfbook.com/c/02-related-works#2023-to-the-present-the-chatgpt-era">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="yt:dnF463_Ar9I@00:06:20-00:06:51">
+      <blockquote style="margin:0">reinforcement learning known for its instability seemed as some shadowy field for those in the NLP research Community however reinforcement learning proved highly effective … which I find really entertaining is this is back in the day when we were like oh we don't know if rhf is really going to take off this is July of year 2023</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://www.youtube.com/watch?v=dnF463_Ar9I&amp;t=380s">Stanford CS224N: NLP with Deep Learning | Spring 2024 | Lecture 15 - After DPO by Nathan Lambert @ 00:06:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/12-synthetic-data.md#L361-L367">
+      <blockquote style="margin:0">The method of Constitutional AI (CAI), which Anthropic uses in their Claude models, is the earliest documented, large-scale use of synthetic data for RLHF training. … Generating pairwise preference data by using a language model to answer which completion was better … Then, RLHF proceeds as normal with synthetic data, hence the RLAIF name.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/12-synthetic-data.md?plain=1#L361-L367">Ch. 12 Synthetic Data &amp; Distillation § Constitutional AI (L361-L367)</a> · <a href="https://rlhfbook.com/c/12-synthetic-data#constitutional-ai">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L83">
+      <blockquote style="margin:0">Today, RLHF is growing into a broader field of preference fine-tuning (PreFT), including new applications such as process rewards for intermediate reasoning steps, covered in Chapter 5; direct alignment algorithms inspired by Direct Preference Optimization (DPO), covered in Chapter 8; learning from execution feedback from code or math and other online reasoning methods inspired by OpenAI's o1, covered in Chapter 7.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L83">Ch. 2 A Tiny History of RLHF § 2023 to the Present: The ChatGPT Era (L83)</a> · <a href="https://rlhfbook.com/c/02-related-works#2023-to-the-present-the-chatgpt-era">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L950-L956">
+      <blockquote style="margin:0">2023: Simple SFT for better chatbots and reproducing RLHF fundamentals … 2024: DPO dominates open models and training stages expand … 2025: RLVR, complex recipes … 2026: Agentic training, multi-turn RL, etc. … largely RLHF was viewed as one tool (that you may not even need).</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L950-L956">Slides lec1-chap1-3 § From RLHF to &quot;post-training&quot; (L950-L956)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:x-MqKBzoxkI@00:00:31-00:01:02">
+      <blockquote style="margin:0">I've really been trying to call it the RLHF and post-training book because it became a post-training book, but it's named after RLHF.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=x-MqKBzoxkI&amp;t=31s">Q&amp;A 1: Teacher Models, PPO Implementation Questions &amp; More | Post-Training Course @ 00:00:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L475-L477">
+      <blockquote style="margin:0">TAMER (Knox &amp; Stone, 2008) — humans score agent actions to learn a reward … Christiano et al. 2017 — RLHF on Atari trajectory preferences … Ziegler et al. 2019 — first RLHF on language models</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L475-L477">Slides lec1-chap1-3 § RLHF before language models (L475-L477)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:Mu_-FWIuhDA@00:06:17-00:07:21">
+      <blockquote style="margin:0">in 2019 is is where we first seeing the see these kind of rhf feedback diagrams that are now popular today this is the first paper that talks about using binary preference data on language models … if you're working in the space you need to read this paper</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=377s">15min History of Reinforcement Learning and Human Feedback @ 00:06:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:IwpYxANrpUs@00:09:20-00:10:21">
+      <blockquote style="margin:0">this is the Ziggler at all paper … this is probably the earliest modern RHF paper and a good one to know about. … this idea is older than RHF, just kind of like the KL penalty.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=560s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="yt:6yIMb0K-aS4@00:04:09-00:04:41">
+      <blockquote style="margin:0">the first example was really like learning to summarize with human feedback in 2020 the same three-stage approach which is collect human feedback train work model train a policy with po</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=249s">How language model post-training is done today @ 00:04:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/01-introduction.md#L40">
+      <blockquote style="margin:0">Early breakthrough experiments with RLHF were applied to deep reinforcement learning, summarization, following instructions, parsing web information for question-answering, and "alignment"</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L40">Ch. 1 Introduction § RLHF in Three Steps (L40)</a> · <a href="https://rlhfbook.com/c/01-introduction#rlhf-in-three-steps">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="yt:Mu_-FWIuhDA@00:04:41-00:05:12">
+      <blockquote style="margin:0">optimize um RL control tasks things like a walking robot a carple swing up and these pawise comparison of trajectories proved even more powerful than the reward signal from the environment</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=281s">15min History of Reinforcement Learning and Human Feedback @ 00:04:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:J1APR8Bo9dE@00:01:35-00:02:06">
+      <blockquote style="margin:0">the kind of canonical Jeff referen the Cristiano at all is actually for control of simulated robotic agents</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=J1APR8Bo9dE&amp;t=95s">Early stages of the reinforcement learning era of language models @ 00:01:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:o6l6tJQgUg4@00:19:45-00:20:16">
+      <blockquote style="margin:0">the the GIFs I showed you are from a 2017 paper, the seminal paper that's like Cristiano et al.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1185s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:19:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="yt:o6l6tJQgUg4@00:20:16-00:20:47">
+      <blockquote style="margin:0">on the left is the final agent that was trained with human feedback and the right was when the human wrote a reward function for what a good backflip is. And it's clear that this human feedback worked better.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1216s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:20:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec1-chap1-3.md#L487">
+      <blockquote style="margin:0">Left: Human feedback; Right: Hand-designed reward function</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec1-chap1-3.md?plain=1#L487">Slides lec1-chap1-3 § Left: Human feedback; Right: Hand-designed reward function (L487)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:o6l6tJQgUg4@00:21:17-00:21:49">
+      <blockquote style="margin:0">The work that popularized RLHF was this InstructGPT paper and then some work from Anthropic on Constitutional AI.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1277s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:21:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="yt:6yIMb0K-aS4@00:03:07-00:03:39">
+      <blockquote style="margin:0">post training through rhf really became popular with this kind of quote from the open AI chat gbt blog post</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=187s">How language model post-training is done today @ 00:03:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="yt:sbXEPxIazqY@00:06:48-00:07:19">
+      <blockquote style="margin:0">Instruct GPT, which is what coined the initial RLHF with this like three-stage idea, which took a while to get people to move on from</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://www.youtube.com/watch?v=sbXEPxIazqY&amp;t=408s">The State of Frontier Post-Training Recipes | Conversation with Finbarr Timbers @ 00:06:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="yt:IwpYxANrpUs@00:03:39-00:04:10">
+      <blockquote style="margin:0">This idea is pretty old. So Natasha Jax … she came up with this KL control idea before language models were even popular.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=219s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L68">
+      <blockquote style="margin:0">Such a KL divergence penalty was first applied to dialogue agents well before the popularity of large language models</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L68">Ch. 15 Regularization § Reference Model to Generations (L68)</a> · <a href="https://rlhfbook.com/c/15-regularization#reference-model-to-generations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/bib.bib#L266-L281">
+      <blockquote style="margin:0">knox2008tamer … year={2008} … macglashan2017interactive … year={2017}</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L266-L281">book/chapters/bib.bib (L266-L281)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="yt:o6l6tJQgUg4@00:05:44-00:06:18">
+      <blockquote style="margin:0">Because after 2021 comes ChatGPT in 2022.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=344s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:05:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/bib.bib#L195-L409">
+      <blockquote style="margin:0">rafailov2024direct … year={2023} … vonwerra2022trl … year = {2020} … lightman2023let … year = {2024}</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/bib.bib#L195-L409">book/chapters/bib.bib (L195-L409)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L24-L32">
+      <blockquote style="margin:0">Chapter 4: Instruction Tuning … Chapter 5: Reward Models | Bradley-Terry RM on UltraFeedback | uv run python -m reward_models.train_preference_rm --config reward_models/configs/preference_rm.yaml … Chapter 8: Direct Alignment | DPO on UltraFeedback | uv run python -m direct_alignment.train --loss dpo --max_samples 1000</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L24-L32">Code code/README.md (L24-L32)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/README.md#L43">
+      <blockquote style="margin:0">The book chapters now include suggested exercises at the end of Chapters 4, 5, 6, 8, 9, and 12.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/README.md?plain=1#L43">Code code/README.md (L43)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="yt:o6l6tJQgUg4@00:03:38-00:04:09">
+      <blockquote style="margin:0">ELMo was from Allen Institute for AI where I still currently work</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=218s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:03:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L29-L33">
+      <blockquote style="margin:0">This is not intended to be a comprehensive review of RLHF and the related fields … It is intentionally focused on recent work that led to ChatGPT. … For a more exhaustive list, you should use a proper survey paper</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L29-L33">Ch. 2 A Tiny History of RLHF (L29-L33)</a> · <a href="https://rlhfbook.com/c/02-related-works#a-tiny-history-of-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/02-related-works.md#L15-L19">
+      <blockquote style="margin:0">label: "Lecture 0: Prerequisites"</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/02-related-works.md?plain=1#L15-L19">Ch. 2 A Tiny History of RLHF (L15-L19)</a> · <a href="https://rlhfbook.com/c/02-related-works">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/10-preferences.md#L91-L93">
+      <blockquote style="margin:0">Breaking down the complex history inspiring the modern use of RLHF requires investigation into the intellectual foundations of quantifying human values, reinforcement learning and optimality, as well as behavioral economics as it relates to measuring preferences.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/10-preferences.md?plain=1#L91-L93">Ch. 10 The Nature of Preferences § The Origins of RLHF and Preferences (L91-L93)</a> · <a href="https://rlhfbook.com/c/10-preferences#the-origins-of-rlhf-and-preferences">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:Mu_-FWIuhDA@00:08:53-00:09:26">
+      <blockquote style="margin:0">the goal of a recent paper that I did is to construct the minimum tree of methods and ideas that led to Modern rhf</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=Mu_-FWIuhDA&amp;t=533s">15min History of Reinforcement Learning and Human Feedback @ 00:08:53</a></figcaption>
+    </figure>
+  </section>
+</main>
+</body>
+</html>

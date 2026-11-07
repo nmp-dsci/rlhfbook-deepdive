@@ -96,6 +96,8 @@ this exact shape:
 - Ids are `s1`, `s2`, and so on. Every source must be referenced at least once.
 - The source must contain a `<blockquote>` and link to the canonical URL from `make resolve`.
 - Book ids carry a full commit sha, so old pages stay valid after the pin moves.
+- A transcript range stops before the caption block that starts at its end time, so a quote that runs
+  into the next block needs a later end.
 - In `notes/*.md`, write the id inline. `make check` confirms it resolves.
 
 ## Lavish
@@ -121,7 +123,8 @@ npx -y lavish-axi playbook <id>   # explanation, diagram, table, comparison, cod
 - Link `house.css` then `project.css`. Write no colour tokens and no raw hex, and use the classes in
   `.lavish/house.css` (`card`, `callout`, `chip`, `badge`, `tablewrap`, `stat`, `kv`, `steps` and so
   on). Status colours are fixed: amber warns, red is an error, blue is information, green is good.
-- Use Mermaid for diagrams, following the `diagram` playbook.
+- Draw diagrams as inline SVG, following the `diagram` playbook. Use Mermaid only if the owner asks for
+  an editable whiteboard.
 - `.lavish/house.css` and `fonts/` are byte-identical copies from
   `nmp-central-ai/agent/house/`. This project has no hue because none is left, so `project.css` holds
   only a comment. Refresh by copying them, since `make install-house-ui` skips projects with no hue.
