@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 7: Reasoning and Inference-Time Scaling</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid input[type=range]{width:100%;accent-color:var(--accent)}
+  .wid output{font-family:var(--mono)}
+  .wid textarea{width:100%;margin-top:var(--s2);font:inherit;font-family:var(--mono);font-size:var(--t-1);padding:var(--s2);background:var(--bg);color:var(--ink);border:1px solid var(--line-3);border-radius:var(--r);resize:vertical}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .dg .axis,.dg .tick{stroke:var(--line-3);stroke-width:1.5}
+  .dg .stem{stroke:var(--line-3);stroke-width:1;stroke-dasharray:3 3}
+  .dg .dot{fill:var(--accent)}
+  #code-excerpt{margin-top:var(--s3)}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite],.kv{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s07_ch06-policy-gradients.html">Chapter 6</a></p>
+  <h1>Chapter 7: Reasoning and Inference-Time Scaling</h1>
+  <p class="lede">Reasoning models think for many tokens before they answer, and get better the more they think. They are trained with large amounts of RL with verifiable rewards (RLVR), plus RLHF. <a class="chip" href="#s1" title="Ch. 7 Reasoning and Inference-Time Scaling (L22-L25)">1</a> Lambert calls the chapter historical context for how RLVR and inference-time scaling arrived. <a class="chip" href="#s2" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:00:30">2</a> It is about recipes and history, not new math.</p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>RLVR swaps the reward model for a checker.</strong> A function returns a positive reward for a correct answer and 0 otherwise. The rest is the RL of Chapter 6. <a class="chip" href="#s3" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L44)">3</a></li>
+      <li><strong>The loop is simple.</strong> Sample many answers, step toward the correct ones, and repeat on the same data. The gains carry over to questions, and some domains, the model never saw. <a class="chip" href="#s4" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L165-L172)">4</a></li>
+      <li><strong>Little is new in principle.</strong> Rewarding correct answers is textbook RL. The new part is doing it without losing the model's general abilities. <a class="chip" href="#s5" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L98-L99)">5</a></li>
+      <li><strong>It arrived in 2025.</strong> o1 and DeepSeek R1 came first, and the industry followed. <a class="chip" href="#s6" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L109-L112)">6</a> The chapter lists over two dozen open reports from that year. <a class="chip" href="#s7" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L279)">7</a></li>
+      <li><strong>The recipes are tricks, not a formula.</strong> Difficulty filtering, format rewards, length control and the rest are common, but rarely universal. <a class="chip" href="#s8" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L287)">8</a> <a class="chip" href="#s9" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:32:45">9</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Write a verifier for a math or code task, and say what it does and does not reward.</li>
+      <li>Explain why training-time RL and inference-time scaling are linked, and estimate pass@k.</li>
+      <li>Explain why prompts the model always or never solves are filtered out.</li>
+      <li>Name the common recipe choices of 2025 and which Lambert says are changing.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/07-reasoning">Chapter 7</a></td><td>Short</td><td>The definitions, the 2025 model table and the list of common practices.</td></tr>
+        <tr><td>Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=0s">0:00</a> to <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2685s">44:45</a></td><td>45 min</td><td>Recorded in June 2026, so it reflects a year more of hindsight than many chapter passages.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L1-L665">Lecture 5 slides</a></td><td>37 slides</td><td>One slide per key model, and the recipe decisions numbered 1 to 15.</td></tr>
+        <tr><td>Q&amp;A 3: <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=251s">4:11</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">5:46</a> and <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=503s">8:23</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=661s">11:01</a></td><td>4 min</td><td>Why RLVR drops the KL penalty, and whether RL is just SFT with a regularizer.</td></tr>
+        <tr><td>Talks from Feb, Mar and Apr 2025</td><td>Optional</td><td>How Lambert described RLVR while it was happening. Useful for the dated views below.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="rlvr">
+    <h2>The role of RLVR</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=93s">1:33</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=189s">3:09</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=284s">4:44</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=316s">5:16</a></p>
+    <p>The chapter opens with LeCun's 2016 cake: unsupervised learning is the cake, supervised learning the icing, RL the cherry. <a class="chip" href="#s10" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L30-L32)">10</a> Pretraining, SFT and RL now fill those roles, with RLHF as the precursor and RL for reasoning as the confirmation. <a class="chip" href="#s11" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L34-L35)">11</a> Whether RL is <em>still</em> the cherry is a point where Lambert's framing has shifted; see <a href="#differ">where the sources differ</a>.</p>
+    <h3>From a judge to a checker</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th></th><th>RLHF</th><th>RLVR</th></tr></thead>
+      <tbody>
+        <tr><td>Example</td><td>"Explain opportunity cost"</td><td>"Sum the primes below 20", or write <code>fib(n)</code></td></tr>
+        <tr><td>Scored by</td><td>A learned reward model judging clarity, accuracy and helpfulness, with no definitive answer <a class="chip" href="#s12" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L53)">12</a></td><td>A verification function: extract the answer and compare, or run unit tests <a class="chip" href="#s13" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L64-L67)">13</a> <a class="chip" href="#s14" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L93-L96)">14</a></td></tr>
+        <tr><td>Over-optimization</td><td>A learned model you can over-optimize <a class="chip" href="#s15" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:03:09">15</a></td><td>Robust enough that most setups use no reward model <a class="chip" href="#s14" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L93-L96)">14</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The answer is pulled out with a regular expression, often from <code>\boxed{}</code>, "regardless of how the model arrived at it". <a class="chip" href="#s13" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L64-L67)">13</a> Code rewards are either all-or-nothing on the tests or partial credit. <a class="chip" href="#s14" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L93-L96)">14</a> The idea that opened the field was simple: we can scale training on problems where we already know the answer. <a class="chip" href="#s16" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:03:40">16</a></p>
+    <p>The name almost came out differently. The Tülu 3 work first called it RL with Ground Truth rewards (RLGT). "Verifiable" is broader, because a checker can accept many correct solutions, as unit tests do. <a class="chip" href="#s17" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L101-L105)">17</a> The slides add that the RLHF and RLVR split is "pedagogical, but in practice rare": real training mixes rewards, rubrics and tools. <a class="chip" href="#s18" title="Slides lec5-chap7 § RLHF vs RLVR: How reward changes everything (L181-L185)">18</a> <a class="chip" href="#s19" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:04:12">19</a> Lambert also notes the verifier is becoming an environment again, closer to classical RL. <a class="chip" href="#s20" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:05:16">20</a></p>
+    <h3>Try a verifier</h3>
+    <p>This mirrors the book's reward code: correctness plus 0.5 times a format score that adds 0.25 for each of <code>&lt;think&gt;</code>, <code>&lt;/think&gt;</code>, <code>&lt;answer&gt;</code> and <code>&lt;/answer&gt;</code>. <a class="chip" href="#s21" title="Code code/policy_gradients/utils.py (L324-L359)">21</a> <a class="chip" href="#s22" title="Code code/policy_gradients/config.py (L110)">22</a> For correctness I use the chapter's <code>\boxed{}</code> convention with 77 as the answer. <a class="chip" href="#s13" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L64-L67)">13</a></p>
+    <div class="wid" id="ver-demo">
+      <p class="label" style="margin:0">Score a response to "What is the sum of all prime numbers less than 20?"</p>
+      <p class="grp-pre">Try: <button class="btn btn-sm" type="button" data-p="good" data-lavish-action>Correct, with tags</button> <button class="btn btn-sm" type="button" data-p="bare" data-lavish-action>Correct, no tags</button> <button class="btn btn-sm" type="button" data-p="wrong" data-lavish-action>Wrong answer</button> <button class="btn btn-sm" type="button" data-p="lucky" data-lavish-action>Right answer, bad reasoning</button></p>
+      <textarea id="ver-text" rows="5" aria-label="Model response" data-lavish-action></textarea>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Extracted answer</dt><dd><output id="ver-ans"></output></dd>
+        <dt>Correctness</dt><dd><output id="ver-c"></output></dd>
+        <dt>Format (tags found)</dt><dd><output id="ver-f"></output></dd>
+        <dt>Total reward</dt><dd><output id="ver-t"></output> $= c + 0.5 f$</dd>
+      </div>
+    </div>
+    <p style="margin-top:var(--s3)">Try "Right answer, bad reasoning". The verifier pays out in full, because it checks only the extracted answer. <a class="chip" href="#s13" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L64-L67)">13</a></p>
+    <h3>What the training loop does</h3>
+    <p>Sample several answers to each question, step toward the correct ones, and repeat over the same questions. <a class="chip" href="#s4" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L165-L172)">4</a> The model "lightly" searches over behaviors, and RL raises the likelihood of the ones that correlate with correct answers. <a class="chip" href="#s23" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L174)">23</a> Where SFT runs 1 or 2 epochs, RLVR can run hundreds or thousands over the same few problems. <a class="chip" href="#s24" title="Ch. 7 Reasoning and Inference-Time Scaling § The Future (Beyond Reasoning) of RLVR (L216-L219)">24</a> The thinking itself can run to thousands of tokens, which is why long-context models came first. <a class="chip" href="#s25" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L161-L163)">25</a> Lambert describes these traces as "very odd" and repetitive, with some guess-and-check. <a class="chip" href="#s26" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:07:48">26</a></p>
+  </section>
+
+  <section id="why">
+    <h2>Why RL works now</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=873s">14:33</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=903s">15:03</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=966s">16:06</a></p>
+    <p>RL had a long reputation for being unstable and hard to reproduce. <a class="chip" href="#s27" title="Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L182)">27</a> The chapter credits the turnaround to two things: stability is solvable, and open tooling exists. <a class="chip" href="#s28" title="Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L186)">28</a> <a class="chip" href="#s29" title="Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L188)">29</a> It also says reasoning RL only became viable with models from about 2024 on, so a capability floor was needed. <a class="chip" href="#s30" title="Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L191)">30</a> The lecture gives three reasons:</p>
+    <ul>
+      <li><strong>Infrastructure.</strong> In 2023 you "couldn't do RHF properly" without RL frameworks at scale. <a class="chip" href="#s31" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:14:33">31</a></li>
+      <li><strong>Base models.</strong> Better base models, with mid-training on math and code, made it easier, and Qwen 2.5 became the default research model in January 2025. <a class="chip" href="#s32" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:15:03">32</a> The slides add that the math and code share of pretraining "bounds what RL can reach". <a class="chip" href="#s33" title="Slides lec5-chap7 § Recipe decisions (4/4) (L613)">33</a></li>
+      <li><strong>Clean evaluation.</strong> Math and code score training and evaluation the same way, unlike the gameable chat benchmarks before. <a class="chip" href="#s34" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:16:06">34</a></li>
+    </ul>
+    <p>The 2025 talks say the same in other words: "stable implementation the base models being strong enough and just belief that things will work". <a class="chip" href="#s35" title="An Unexpected Reinforcement Learning Renaissance @ 00:26:32">35</a></p>
+  </section>
+
+  <section id="scaling">
+    <h2>RL training and inference-time scaling</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=346s">5:46</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=377s">6:17</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=499s">8:19</a></p>
+    <p>Inference-time (or test-time) scaling means spending more compute at inference to do better. Methods existed before o1 and R1. <a class="chip" href="#s36" title="Ch. 7 Reasoning and Inference-Time Scaling § RL Training vs. Inference-Time Scaling (L196-L197)">36</a> Performance grows with the log of the number of thinking tokens, and with the log of RL training compute, and the two are "deeply intertwined". <a class="chip" href="#s37" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:05:46">37</a> RL is a short path to inference-time scaling. Its length growth contrasts with early RLHF, where preference training made answers longer for marginal gains. <a class="chip" href="#s38" title="Ch. 7 Reasoning and Inference-Time Scaling § RL Training vs. Inference-Time Scaling (L201-L203)">38</a> The extra tokens matter only if they improve performance, "otherwise it is just wasted energy". <a class="chip" href="#s39" title="Ch. 7 Reasoning and Inference-Time Scaling § RL Training vs. Inference-Time Scaling (L207)">39</a></p>
+    <p>Parallel test-time scaling samples several answers and combines them, most simply by majority vote, as in DeepSeek R1 and Phi-4. A trained selector was still uncommon in open recipes in 2026. <a class="chip" href="#s40" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L298)">40</a></p>
+    <h3>Try pass@k</h3>
+    <p>Papers report pass@1, the accuracy of one sample, and pass@k, whether any of $k$ samples is right. The slides give the estimator for $n$ samples with $c$ correct. <a class="chip" href="#s41" title="Slides lec5-chap7 § Key terms for this lecture (L240-L247)">41</a> Lambert calls his own explanation "a little waffling" and suggests asking a chatbot, <a class="chip" href="#s42" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:09:21">42</a> so here it is computed.</p>
+    <div class="wid" id="pk-demo">
+      <p class="label" style="margin:0">Estimate pass@k from n samples</p>
+      <label for="pk-n">Samples drawn, $n$: <output id="pk-n-o">16</output></label>
+      <input id="pk-n" type="range" min="1" max="64" step="1" value="16" data-lavish-action>
+      <label for="pk-c">Correct among them, $c$: <output id="pk-c-o">4</output></label>
+      <input id="pk-c" type="range" min="0" max="16" step="1" value="4" data-lavish-action>
+      <label for="pk-k">Attempts allowed, $k$: <output id="pk-k-o">4</output></label>
+      <input id="pk-k" type="range" min="1" max="16" step="1" value="4" data-lavish-action>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>pass@1</dt><dd><output id="pk-1"></output> $= c/n$</dd>
+        <dt>pass@k, the slide's estimator</dt><dd><output id="pk-k-est"></output> $= 1 - \binom{n-c}{k} / \binom{n}{k}$</dd>
+        <dt>Naive $1-(1-c/n)^k$</dt><dd><output id="pk-naive"></output></dd>
+      </div>
+    </div>
+  </section>
+
+  <section id="history">
+    <h2>Before o1 and R1</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=716s">11:56</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=779s">12:59</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=810s">13:30</a></p>
+    <p>Earlier work trained on verifiable domains but either did not scale or gave up general performance for math and code. <a class="chip" href="#s43" title="Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L234)">43</a></p>
+    <ul>
+      <li><strong>STaR and Quiet-STaR (2022 onward).</strong> Sample rationales, keep the ones with correct answers, and train on them. <a class="chip" href="#s44" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:11:56">44</a> STaR approximates the policy gradient but filters samples and uses cross-entropy. <a class="chip" href="#s45" title="Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L238)">45</a></li>
+      <li><strong>TRICE.</strong> An MCMC-inspired method. Lambert notes such complex algorithms tend not to scale, "which ended up being the chase" (case). <a class="chip" href="#s46" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:12:59">46</a></li>
+      <li><strong>VinePPO.</strong> PPO with binary rewards on GSM8K and MATH. <a class="chip" href="#s47" title="Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L241)">47</a></li>
+      <li><strong>Tülu 3.</strong> A simple PPO trainer rewarding correct answers without losing broad performance. <a class="chip" href="#s48" title="Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L243)">48</a> This paper coined "RLVR", and it was not a reasoning model. <a class="chip" href="#s49" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:13:30">49</a> Lambert thinks the term caught on "because it was so simple". <a class="chip" href="#s50" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:14:02">50</a></li>
+    </ul>
+    <p>What came next was a reallocation of training stages and priorities rather than a new kind of RL. <a class="chip" href="#s6" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L109-L112)">6</a> The core step became either a large RL run or SFT on the outputs of a model that had one, which is distillation. <a class="chip" href="#s51" title="Ch. 7 Reasoning and Inference-Time Scaling § Understanding Reasoning Training Methods (L229)">51</a></p>
+  </section>
+
+  <section id="models">
+    <h2>The 2025 wave</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=654s">10:54</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=997s">16:37</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1123s">18:43</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1186s">19:46</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1436s">23:56</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1810s">30:10</a></p>
+    <figure class="fig">
+      <div class="dg-scroll"><svg class="dg" viewBox="0 0 800 226" role="img" aria-label="Timeline of eleven notable 2025 reasoning model reports, from DeepSeek R1 and Kimi 1.5 in January to MiMo-V2-Flash in December, using the dates in the chapter's table.">
+  <line class="axis" x1="30" x2="770" y1="196" y2="196"/>
+  <line class="tick" x1="30.0" x2="30.0" y1="196" y2="201"/><text class="l" x="32.0" y="214">Jan</text>
+  <line class="tick" x1="92.8" x2="92.8" y1="196" y2="201"/><text class="l" x="94.8" y="214">Feb</text>
+  <line class="tick" x1="149.6" x2="149.6" y1="196" y2="201"/><text class="l" x="151.6" y="214">Mar</text>
+  <line class="tick" x1="212.5" x2="212.5" y1="196" y2="201"/><text class="l" x="214.5" y="214">Apr</text>
+  <line class="tick" x1="273.3" x2="273.3" y1="196" y2="201"/><text class="l" x="275.3" y="214">May</text>
+  <line class="tick" x1="336.1" x2="336.1" y1="196" y2="201"/><text class="l" x="338.1" y="214">Jun</text>
+  <line class="tick" x1="397.0" x2="397.0" y1="196" y2="201"/><text class="l" x="399.0" y="214">Jul</text>
+  <line class="tick" x1="459.8" x2="459.8" y1="196" y2="201"/><text class="l" x="461.8" y="214">Aug</text>
+  <line class="tick" x1="522.7" x2="522.7" y1="196" y2="201"/><text class="l" x="524.7" y="214">Sep</text>
+  <line class="tick" x1="583.5" x2="583.5" y1="196" y2="201"/><text class="l" x="585.5" y="214">Oct</text>
+  <line class="tick" x1="646.3" x2="646.3" y1="196" y2="201"/><text class="l" x="648.3" y="214">Nov</text>
+  <line class="tick" x1="707.2" x2="707.2" y1="196" y2="201"/><text class="l" x="709.2" y="214">Dec</text>
+  <g><title>DeepSeek R1, Kimi 1.5, 2025-01-22: R1: RL-based upgrade to DeepSeek. Kimi 1.5: scales PPO/GRPO, no open weights.</title><line class="stem" x1="72.6" x2="72.6" y1="30" y2="196"/><circle class="dot" cx="72.6" cy="196" r="5"/><text class="rn" x="78.6" y="26" text-anchor="start">DeepSeek R1, Kimi 1.5</text><text class="l" x="78.6" y="41" text-anchor="start">01/22</text></g>
+  <g><title>Open-Reasoner-Zero, 2025-03-31: Fully open replication of base-model RL.</title><line class="stem" x1="210.4" x2="210.4" y1="70" y2="196"/><circle class="dot" cx="210.4" cy="196" r="5"/><text class="rn" x="216.4" y="66" text-anchor="start">Open-Reasoner-Zero</text><text class="l" x="216.4" y="81" text-anchor="start">03/31</text></g>
+  <g><title>Xiaomi MiMo, 2025-05-12: End-to-end reasoning pipeline from pre- to post-training.</title><line class="stem" x1="295.6" x2="295.6" y1="30" y2="196"/><circle class="dot" cx="295.6" cy="196" r="5"/><text class="rn" x="301.6" y="26" text-anchor="start">Xiaomi MiMo</text><text class="l" x="301.6" y="41" text-anchor="start">05/12</text></g>
+  <g><title>Qwen 3, 2025-05-14: R1-like recipe applied to new models; toggleable thinking.</title><line class="stem" x1="299.6" x2="299.6" y1="110" y2="196"/><circle class="dot" cx="299.6" cy="196" r="5"/><text class="rn" x="305.6" y="106" text-anchor="start">Qwen 3</text><text class="l" x="305.6" y="121" text-anchor="start">05/14</text></g>
+  <g><title>OpenThoughts, 2025-06-04: 1.2M-example open dataset distilled from QwQ-32B.</title><line class="stem" x1="342.2" x2="342.2" y1="150" y2="196"/><circle class="dot" cx="342.2" cy="196" r="5"/><text class="rn" x="348.2" y="146" text-anchor="start">OpenThoughts</text><text class="l" x="348.2" y="161" text-anchor="start">06/04</text></g>
+  <g><title>MiniMax-M1, 2025-06-16: Open 456B MoE trained with CISPO.</title><line class="stem" x1="366.5" x2="366.5" y1="70" y2="196"/><circle class="dot" cx="366.5" cy="196" r="5"/><text class="rn" x="372.5" y="66" text-anchor="start">MiniMax-M1</text><text class="l" x="372.5" y="81" text-anchor="start">06/16</text></g>
+  <g><title>GLM-4.5, 2025-07-28: 355B MoE with thinking and non-thinking modes.</title><line class="stem" x1="451.7" x2="451.7" y1="30" y2="196"/><circle class="dot" cx="451.7" cy="196" r="5"/><text class="rn" x="457.7" y="26" text-anchor="start">GLM-4.5</text><text class="l" x="457.7" y="41" text-anchor="start">07/28</text></g>
+  <g><title>Olmo 3 Think, 2025-11-20: Fully open model flow: stages, checkpoints and data.</title><line class="stem" x1="684.8" x2="684.8" y1="70" y2="196"/><circle class="dot" cx="684.8" cy="196" r="5"/><text class="rn" x="678.8" y="66" text-anchor="end">Olmo 3 Think</text><text class="l" x="678.8" y="81" text-anchor="end">11/20</text></g>
+  <g><title>DeepSeek V3.2, 2025-12-02: Open MoE; RL framework upgrades and agentic data.</title><line class="stem" x1="709.2" x2="709.2" y1="110" y2="196"/><circle class="dot" cx="709.2" cy="196" r="5"/><text class="rn" x="703.2" y="106" text-anchor="end">DeepSeek V3.2</text><text class="l" x="703.2" y="121" text-anchor="end">12/02</text></g>
+  <g><title>Nemotron 3 Nano, 2025-12-15: 30B-A3B hybrid Mamba-Transformer with large-scale RL.</title><line class="stem" x1="735.5" x2="735.5" y1="150" y2="196"/><circle class="dot" cx="735.5" cy="196" r="5"/><text class="rn" x="729.5" y="146" text-anchor="end">Nemotron 3 Nano</text><text class="l" x="729.5" y="161" text-anchor="end">12/15</text></g>
+  <g><title>MiMo-V2-Flash, 2025-12-16: 309B MoE; post-trained with MOPD and agentic RL.</title><line class="stem" x1="737.6" x2="737.6" y1="30" y2="196"/><circle class="dot" cx="737.6" cy="196" r="5"/><text class="rn" x="731.6" y="26" text-anchor="end">MiMo-V2-Flash</text><text class="l" x="731.6" y="41" text-anchor="end">12/16</text></g>
+</svg></div>
+      <figcaption>Figure 1. Mine, from eleven rows of the chapter's table, <a class="chip" href="#s52" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L253-L254)">52</a> <a class="chip" href="#s53" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L255)">53</a> <a class="chip" href="#s54" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L260-L261)">54</a> <a class="chip" href="#s55" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L265-L269)">55</a> <a class="chip" href="#s56" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L274-L278)">56</a> which lists technical reports. <a class="chip" href="#s7" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L279)">7</a> Hover a name for the chapter's one-line summary. The slides give different dates for several; see <a href="#differ">smaller traps</a>.</figcaption>
+    </figure>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Model</th><th>What Lambert takes from it</th></tr></thead>
+      <tbody>
+        <tr><td>DeepSeek R1</td><td>R1-Zero showed RL on a base model, with no SFT, induces chain of thought. The full recipe is cold-start SFT, RL, then distillation. <a class="chip" href="#s57" title="Slides lec5-chap7 § DeepSeek R1 (Jan. 20, 2025): The catalyst (L309-L317)">57</a> The paper "has held up remarkably well". <a class="chip" href="#s58" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:17:09">58</a></td></tr>
+        <tr><td>Kimi 1.5</td><td>Same day as R1, with curriculum and length extension, but no open weights, so it was overlooked. <a class="chip" href="#s59" title="Slides lec5-chap7 § Kimi 1.5 (Jan. 20, 2025): Scaling the curriculum (L326-L335)">59</a> <a class="chip" href="#s60" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:17:41">60</a></td></tr>
+        <tr><td>Open-Reasoner-Zero</td><td>The first open data and code for R1-style RL, using PPO, not GRPO, and no KL. <a class="chip" href="#s61" title="Slides lec5-chap7 § Open-Reasoner-Zero (Feb. 18, 2025): The minimalist replication (L344-L353)">61</a> Lambert's lesson: "don't sleep on PO". <a class="chip" href="#s62" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:18:43">62</a></td></tr>
+        <tr><td>Qwen 3</td><td>Toggleable <code>/think</code> and <code>/no_think</code>, "quite the training headache". <a class="chip" href="#s63" title="Slides lec5-chap7 § Qwen 3 (Apr. 29, 2025): Hybrid reasoners (L362-L368)">63</a></td></tr>
+        <tr><td>MiMo</td><td>One of the only open reasoners with intermediate post-training checkpoints. <a class="chip" href="#s64" title="Slides lec5-chap7 § MiMo (Apr. 30, 2025): End-to-end reasoning pipeline (L382-L393)">64</a></td></tr>
+        <tr><td>OpenThoughts 3</td><td>Open SFT data good enough for a strong 7B with SFT only. <a class="chip" href="#s65" title="Slides lec5-chap7 § OpenThoughts 3 (Jun. 5, 2025): SFT data recipes still matter (L402-L410)">65</a> A year later nothing had rebuilt it from scratch. <a class="chip" href="#s66" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:22:53">66</a></td></tr>
+        <tr><td>MiniMax-M1</td><td>CISPO, and the FP32 language-model head that fixed a gap between inference and training probabilities. <a class="chip" href="#s67" title="Slides lec5-chap7 § MiniMax-M1 (Jun. 16, 2025): A fun RL paper! (L421-L428)">67</a> <a class="chip" href="#s68" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:24:59">68</a> The head is "very sensitive to numerical perturbation". <a class="chip" href="#s69" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:25:30">69</a></td></tr>
+        <tr><td>Olmo 3 Think</td><td>The fully open lifecycle: stages, checkpoints, data, hyperparameters. <a class="chip" href="#s70" title="Slides lec5-chap7 § Olmo 3 Think (Nov. 20, 2025): The fully open reasoning model (L454-L460)">70</a></td></tr>
+        <tr><td>DeepSeek V3.2</td><td>Thinking folded into tool use, no longer a separate reasoning model. <a class="chip" href="#s71" title="Slides lec5-chap7 § DeepSeek V3.2 (Dec. 1, 2025): Reasoning becomes agentic (L472-L479)">71</a></td></tr>
+        <tr><td>MiMo-V2-Flash</td><td>Multi-teacher on-policy distillation, with dense token-level rewards from domain teachers. <a class="chip" href="#s72" title="Slides lec5-chap7 § MiMo-V2-Flash (Dec. 16, 2025): Distilling many teachers into one (L506-L513)">72</a> It became "the new standard" for post-training. <a class="chip" href="#s73" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:30:10">73</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The year's arc went from reasoning models to "long-horizon, tool-using agent substrate". <a class="chip" href="#s74" title="Slides lec5-chap7 § Recent Chinese open models (L546)">74</a> Many people quickly saw tool use as the real frontier. <a class="chip" href="#s75" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:26:32">75</a> The basics replicated fast in the open, but lasting fundamentals took real tinkering to converge. <a class="chip" href="#s76" title="Slides lec5-chap7 § What the landscape tells us (L554-L557)">76</a></p>
+  </section>
+
+  <section id="recipes">
+    <h2>Common practices</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2088s">34:48</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2182s">36:22</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2245s">37:25</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2337s">38:57</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2403s">40:03</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2434s">40:34</a></p>
+    <p>A model may use a trick without reporting it, so treat these as a reference, not a recipe. <a class="chip" href="#s8" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L287)">8</a> Lambert adds that it is rare for every model to adopt any one trick, because model building is path dependent. <a class="chip" href="#s9" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:32:45">9</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:600px">
+      <thead><tr><th>Practice</th><th>What and why</th></tr></thead>
+      <tbody>
+        <tr><td>Offline difficulty filtering</td><td>Keep prompts the starting model solves 20 to 80% of the time, measured by sampling about 16 completions each. <a class="chip" href="#s77" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L289)">77</a> The lecture calls it one of the most unanimous tricks. <a class="chip" href="#s78" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:35:50">78</a></td></tr>
+        <tr><td>Online filtering, curricula</td><td>Skip prompts that became too easy, save hard ones for later. <a class="chip" href="#s79" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L290)">79</a> Olmo 3's active sampling admits only groups with a nonzero gradient and refills the batch. <a class="chip" href="#s80" title="Slides lec5-chap7 § Recipe decisions (1/4) (L573)">80</a> <a class="chip" href="#s81" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:36:52">81</a></td></tr>
+        <tr><td>Remove the KL penalty</td><td>Longer runs and harder-to-hack rewards let many models drop it, to explore more. <a class="chip" href="#s82" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L291)">82</a> Now contested; see below.</td></tr>
+        <tr><td>Relaxed clipping</td><td>A higher upper clip bound, after DAPO, for exploration. Clipping can also cause spurious signals when rewards are imperfect. <a class="chip" href="#s83" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L292)">83</a></td></tr>
+        <tr><td>Asynchronous updates</td><td>Long, highly variable completions leave compute idle. <a class="chip" href="#s84" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L293)">84</a> Olmo 3's learner GPUs sat idle about 75% of the time. <a class="chip" href="#s85" title="Slides lec5-chap7 § Recipe decisions (3/4) (L598)">85</a></td></tr>
+        <tr><td>Format and language rewards</td><td>Small rewards for the <code>&lt;think&gt;</code> format, <a class="chip" href="#s86" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L294)">86</a> and for not switching languages mid-trace. <a class="chip" href="#s87" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L295)">87</a></td></tr>
+        <tr><td>Length control</td><td>Grow the length limit over training, so the model learns to reason within a budget first. <a class="chip" href="#s88" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L296)">88</a> The lecture calls length control under-documented. <a class="chip" href="#s89" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:41:06">89</a></td></tr>
+        <tr><td>Loss normalization</td><td>Normalize losses or advantages over the batch, not the group. <a class="chip" href="#s90" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L297)">90</a> Per-token losses are "a bit less biased". <a class="chip" href="#s91" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:39:27">91</a></td></tr>
+      </tbody>
+    </table></div>
+    <h3>Try difficulty filtering</h3>
+    <p>With binary rewards, a group teaches nothing when every answer agrees, because all the advantages are zero. <a class="chip" href="#s77" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L289)">77</a> Set how often the model solves the prompt and how many samples you draw.</p>
+    <div class="wid" id="flt-demo">
+      <p class="label" style="margin:0">Does a prompt's group teach anything?</p>
+      <label for="flt-p">The model solves this prompt with probability $p$: <output id="flt-p-o">0.50</output></label>
+      <input id="flt-p" type="range" min="0" max="1" step="0.01" value="0.5" data-lavish-action>
+      <label for="flt-g">Completions per prompt, $G$: <output id="flt-g-o">8</output></label>
+      <input id="flt-g" type="range" min="2" max="32" step="1" value="8" data-lavish-action>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Chance every answer agrees</dt><dd><output id="flt-z"></output> $= p^G + (1-p)^G$</dd>
+        <dt>So the group is wasted</dt><dd><output id="flt-w"></output></dd>
+        <dt>Inside the 20 to 80% band?</dt><dd><output id="flt-b"></output></dd>
+      </div>
+    </div>
+    <p style="margin-top:var(--s3)">Two findings were also common: text-only reasoning RL after multimodal training can <em>improve</em> multimodal performance, <a class="chip" href="#s92" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L302)">92</a> and many models let users toggle thinking or pick a reasoning effort. <a class="chip" href="#s93" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L303)">93</a> Lambert's 2026 view of toggles is less kind; see below.</p>
+  </section>
+
+  <section id="ahead">
+    <h2>Looking ahead</h2>
+    <p class="tag">In Lecture 5: <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2559s">42:39</a> · <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2623s">43:43</a></p>
+    <p>The chapter expects some of these practices to be superseded. <a class="chip" href="#s94" title="Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L307)">94</a> It ends with RL "graduated from the 'cherry on top'" to "a load-bearing component of frontier model training". <a class="chip" href="#s95" title="Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L313-L314)">95</a> The slides list the open questions: does RL discover capabilities or elicit them, how far reasoning goes without better pretraining data, and the future balance of pretraining and RL compute. <a class="chip" href="#s96" title="Slides lec5-chap7 § Open questions (L621-L625)">96</a> The recommended libraries also moved on: slime and SkyRL by mid-2026, after veRL and TRL. <a class="chip" href="#s97" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:43:43">97</a></p>
+    <h3>Is RL just SFT with a regularizer?</h3>
+    <p>A reader asked in Q&amp;A 3. Lambert's answer is no, for two reasons. RL generates its own on-policy data, which "you can't just go back and generate" in advance for SFT. <a class="chip" href="#s98" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26">98</a> And RL has negative gradients: it shows the model what not to do, as well as what to do. <a class="chip" href="#s99" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">99</a> He adds that many models, especially small ones, could get further with SFT alone than people think. <a class="chip" href="#s100" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26">100</a></p>
+  </section>
+
+  <section id="run">
+    <h2>Where this is in the code</h2>
+    <p>Chapter 7 has no code of its own, but the policy-gradient code from Chapter 6 implements several of its practices. It trains on reasoning-gym's word-reversal task. <a class="chip" href="#s101" title="Ch. 6 Reinforcement Learning § Suggested Experiments (L1550)">101</a> <strong>I did not run it.</strong></p>
+    <ul>
+      <li><strong>Format reward:</strong> 0.25 per tag, weighted 0.5 and added to correctness. <a class="chip" href="#s21" title="Code code/policy_gradients/utils.py (L324-L359)">21</a> <a class="chip" href="#s22" title="Code code/policy_gradients/config.py (L110)">22</a> Answers are extracted by reasoning-gym's own function, which I have not read. <a class="chip" href="#s102" title="Code code/policy_gradients/utils.py (L20)">102</a></li>
+      <li><strong>Zero-gradient filtering:</strong> the DAPO config drops any group whose completions are all right or all wrong. <a class="chip" href="#s103" title="Code code/policy_gradients/rollout.py (L169-L175)">103</a></li>
+      <li><strong>Clip-higher, no KL and an overlong penalty:</strong> the DAPO config sets the upper clip to 0.28, beta to 0, and a soft penalty over the last 128 of 512 tokens. <a class="chip" href="#s104" title="Code code/policy_gradients/configs/dapo.yaml (L13-L25)">104</a> <a class="chip" href="#s105" title="Code code/policy_gradients/utils.py (L311-L317)">105</a></li>
+    </ul>
+    <div id="code-excerpt"><pre><code>def _format_reward(completions: list[str]) -&gt; list[float]:
+    """Compute format reward based on presence of thinking/answer tags."""
+
+    def count_tags(text: str) -&gt; float:
+        count = 0.0
+        if re.search(r"\s*&lt;think&gt;\s*", text):
+            count += 0.25
+        if re.search(r"\s*&lt;/think&gt;\s*", text):
+            count += 0.25
+        if re.search(r"\s*&lt;answer&gt;\s*", text):
+            count += 0.25
+        if re.search(r"\s*&lt;/answer&gt;\s*", text):
+            count += 0.25
+        return count
+
+    return [count_tags(c) for c in completions]
+
+
+def compute_rewards(
+    entries: list[dict],
+    completions: list[str],
+    lengths: list[int],
+    dataset: ProceduralDataset,
+    cfg: Config,
+    device: torch.device,
+) -&gt; TensorDict:
+    """Compute reward components for a rollout group as a single TensorDict.
+
+    Keys: ``total``, ``correctness``, ``format``, ``penalty``, ``binary``.
+    """
+    correctness = _correctness_reward(dataset, completions, entries)
+    penalty = _response_penalties(lengths, cfg)
+    format = _format_reward(completions)
+    total = [
+        c + p + cfg.format_weight * f for c, p, f in zip(correctness, penalty, format, strict=True)
+    ]
+</code></pre></div>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter and slides are dated by the pinned commit, November 2026. None of these is settled.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does RL teach new things, or elicit what is there?</strong></p><ul>
+      <li><strong>Talk (Apr 2025):</strong> "I subscribe to the elicitation view of post- training": the behaviors exist after pretraining at low probability. <a class="chip" href="#s106" title="Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:12:30">106</a></li>
+      <li><strong>Chapter:</strong> RLVR turns behaviors "that would work sparingly in the base model" into robust ones, <a class="chip" href="#s24" title="Ch. 7 Reasoning and Inference-Time Scaling § The Future (Beyond Reasoning) of RLVR (L216-L219)">24</a> and needed a capability floor. <a class="chip" href="#s30" title="Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L191)">30</a></li>
+      <li><strong>Lecture 5 (Jun 2026):</strong> after a NeurIPS best paper argued models learn everything in pretraining, "I think it's pretty clear that RL is teaching the model new things". <a class="chip" href="#s107" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:42:39">107</a></li>
+      <li><strong>Slides at this pin:</strong> still list "discovering" versus "eliciting" as an open question. <a class="chip" href="#s96" title="Slides lec5-chap7 § Open questions (L621-L625)">96</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is the KL penalty gone for RLVR?</strong></p><ul>
+      <li><strong>Talk (Apr 2025):</strong> in Tülu 3 sweeps of β from 0.1 to 0.001, the KL setting "doesn't really matter". <a class="chip" href="#s108" title="Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:20:53">108</a></li>
+      <li><strong>Chapter:</strong> "Remove KL penalty" is a common practice, because runs got longer and rewards harder to over-optimize. <a class="chip" href="#s82" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L291)">82</a></li>
+      <li><strong>Lecture 5 (Jun 2026):</strong> "this KL penalty might come back" as runs get very long. <a class="chip" href="#s109" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:37:56">109</a> The slides: "dropped, now creeping back", citing long-horizon agentic training. <a class="chip" href="#s110" title="Slides lec5-chap7 § Recipe decisions (1/4) (L574)">110</a></li>
+      <li><strong>Q&amp;A 3 (Aug 2026):</strong> basic math and code RLVR does not need it, but regularization "is starting to come back" in tool use, <a class="chip" href="#s111" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">111</a> and it is "becoming much messier". <a class="chip" href="#s112" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46">112</a> He notes DeepSeek R1's paper "didn't actually talk about it". <a class="chip" href="#s113" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">113</a></li>
+      <li>See also the earlier question page, <a href="s01_q-rlvr-kl-penalty.html">why RLVR often drops the KL penalty</a>.</li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Should thinking be a toggle?</strong></p><ul>
+      <li><strong>Chapter:</strong> toggleable reasoning or a reasoning-effort setting is a common finding, though the training methods are poorly documented. <a class="chip" href="#s93" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L303)">93</a></li>
+      <li><strong>Slides:</strong> Qwen 3's toggle was "quite the training headache". <a class="chip" href="#s63" title="Slides lec5-chap7 § Qwen 3 (Apr. 29, 2025): Hybrid reasoners (L362-L368)">63</a></li>
+      <li><strong>Lecture 5 (Jun 2026):</strong> model makers said "this sucks", and "in 2026 what we see is that you only get a reasoning model", <a class="chip" href="#s114" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:19:46">114</a> with a low-effort mode for quick answers. <a class="chip" href="#s115" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:20:16">115</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is RL stability solved?</strong></p><ul>
+      <li><strong>Talk (Mar 2025):</strong> the innovation is "stability of implementation" without degrading other domains. <a class="chip" href="#s116" title="Early stages of the reinforcement learning era of language models @ 00:23:59">116</a></li>
+      <li><strong>Chapter:</strong> "Stability of RL can be solved", and the barriers to entry "are at an all-time low". <a class="chip" href="#s28" title="Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L186)">28</a></li>
+      <li><strong>Slides:</strong> "much more tractable", but "Still a first-class research problem", such as entropy collapse. <a class="chip" href="#s117" title="Slides lec5-chap7 § Why does RL work now? (L294-L296)">117</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is RL still the cherry on top?</strong></p><ul>
+      <li><strong>Talks (Feb and Mar 2025):</strong> RLHF was "just a cherry on top", and RLVR could become "a necessary and Central Training Method". <a class="chip" href="#s118" title="Early stages of the reinforcement learning era of language models @ 00:02:37">118</a> <a class="chip" href="#s119" title="An Unexpected Reinforcement Learning Renaissance @ 00:35:48">119</a></li>
+      <li><strong>Chapter:</strong> the cake analogy is "now largely complete" with RL as the cherry, <a class="chip" href="#s11" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L34-L35)">11</a> yet its last section says RL "graduated" from the cherry to load-bearing. <a class="chip" href="#s95" title="Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L313-L314)">95</a></li>
+      <li><strong>Slides and Lecture 5 (Jun 2026):</strong> with agents RL may be "more than just the cherry in compute", <a class="chip" href="#s120" title="Slides lec5-chap7 § The LeCun cake (L140-L152)">120</a> but the metaphor still describes the path taken. <a class="chip" href="#s121" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:02:37">121</a></li>
+      <li><span class="badge info">agent note</span> These may be two measures, not a conflict: the order of training stages, which the cake describes, versus the share of compute.</li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>What DAPO stands for.</strong> The slides expand it as "Dynamic Advantage Policy Optimization". <a class="chip" href="#s122" title="Slides lec5-chap7 § Key terms for this lecture (L253)">122</a> Chapter 6 gives "Decoupled Clip and Dynamic sAmpling Policy Optimization". <a class="chip" href="#s123" title="Ch. 6 Reinforcement Learning § Further Reading (L1544)">123</a></li>
+      <li><strong>Which paper averages over total tokens.</strong> The slides credit per-token averaging to Dr. GRPO. <a class="chip" href="#s124" title="Slides lec5-chap7 § Recipe decisions (2/4) (L584)">124</a> Chapter 6 credits per-token to DAPO and fixed-length to Dr. GRPO. <a class="chip" href="#s125" title="Ch. 6 Reinforcement Learning § Loss Aggregation Tradeoffs (L810-L822)">125</a></li>
+      <li><strong>Release dates.</strong> The chapter's table puts R1 and Kimi 1.5 on 2025-01-22, <a class="chip" href="#s52" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L253-L254)">52</a> the slides and lecture on January 20. <a class="chip" href="#s57" title="Slides lec5-chap7 § DeepSeek R1 (Jan. 20, 2025): The catalyst (L309-L317)">57</a> <a class="chip" href="#s59" title="Slides lec5-chap7 § Kimi 1.5 (Jan. 20, 2025): Scaling the curriculum (L326-L335)">59</a> <a class="chip" href="#s60" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:17:41">60</a> Open-Reasoner-Zero is 2025-03-31 in the table <a class="chip" href="#s53" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L255)">53</a> and Feb. 18 in the slides, with a Mar. 31 expansion. <a class="chip" href="#s61" title="Slides lec5-chap7 § Open-Reasoner-Zero (Feb. 18, 2025): The minimalist replication (L344-L353)">61</a> Qwen 3 and MiMo are May 14 and May 12 in the table, <a class="chip" href="#s54" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L260-L261)">54</a> Apr. 29 and Apr. 30 in the slides. <a class="chip" href="#s63" title="Slides lec5-chap7 § Qwen 3 (Apr. 29, 2025): Hybrid reasoners (L362-L368)">63</a> <a class="chip" href="#s64" title="Slides lec5-chap7 § MiMo (Apr. 30, 2025): End-to-end reasoning pipeline (L382-L393)">64</a></li>
+      <li><strong>The Olmo 3.1 run.</strong> The chapter says nearly 4 weeks on 220 GPUs, <a class="chip" href="#s126" title="Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L310)">126</a> the lecture about a month on 200 GPUs. <a class="chip" href="#s127" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:27:36">127</a></li>
+      <li><strong>Captions mishear.</strong> "two loop 3", "23" and "Tool Use 3" are Tülu 3, <a class="chip" href="#s49" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:13:30">49</a> <a class="chip" href="#s128" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">128</a> "PO" is PPO, <a class="chip" href="#s62" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:18:43">62</a> "Kimmy" is Kimi, <a class="chip" href="#s60" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:17:41">60</a> and "Nurups" is NeurIPS. <a class="chip" href="#s107" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:42:39">107</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Your model solves a training prompt in all 16 of 16 samples. What does GRPO learn from it?</summary>
+      <p>Nothing. Every completion gets the same reward, so there is no gradient between them, which is why such prompts are filtered out. <a class="chip" href="#s77" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L289)">77</a> <a class="chip" href="#s80" title="Slides lec5-chap7 § Recipe decisions (1/4) (L573)">80</a></p>
+    </details>
+    <details><summary>A completion reaches 77 through wrong reasoning. What does the verifier give it?</summary>
+      <p>Full reward. The extracted answer is checked "regardless of how the model arrived at it". <a class="chip" href="#s13" title="Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L64-L67)">13</a></p>
+    </details>
+    <details><summary>Why add a format reward if it says nothing about correctness?</summary>
+      <p>To make the reasoning process predictable, with a <code>&lt;think&gt;</code> block and an extractable answer. <a class="chip" href="#s86" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L294)">86</a></p>
+    </details>
+    <details><summary>Why start RL with a short length limit and raise it later?</summary>
+      <p>So the model first learns to reason within a limited budget, then uses those habits efficiently on harder problems. It fights overthinking. <a class="chip" href="#s88" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L296)">88</a></p>
+    </details>
+    <details><summary>Why could early RLVR drop the KL penalty that RLHF needs?</summary>
+      <p>RLHF's learned reward model can be over-optimized, while a verifier is precise and harder to game. <a class="chip" href="#s15" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:03:09">15</a> <a class="chip" href="#s82" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L291)">82</a> Lambert expects it may return for very long runs. <a class="chip" href="#s109" title="The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:37:56">109</a></p>
+    </details>
+    <details><summary>A friend says RL is just SFT with extra steps. What two things does RL have?</summary>
+      <p>On-policy data that could not be prepared in advance, and negative gradients that push down wrong answers. <a class="chip" href="#s98" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26">98</a> <a class="chip" href="#s99" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">99</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>pass@k is not $1-(1-p)^k$.</strong> Not Lambert: the slide's estimator draws $k$ of the $n$ samples without replacement. <a class="chip" href="#s41" title="Slides lec5-chap7 § Key terms for this lecture (L240-L247)">41</a> The naive formula treats every attempt as independent, with success rate $c/n$. With $n = 16$, $c = 4$ and $k = 4$, the estimator gives 0.728 and the naive formula 0.684. They agree only as $n$ grows large relative to $k$. When $k = n$, the estimator is exactly 1 if any sample is correct.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Why 20 to 80%.</strong> Not Lambert: with binary rewards and $G$ independent samples, a group is useless with probability $p^G + (1-p)^G$. With 8 samples that is 0.8% at a 50% solve rate, but 17% at 80% and 43% at 90%. The chapter's band keeps that waste small. The arithmetic is mine; the band and its reason are the chapter's. <a class="chip" href="#s77" title="Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L289)">77</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The date gaps are probably two kinds of date.</strong> Not Lambert: the chapter's table is captioned as technical reports, <a class="chip" href="#s7" title="Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L279)">7</a> while the slides date model releases. That would explain table dates that are a few days to six weeks later. I have not checked the papers.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>most rows of the 2025 table</li>
+      <li>the recent 2026 model slides</li>
+      <li>the R1 recipe details, covered in Chapter 3</li>
+      <li>the full Feb, Mar and Apr 2025 talks, which I only searched</li>
+    </ul>
+    <p>Regularization and over-optimization come in Chapters 14 and 15. I describe papers only through Lambert.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 8 (Direct Alignment Algorithms) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 8&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 8</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 7 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 7&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 7</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L22-L25">
+      <blockquote style="margin:0">Inference-time scaling is the ability to improve model performance by using more computation during generation, such as producing longer reasoning chains or sampling multiple responses. … These models, trained with a large amount of reinforcement learning with verifiable rewards (RLVR) [@lambert2024t], still utilize large amounts of RLHF.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L22-L25">Ch. 7 Reasoning and Inference-Time Scaling (L22-L25)</a> · <a href="https://rlhfbook.com/c/07-reasoning#reasoning-and-inference-time-scaling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="yt:o4AB5xHIDdM@00:00:30-00:01:02">
+      <blockquote style="margin:0">this chapter is really like giving historical context on the time period by which RLVR and inference time scaling came about</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=30s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:00:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L44">
+      <blockquote style="margin:0">proceeds very similarly to RLHF, but it makes the reward model optional in lieu of a scoring function that returns a positive reward when the answer is correct and 0 otherwise.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L44">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L44)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L165-L172">
+      <blockquote style="margin:0">Sample multiple answers to multiple questions, … Take gradient steps towards the answers that are correct, and … Repeat, revisiting the same data. … Even more remarkable is that the improvements on these training questions generalize to questions and (some) domains the models have never seen!</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L165-L172">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L165-L172)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L98-L99">
+      <blockquote style="margin:0">the core idea of taking gradient updates based on whether the answer is correct is almost the textbook definition of reinforcement learning. The innovations when applying this to language models are largely how to apply it while maintaining the strong, general capabilities of the model being fine-tuned.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L98-L99">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L98-L99)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L109-L112">
+      <blockquote style="margin:0">The first models to successfully deploy this type of training were OpenAI's o1 … and the open-weight model DeepSeek R1 … The core change here is more a reallocation of the stages of training and the priority of different behaviors rather than this type of RL setup being entirely new.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L109-L112">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L109-L112)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L279">
+      <blockquote style="margin:0">Table: A summary of the notable reasoning model technical reports in 2025, the first year of substantial inference-time scaling with RLHF.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L279">Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L279)</a> · <a href="https://rlhfbook.com/c/07-reasoning#early-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L287">
+      <blockquote style="margin:0">these papers could have used a listed technique and not mentioned it, whereas their peers do, so these examples are a subset of known implementations and should be used as a reference, but not a final proclamation on what an optimal recipe is.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L287">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L287)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="yt:o4AB5xHIDdM@00:32:45-00:33:15">
+      <blockquote style="margin:0">it's very rare for every single model to take on a trick. … building language models is so path dependent that you'll always have noise.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1965s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:32:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L30-L32">
+      <blockquote style="margin:0">If intelligence is a cake, the bulk of the cake is unsupervised learning, the icing on the cake is supervised learning, and the cherry on the cake is reinforcement learning (RL).</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L30-L32">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L30-L32)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L34-L35">
+      <blockquote style="margin:0">This analogy is now largely complete with modern language models and recent changes to the post-training stack. RLHF was the precursor to this, and RL for reasoning models, primarily on math, code, and science topics, was its confirmation.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L34-L35">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L34-L35)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L53">
+      <blockquote style="margin:0">Scoring this response requires judging clarity, accuracy, completeness, and helpfulness -- all qualities that require learned preferences and lack a definitive correct answer.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L53">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L53)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L64-L67">
+      <blockquote style="margin:0">**Verification**: `extracted_answer == 77` → Reward = 1 … a simple regular expression can pull the final answer from the response, regardless of how the model arrived at it.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L64-L67">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L64-L67)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L93-L96">
+      <blockquote style="margin:0">A common form of scoring is to perform simple gating: If all assertions pass, the reward is 1; if any fail, the reward is 0. Other setups use partial credit proportional to the number of tests passed. For both these examples, no learned reward model is needed and most setups go without one (because the models are robust to over-optimization in these domains)</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L93-L96">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L93-L96)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="yt:o4AB5xHIDdM@00:03:09-00:04:12">
+      <blockquote style="margin:0">RLHF is about the subjective scoring where you have an environment that's a learned model that you can kind of overoptimize and reinforce learning with verifiable rewards is way more precise</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=189s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:03:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="yt:o4AB5xHIDdM@00:03:40-00:04:12">
+      <blockquote style="margin:0">whoa, we could scale all this training on problems where we already know the answer.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=220s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:03:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L101-L105">
+      <blockquote style="margin:0">the method was to be named RL with Ground Truth rewards (RLGT). Yet RLVR is subtly different from learning solely from ground truth answers. … answers can be verified with a checking function (e.g., a unit test), even when there are multiple correct solutions rather than just a single ground truth answer.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L101-L105">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L101-L105)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L181-L185">
+      <blockquote style="margin:0">The post-training methods are the same (i.e. same algorithms), but a new set of intuitions for building models. … Now RL training uses mixed rewards, rubrics, and a variety of tools to train useful models. The clean distinction here is pedagogical, but in practice rare.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L181-L185">Slides lec5-chap7 § RLHF vs RLVR: How reward changes everything (L181-L185)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:o4AB5xHIDdM@00:04:12-00:05:16">
+      <blockquote style="margin:0">in practice postraining is very messy. So people use all these methods together, RHF, RLVR,</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=252s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:04:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="yt:o4AB5xHIDdM@00:05:16-00:05:46">
+      <blockquote style="margin:0">this blue verifier function at the top is becoming an environment again which is closer to the classical notion of RL</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=316s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:05:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L324-L359">
+      <blockquote style="margin:0">def _format_reward(completions: list[str]) -&gt; list[float]: \"\"\"Compute format reward based on presence of thinking/answer tags.\"\"\" … count += 0.25 … total = [ c + p + cfg.format_weight * f for c, p, f in zip(correctness, penalty, format, strict=True) ]</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L324-L359">Code code/policy_gradients/utils.py (L324-L359)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/config.py#L110">
+      <blockquote style="margin:0">format_weight: float = 0.5</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/config.py#L110">Code code/policy_gradients/config.py (L110)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L174">
+      <blockquote style="margin:0">This simple approach allows the models to lightly search over behavior space and the RL algorithm increases the likelihood of behaviors that are correlated with correct answers.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L174">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L174)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L216-L219">
+      <blockquote style="margin:0">RLVR is focused on matching answers. … While standard instruction tuning is done with 1 or 2 epochs of loss updates over the data, RLVR can involve hundreds or thousands of epochs over the same few data points to give the model time to learn new behaviors. This can be viewed as reinforcing positive behaviors that would work sparingly in the base model version into robust behaviors after RLVR.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L216-L219">Ch. 7 Reasoning and Inference-Time Scaling § The Future (Beyond Reasoning) of RLVR (L216-L219)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-future-beyond-reasoning-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L161-L163">
+      <blockquote style="margin:0">The tokens in the `&lt;thinking&gt;` tags are the model's reasoning. For more complex problems the reasoning stage can take thousands of tokens before producing an answer. So, long-context language models were a prerequisite to advanced reasoning behavior</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L161-L163">Ch. 7 Reasoning and Inference-Time Scaling § The Role of RLVR (L161-L163)</a> · <a href="https://rlhfbook.com/c/07-reasoning#the-role-of-rlvr">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:o4AB5xHIDdM@00:07:48-00:08:19">
+      <blockquote style="margin:0">it shows that these models are doing a form of reasoning but is very odd. It's very repetitive. Sometimes they do guess and check but it helps the models get smarter and closer to the answers.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=468s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:07:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L182">
+      <blockquote style="margin:0">Despite many, many takes that \"RL doesn't work yet\" [@irpan2018deep] and papers detailing deep reproducibility issues with RL [@henderson2018deep], the field overcame them to find high-impact applications.</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L182">Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L182)</a> · <a href="https://rlhfbook.com/c/07-reasoning#why-does-rl-work-now">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L186">
+      <blockquote style="margin:0">**Stability of RL can be solved**: For its entire existence, the limiting factor on RL's adoption has been stability. … The technical barriers to entry on RL are at an all-time low.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L186">Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L186)</a> · <a href="https://rlhfbook.com/c/07-reasoning#why-does-rl-work-now">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L188">
+      <blockquote style="margin:0">**Open-source versions already \"exist\"**: Many tools already exist for training language models with RLVR and related techniques.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L188">Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L188)</a> · <a href="https://rlhfbook.com/c/07-reasoning#why-does-rl-work-now">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L191">
+      <blockquote style="margin:0">Multiple resources point to RL training for reasoning only being viable with leading models coming out from about 2024 onwards, indicating that a certain level of underlying capability was needed in the models before reasoning training was possible.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L191">Ch. 7 Reasoning and Inference-Time Scaling § Why Does RL Work Now? (L191)</a> · <a href="https://rlhfbook.com/c/07-reasoning#why-does-rl-work-now">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="yt:o4AB5xHIDdM@00:14:33-00:15:03">
+      <blockquote style="margin:0">you like couldn't do RHF properly just because there weren't at scale RL frameworks</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=873s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:14:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="yt:o4AB5xHIDdM@00:15:03-00:16:06">
+      <blockquote style="margin:0">the base models getting better made this so much easier. … Quen 2.5 was the most popular model to do research on in early January 2025</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=903s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:15:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L613">
+      <blockquote style="margin:0">**Finding -- midtraining sets the RL ceiling** -- the math/code share in pretraining bounds what RL can reach.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L613">Slides lec5-chap7 § Recipe decisions (4/4) (L613)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:o4AB5xHIDdM@00:16:06-00:16:37">
+      <blockquote style="margin:0">Being able to switch to math and code which have very clear analoges between train training and accurate evaluations was really great.</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=966s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:16:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:YXTYbr3hiFU@00:26:32-00:27:34">
+      <blockquote style="margin:0">why is this even new we trained rein models with RL and we rewarded them when the answer was right … most of it has to do with stable implementation the base models being strong enough and just belief that things will work</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=YXTYbr3hiFU&amp;t=1592s">An Unexpected Reinforcement Learning Renaissance @ 00:26:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L196-L197">
+      <blockquote style="margin:0">Inference-time scaling, also called test-time scaling, is the general class of methods that use more computational power at inference in order to perform better at downstream tasks. Methods for inference-time scaling were studied before the release of DeepSeek R1 and OpenAI's o1</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L196-L197">Ch. 7 Reasoning and Inference-Time Scaling § RL Training vs. Inference-Time Scaling (L196-L197)</a> · <a href="https://rlhfbook.com/c/07-reasoning#rl-training-vs-inference-time-scaling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:o4AB5xHIDdM@00:05:46-00:06:48">
+      <blockquote style="margin:0">the performance from that long chain of thought is proportional to the log scale of the number of tokens. … the longer you let RL go the better the model gets again in log scale these are deeply intertwined</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=346s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:05:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L201-L203">
+      <blockquote style="margin:0">RL training is a short path to inference-time scaling laws being used, but in the long-term we will have more methods for eliciting the inference-time tradeoffs we need for best performance. … This is a substantial shift from the length-bias seen in early RLHF systems … where the human preference training had a side effect of increasing the response average length for marginal gains on preference rankings.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L201-L203">Ch. 7 Reasoning and Inference-Time Scaling § RL Training vs. Inference-Time Scaling (L201-L203)</a> · <a href="https://rlhfbook.com/c/07-reasoning#rl-training-vs-inference-time-scaling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L207">
+      <blockquote style="margin:0">What is important here is the correlation between downstream performance and an increase in the number of tokens generated -- otherwise it is just wasted energy.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L207">Ch. 7 Reasoning and Inference-Time Scaling § RL Training vs. Inference-Time Scaling (L207)</a> · <a href="https://rlhfbook.com/c/07-reasoning#rl-training-vs-inference-time-scaling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L298">
+      <blockquote style="margin:0">The most naive form of parallel test-time compute scaling, as done in DeepSeek-R1, Phi-4, and others, involves using the answer returned by a majority of rollouts as the final answer. … As of 2026, this technique had not become common in open, documented reasoning model recipes</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L298">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L298)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L240-L247">
+      <blockquote style="margin:0">**pass@1**: Accuracy on a single sample per problem … **pass@K**: Generate $K$ completions, report whether *any* is correct -- measures coverage … \widehat{\mathrm{pass@}k}=1-\frac{\binom{n-c}{k}}{\binom{n}{k}}</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L240-L247">Slides lec5-chap7 § Key terms for this lecture (L240-L247)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:o4AB5xHIDdM@00:09:21-00:09:52">
+      <blockquote style="margin:0">I encourage you to ask chat PT the same question cuz my explanation right now was uh a little waffling.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=561s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:09:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L234">
+      <blockquote style="margin:0">their methodologies did not scale to the same level as those used in DeepSeek R1 and subsequent models, or they resulted in models that made sacrifices in overall performance in exchange for higher mathematics or coding abilities.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L234">Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L234)</a> · <a href="https://rlhfbook.com/c/07-reasoning#reasoning-research-before-openai-o1-or-deepseek-r1">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:o4AB5xHIDdM@00:11:56-00:12:27">
+      <blockquote style="margin:0">they would sample chain of thoughts with different ration from the model and then they would keep the strategies that got correct answers and train them.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=716s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:11:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L238">
+      <blockquote style="margin:0">STaR effectively approximates the policy gradient algorithm, but in practice filters samples differently and uses a cross-entropy measure instead of a log-probability</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L238">Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L238)</a> · <a href="https://rlhfbook.com/c/07-reasoning#reasoning-research-before-openai-o1-or-deepseek-r1">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="yt:o4AB5xHIDdM@00:12:59-00:13:30">
+      <blockquote style="margin:0">when you hear more complex algorithms, you generally think that they're not going to scale as well, which ended up being the chase.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=779s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:12:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L241">
+      <blockquote style="margin:0">VinePPO uses a PPO-based algorithm with binary rewards for math question correctness, training on GSM8K and MATH.</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L241">Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L241)</a> · <a href="https://rlhfbook.com/c/07-reasoning#reasoning-research-before-openai-o1-or-deepseek-r1">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L243">
+      <blockquote style="margin:0">Tülu 3 expanded on these methods by using a simple PPO trainer to reward completions with correct answers -- most importantly while maintaining the model's overall performance on a broad suite of evaluations.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L243">Ch. 7 Reasoning and Inference-Time Scaling § Reasoning Research Before OpenAI o1 or DeepSeek R1 (L243)</a> · <a href="https://rlhfbook.com/c/07-reasoning#reasoning-research-before-openai-o1-or-deepseek-r1">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:o4AB5xHIDdM@00:13:30-00:14:33">
+      <blockquote style="margin:0">this two loop 3 paper is actually where we coined the term reinforce learning with verifiable rewards. … even this 23 model wasn't a reasoning model.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=810s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:13:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="yt:o4AB5xHIDdM@00:14:02-00:14:33">
+      <blockquote style="margin:0">RLVR was really so popular because it was so simple</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=842s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:14:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L229">
+      <blockquote style="margin:0">The core change is using far more RLVR and applying the other training techniques in different orders -- traditionally for a reasoning model the core training step is either a large-scale RL run or a large-scale instruction tuning run on *outputs* of another model that had undergone a substantial portion of RLVR training (referred to as distillation).</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L229">Ch. 7 Reasoning and Inference-Time Scaling § Understanding Reasoning Training Methods (L229)</a> · <a href="https://rlhfbook.com/c/07-reasoning#understanding-reasoning-training-methods">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L253-L254">
+      <blockquote style="margin:0">| 2025-01-22  | DeepSeek R1 … | 2025-01-22  | Kimi 1.5</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L253-L254">Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L253-L254)</a> · <a href="https://rlhfbook.com/c/07-reasoning#early-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L255">
+      <blockquote style="margin:0">| 2025-03-31  | Open-Reasoner-Zero</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L255">Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L255)</a> · <a href="https://rlhfbook.com/c/07-reasoning#early-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L260-L261">
+      <blockquote style="margin:0">| 2025-05-12  | Xiaomi MiMo … | 2025-05-14  | Qwen 3</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L260-L261">Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L260-L261)</a> · <a href="https://rlhfbook.com/c/07-reasoning#early-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L265-L269">
+      <blockquote style="margin:0">| 2025-06-04  | OpenThoughts … | 2025-06-16 | MiniMax-M1 … | 2025-07-28 | GLM-4.5</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L265-L269">Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L265-L269)</a> · <a href="https://rlhfbook.com/c/07-reasoning#early-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L274-L278">
+      <blockquote style="margin:0">| 2025-11-20 | Olmo 3 Think … | 2025-12-02 | DeepSeek V3.2 … | 2025-12-15 | Nemotron 3 Nano … | 2025-12-16 | MiMo-V2-Flash</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L274-L278">Ch. 7 Reasoning and Inference-Time Scaling § Early Reasoning Models (L274-L278)</a> · <a href="https://rlhfbook.com/c/07-reasoning#early-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L309-L317">
+      <blockquote style="margin:0">## DeepSeek R1 (Jan. 20, 2025): The catalyst … **R1-Zero**: Pure RL on a base model. No SFT warm-start. Showed that large-scale RL *alone* induces chain-of-thought reasoning. **The full R1 recipe**: Cold-start SFT → large-scale RL → distillation of smaller models.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L309-L317">Slides lec5-chap7 § DeepSeek R1 (Jan. 20, 2025): The catalyst (L309-L317)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:o4AB5xHIDdM@00:17:09-00:17:41">
+      <blockquote style="margin:0">the deepseek R1 paper held has held up remarkably well.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1029s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:17:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L326-L335">
+      <blockquote style="margin:0">## Kimi 1.5 (Jan. 20, 2025): Scaling the curriculum … Detailed technical report, but **no open-weight k1.5 release**</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L326-L335">Slides lec5-chap7 § Kimi 1.5 (Jan. 20, 2025): Scaling the curriculum (L326-L335)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="yt:o4AB5xHIDdM@00:17:41-00:18:12">
+      <blockquote style="margin:0">January 20th, January 20th is like Kimmy Moonshot also released a RL scaling paper on the same day of Deep Sea Gar … this model didn't have open weights at release. So, they kind of got swept under the pos swept under the rug</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1061s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:17:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L344-L353">
+      <blockquote style="margin:0">## Open-Reasoner-Zero (Feb. 18, 2025): The minimalist replication … Vanilla PPO with GAE ($\lambda=1, \gamma=1$) and simple rule-based rewards … No KL penalty … Mar. 31 expansion: easier scripts and 129k curated problems</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L344-L353">Slides lec5-chap7 § Open-Reasoner-Zero (Feb. 18, 2025): The minimalist replication (L344-L353)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:o4AB5xHIDdM@00:18:43-00:19:46">
+      <blockquote style="margin:0">open reasoner zero here was still using PO and they hadn't switched over to gRPO … So don't sleep on PO</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1123s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:18:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L362-L368">
+      <blockquote style="margin:0">## Qwen 3 (Apr. 29, 2025): Hybrid reasoners … Toggleable thinking: `/think` and `/no_think` modes (most labs found this to be quite the training headache)</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L362-L368">Slides lec5-chap7 § Qwen 3 (Apr. 29, 2025): Hybrid reasoners (L362-L368)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L382-L393">
+      <blockquote style="margin:0">## MiMo (Apr. 30, 2025): End-to-end reasoning pipeline … One of the only open-weight reasoning models to release clear intermediate checkpoints within post-training!</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L382-L393">Slides lec5-chap7 § MiMo (Apr. 30, 2025): End-to-end reasoning pipeline (L382-L393)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L402-L410">
+      <blockquote style="margin:0">## OpenThoughts 3 (Jun. 5, 2025): SFT data recipes still matter … OpenThinker3-7B reaches strong reasoning performance with SFT only</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L402-L410">Slides lec5-chap7 § OpenThoughts 3 (Jun. 5, 2025): SFT data recipes still matter (L402-L410)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:o4AB5xHIDdM@00:22:53-00:23:25">
+      <blockquote style="margin:0">there hasn't been a data set that obviously rebuilt this from the ground up.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1373s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:22:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L421-L428">
+      <blockquote style="margin:0">## MiniMax-M1 (Jun. 16, 2025): A fun RL paper! … CISPO clips importance-sampling weights instead of dropping high-update tokens. This sort of algorithm has been lasting. … Introduced the now famous FP32 LM head inference-training mismatch plot.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L421-L428">Slides lec5-chap7 § MiniMax-M1 (Jun. 16, 2025): A fun RL paper! (L421-L428)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="yt:o4AB5xHIDdM@00:24:59-00:25:30">
+      <blockquote style="margin:0">you change the LM head of the model to FP32, you get much better accuracy.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1499s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:24:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="yt:o4AB5xHIDdM@00:25:30-00:26:00">
+      <blockquote style="margin:0">the language model which produces the logits and goes through the softmax is very sensitive to numerical perturbation.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1530s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:25:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L454-L460">
+      <blockquote style="margin:0">## Olmo 3 Think (Nov. 20, 2025): The fully open reasoning model … Releases: stages, checkpoints, data, infrastructure, hyperparameters.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L454-L460">Slides lec5-chap7 § Olmo 3 Think (Nov. 20, 2025): The fully open reasoning model (L454-L460)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L472-L479">
+      <blockquote style="margin:0">## DeepSeek V3.2 (Dec. 1, 2025): Reasoning becomes agentic … V3.2 integrates thinking directly into tool use, no longer distinct reasoning models</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L472-L479">Slides lec5-chap7 § DeepSeek V3.2 (Dec. 1, 2025): Reasoning becomes agentic (L472-L479)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L506-L513">
+      <blockquote style="margin:0">## MiMo-V2-Flash (Dec. 16, 2025): Distilling many teachers into one … The student learns from **dense, token-level rewards**, not just sequence-level outcome rewards</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L506-L513">Slides lec5-chap7 § MiMo-V2-Flash (Dec. 16, 2025): Distilling many teachers into one (L506-L513)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="yt:o4AB5xHIDdM@00:30:10-00:30:41">
+      <blockquote style="margin:0">this kind of marked the moment in time when multi-teer on policy distillation became the new standard for post-raining</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1810s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:30:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L546">
+      <blockquote style="margin:0">The frontier moved fast -- from \"reasoning model\" to **long-horizon, tool-using agent substrate**.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L546">Slides lec5-chap7 § Recent Chinese open models (L546)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="yt:o4AB5xHIDdM@00:26:32-00:27:05">
+      <blockquote style="margin:0">a lot of people pretty quickly saw the change where tool use in agents was the real frontier.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1592s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:26:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L554-L557">
+      <blockquote style="margin:0">RL basics were quickly replicated in open-source codebases and data … Lots of lasting fundamentals (FP32 LM head, CISPO style losses, etc.) emerged very quickly but took meaningful tinkering to converge</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L554-L557">Slides lec5-chap7 § What the landscape tells us (L554-L557)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L289">
+      <blockquote style="margin:0">models can only learn from examples where there is a gradient. If the starting model for RLVR can solve a problem either 100% of the time or 0% of the time, there will be no gradient between different completions to the prompt … restrict the training problems to those that the starting point model solves only 20-80% of the time. This data is collected by sampling N, e.g. 16, completions to each prompt in the training set and verifying what percentage are correct.</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L289">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L289)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="yt:o4AB5xHIDdM@00:35:50-00:36:22">
+      <blockquote style="margin:0">this is probably one of the runs that is the most unanimous with one of the tricks was most unanimous with so many models implementing this.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2150s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:35:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L290">
+      <blockquote style="margin:0">many models use online filtering of questions in the batch, prebuilt curriculums/data schedulers, saving harder problems for later in training</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L290">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L290)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L573">
+      <blockquote style="margin:0">**Zero-gradient filtering + active sampling** -- drop groups where all $G$ completions pass or fail (advantage 0), then refill the batch.</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L573">Slides lec5-chap7 § Recipe decisions (1/4) (L573)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:o4AB5xHIDdM@00:36:52-00:37:25">
+      <blockquote style="margin:0">you would only put a prompt into the batch if it had a nonzero gpo gradient</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2212s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:36:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L291">
+      <blockquote style="margin:0">**Remove KL penalty**: As the length of RL runs … increased for reasoning models relative to RLHF training, and the reward function became less prone to over-optimization, many models removed the KL penalty … This allows the model to further explore during its training.</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L291">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L291)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L292">
+      <blockquote style="margin:0">proposed modifications to the two-sided clipping objective used in GRPO (or PPO) in order to enable better exploration. Clipping has also been shown to cause potentially spurious learning signals when rewards are imperfect</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L292">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L292)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L293">
+      <blockquote style="margin:0">particularly in the *variance* of the response length, where there are often outliers with extremely long lengths), compute in RL runs can sit idle.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L293">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L293)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L598">
+      <blockquote style="margin:0">Olmo 3 learner GPUs idle ~**75%**, **5-14x** more inference than training compute.</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L598">Slides lec5-chap7 § Recipe decisions (3/4) (L598)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L294">
+      <blockquote style="margin:0">many models add minor rewards to make sure the model follows the correct format of e.g. `&lt;think&gt;...&lt;/think&gt;` before an answer.</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L294">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L294)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L295">
+      <blockquote style="margin:0">language consistency rewards to prioritize models that do not change languages while reasoning</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L295">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L295)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L296">
+      <blockquote style="margin:0">Progressively extending the training sequence length mitigates overthinking by forcing the model to first reason effectively in a domain with a more limited thinking budget, and then transitioning to longer training where the model can use those behaviors efficiently on more complex problems.</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L296">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L296)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:o4AB5xHIDdM@00:41:06-00:42:07">
+      <blockquote style="margin:0">this is a ripe area for research that actually hasn't been documented as much in all the current technical reports.</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2466s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:41:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L297">
+      <blockquote style="margin:0">some models, such as Magistral or MiMo, chose to normalize either losses or advantages at the batch level instead of the group level.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L297">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L297)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="yt:o4AB5xHIDdM@00:39:27-00:40:03">
+      <blockquote style="margin:0">people found that using a per token loss is just a bit less biased.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2367s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:39:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L302">
+      <blockquote style="margin:0">training a multimodal model and then performing text-only reasoning training after this multimodal training can *improve* multimodal performance in the final model.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L302">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L302)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L303">
+      <blockquote style="margin:0">**Toggleable reasoning with system prompt** (or length control): Llama-Nemotron, Nemotron Nano, Qwen 3, SmolLM 3, and others use specific system prompts … to enable a toggleable on/off thinking length for the user. … adopt a low-medium-high reasoning effort set in the system prompt, but training methods for this type of behavior are not as well documented.</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L303">Ch. 7 Reasoning and Inference-Time Scaling § Common Practices in Training Reasoning Models (L303)</a> · <a href="https://rlhfbook.com/c/07-reasoning#common-practices-in-training-reasoning-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L307">
+      <blockquote style="margin:0">some of the common practices listed here will inevitably be superseded by new techniques.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L307">Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L307)</a> · <a href="https://rlhfbook.com/c/07-reasoning#looking-ahead">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L313-L314">
+      <blockquote style="margin:0">reinforcement learning has graduated from the \"cherry on top\" in the cake metaphor to a load-bearing component of frontier model training. The minor techniques in this chapter around the idea of RLVR -- difficulty filtering, format rewards, and the rest -- are not the final answers</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L313-L314">Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L313-L314)</a> · <a href="https://rlhfbook.com/c/07-reasoning#looking-ahead">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L621-L625">
+      <blockquote style="margin:0">Is RL training **discovering** new capabilities, or **eliciting** what pretraining already learned? … In 1, 2, 5, and 10 years what does the balance of compute between pretraining and RL look like?</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L621-L625">Slides lec5-chap7 § Open questions (L621-L625)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:o4AB5xHIDdM@00:43:43-00:44:45">
+      <blockquote style="margin:0">slime and skyl are probably the two most popular RL frameworks</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2623s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:43:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:6StK9ttLNbQ@00:09:26-00:09:58">
+      <blockquote style="margin:0">you can't just go back and generate that data a priori such that you could only do SFT.</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=566s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:6StK9ttLNbQ@00:10:28-00:11:01">
+      <blockquote style="margin:0">RL has negative gradients. So, instead of SFT is just showing the model what it should do by saying what the correct token is, RL also shows the model what it should not do.</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=628s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:6StK9ttLNbQ@00:09:26-00:10:28">
+      <blockquote style="margin:0">I think a lot more problem models today could get what by with just SFT, especially small models, than people think.</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=566s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1550">
+      <blockquote style="margin:0">The default configs train `Qwen/Qwen3-1.7B` on the `spell_backward` procedural task from `reasoning-gym`</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1550">Ch. 6 Reinforcement Learning § Suggested Experiments (L1550)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#suggested-experiments">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L20">
+      <blockquote style="margin:0">from reasoning_gym.utils import extract_answer</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L20">Code code/policy_gradients/utils.py (L20)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/rollout.py#L169-L175">
+      <blockquote style="margin:0">def _dapo_filter(self, exp: Experience) -&gt; Experience | None: \"\"\"Drop the group if every completion has min or max correctness.\"\"\"</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/rollout.py#L169-L175">Code code/policy_gradients/rollout.py (L169-L175)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/configs/dapo.yaml#L13-L25">
+      <blockquote style="margin:0"># Clip higher clip_eps_hi: 0.28 … # Shared KL fields; DAPO loss ignores KL. beta: 0.0 … # DAPO overlong penalty l_cache: 128 l_max: 512</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/configs/dapo.yaml#L13-L25">Code code/policy_gradients/configs/dapo.yaml (L13-L25)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L311-L317">
+      <blockquote style="margin:0">def dapo_length_penalty(completion_len: int, l_cache: int, l_max: int) -&gt; float: safe_len = l_max - l_cache … return (safe_len - completion_len) / l_cache return -1.0</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L311-L317">Code code/policy_gradients/utils.py (L311-L317)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="yt:zYeIqzULzr0@00:12:30-00:13:00">
+      <blockquote style="margin:0">I subscribe to the elicitation view of post- training which is at pre-training most of these behaviors exist. They might just be such low probabilities that we can't really extract them as a user.</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://www.youtube.com/watch?v=zYeIqzULzr0&amp;t=750s">Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:12:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="yt:o4AB5xHIDdM@00:42:39-00:43:43">
+      <blockquote style="margin:0">There was this best paper award at Nurups which argued that models learn everything at pre-training … So I think it's pretty clear that RL is teaching the model new things</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2559s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:42:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="yt:zYeIqzULzr0@00:20:53-00:21:24">
+      <blockquote style="margin:0">these four lines are sweeping over just different levels of the KL penalty beta from 0.1 to 0.001. And while the model the left plot is how much the model change changes it doesn't really matter</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://www.youtube.com/watch?v=zYeIqzULzr0&amp;t=1253s">Experimenting with Reinforcement Learning with Verifiable Rewards (RLVR) @ 00:20:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="yt:o4AB5xHIDdM@00:37:56-00:38:26">
+      <blockquote style="margin:0">in RLVR, because the reward signals were more precise, you didn't really need this in earlier earlier work. But what we're seeing is that as RL runs get really long, this KL penalty might come back</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=2276s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:37:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L574">
+      <blockquote style="margin:0">**KL penalty: dropped, now creeping back** -- single-turn math RLVR usually sets $\beta=0$ (verifiable rewards resist over-optimization). … But long-horizon, off-policy agentic training is reviving a KL/reference term for stability</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L574">Slides lec5-chap7 § Recipe decisions (1/4) (L574)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:46">
+      <blockquote style="margin:0">as these RL things got more complicated, especially in tool use, over optimization can come into many different forms and the regularization is starting to come back … but the basic math and code RLVR it seems like you do not need a KL penalty.</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="yt:6StK9ttLNbQ@00:05:46-00:06:18">
+      <blockquote style="margin:0">I think the KL penalty stuff is becoming much messier as we go into agentic models and regularization is getting much harder.</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="yt:6StK9ttLNbQ@00:05:15-00:05:46">
+      <blockquote style="margin:0">Deep Seek R1 didn't actually talk about it.</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=315s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="yt:o4AB5xHIDdM@00:19:46-00:20:47">
+      <blockquote style="margin:0">pretty much all the bottle makers were like this sucks it was a major hard time you probably shouldn't do this you should just do separate models … But in 2026 what we see is that you only get a reasoning model.</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1186s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:19:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="yt:o4AB5xHIDdM@00:20:16-00:20:47">
+      <blockquote style="margin:0">one of the important things for your reasoning model is to have a low reasoning effort where the model will respond quickly</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1216s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:20:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="yt:J1APR8Bo9dE@00:23:59-00:24:29">
+      <blockquote style="margin:0">I think the Innovation here is kind of stability of implementation and making it really easy to do without degradation outside of domains</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://www.youtube.com/watch?v=J1APR8Bo9dE&amp;t=1439s">Early stages of the reinforcement learning era of language models @ 00:23:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L294-L296">
+      <blockquote style="margin:0">**Stability is much more tractable**: Still a first-class research problem (entropy collapse, long-horizon credit), but tooling and recipes are mature enough for widespread adoption … **Verifiable domains provide clean signal**: Math and code give unambiguous rewards, avoiding the reward hacking problems of RLHF</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L294-L296">Slides lec5-chap7 § Why does RL work now? (L294-L296)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:J1APR8Bo9dE@00:02:37-00:03:08">
+      <blockquote style="margin:0">it was really just a cherry on top and now we kind of have this bigger RL phase</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=J1APR8Bo9dE&amp;t=157s">Early stages of the reinforcement learning era of language models @ 00:02:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="yt:YXTYbr3hiFU@00:35:48-00:36:20">
+      <blockquote style="margin:0">rhf was necessary but not sufficient for chatbots and RL with verifiable rewards in this 01 and R1 and 23 can become a necessary and Central Training Method for AI</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://www.youtube.com/watch?v=YXTYbr3hiFU&amp;t=2148s">An Unexpected Reinforcement Learning Renaissance @ 00:35:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L140-L152">
+      <blockquote style="margin:0">With modern language models, the analogy is complete: … With agents, RL may be more than just the cherry in compute, but it's still the shape of the training loops!</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L140-L152">Slides lec5-chap7 § The LeCun cake (L140-L152)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="yt:o4AB5xHIDdM@00:02:37-00:03:40">
+      <blockquote style="margin:0">say if continual learning is solved in 5 years and we're scaling RL and RL compute is obviously more compute than pre-training this metaphor will still be apt on the path that we took to get the technology</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=157s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:02:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L253">
+      <blockquote style="margin:0">**DAPO**: Dynamic Advantage Policy Optimization -- a relaxed-clipping variant of GRPO</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L253">Slides lec5-chap7 § Key terms for this lecture (L253)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L1544">
+      <blockquote style="margin:0">**Decoupled Clip and Dynamic sAmpling Policy Optimization (DAPO)**</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L1544">Ch. 6 Reinforcement Learning § Further Reading (L1544)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#further-reading">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec5-chap7.md#L584">
+      <blockquote style="margin:0">average loss over **total tokens**, not per sequence, to remove a length bias (Dr. GRPO</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec5-chap7.md?plain=1#L584">Slides lec5-chap7 § Recipe decisions (2/4) (L584)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L810-L822">
+      <blockquote style="margin:0">Strategy 2: Per-token normalization** (DAPO … Strategy 3: Fixed-length normalization** (Dr. GRPO</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L810-L822">Ch. 6 Reinforcement Learning § Loss Aggregation Tradeoffs (L810-L822)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#loss-aggregation-tradeoffs">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/07-reasoning.md#L310">
+      <blockquote style="margin:0">concluding with a nearly 4-week-long training run on 220 GPUs to produce Olmo 3.1 Think 32B.</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/07-reasoning.md?plain=1#L310">Ch. 7 Reasoning and Inference-Time Scaling § Looking Ahead (L310)</a> · <a href="https://rlhfbook.com/c/07-reasoning#looking-ahead">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="yt:o4AB5xHIDdM@00:27:36-00:28:06">
+      <blockquote style="margin:0">we ran OMO mode 3.1 think for about a month on 200 GPUs to do the final multi-dommain RL run</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://www.youtube.com/watch?v=o4AB5xHIDdM&amp;t=1656s">The Rise of Reasoning Models  | Post-Training Course Lecture 5 @ 00:27:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">we even found something in Tool Use 3 that when we did RLVR in math, the models are pretty good at separating domains into really specific modes</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  const PRESETS = {"good": "<think>Primes below 20: 2, 3, 5, 7, 11, 13, 17, 19. Running sum: 5, 10, 17, 28, 41, 58, 77.<\/think>\n<answer>The answer is \\boxed{77}.<\/answer>", "bare": "The primes below 20 are 2, 3, 5, 7, 11, 13, 17 and 19, which add up to 77. The answer is \\boxed{77}.", "wrong": "<think>Primes below 20: 2, 3, 5, 7, 11, 13, 17. Sum is 58.<\/think>\n<answer>The answer is \\boxed{58}.<\/answer>", "lucky": "<think>20 is close to 77 if you multiply by 4 and subtract 3, so that must be it.<\/think>\n<answer>\\boxed{77}<\/answer>"};
+
+  // Verifier: chapter's \boxed{} extraction; format score as in the book's _format_reward; total = c + 0.5 f.
+  (() => {
+    const text = document.getElementById('ver-text');
+    const show = () => {
+      const v = text.value;
+      const m = [...v.matchAll(/\\boxed\{([^}]*)\}/g)];
+      const ans = m.length ? m[m.length - 1][1].trim() : null;
+      const c = ans !== null && ans === '77' ? 1 : 0;
+      const tags = ['<think>', '</think>', '<answer>', '</answer>'].filter(tag => v.includes(tag));
+      const f = tags.length * 0.25;
+      document.getElementById('ver-ans').textContent = ans === null ? 'none found' : ans;
+      document.getElementById('ver-c').textContent = c + (c ? ' (matches 77)' : ' (does not match 77)');
+      document.getElementById('ver-f').textContent = f.toFixed(2) + (tags.length ? ' (' + tags.join(' ') + ')' : ' (no tags)');
+      document.getElementById('ver-t').textContent = (c + 0.5 * f).toFixed(3);
+    };
+    document.querySelectorAll('#ver-demo button[data-p]').forEach(btn => btn.addEventListener('click', () => { text.value = PRESETS[btn.dataset.p]; show(); }));
+    text.addEventListener('input', show);
+    text.value = PRESETS.good;
+    show();
+  })();
+
+  // pass@k: the slide's unbiased estimator against the naive formula.
+  (() => {
+    const [n, c, k] = ['pk-n', 'pk-c', 'pk-k'].map(id => document.getElementById(id));
+    const lchoose = (a, b) => { let s = 0; for (let i = 0; i < b; i++) s += Math.log(a - i) - Math.log(i + 1); return s; };
+    const show = () => {
+      const N = Number(n.value);
+      c.max = N; k.max = N;
+      if (Number(c.value) > N) c.value = N;
+      if (Number(k.value) > N) k.value = N;
+      const C = Number(c.value), K = Number(k.value);
+      document.getElementById('pk-n-o').textContent = N;
+      document.getElementById('pk-c-o').textContent = C;
+      document.getElementById('pk-k-o').textContent = K;
+      const est = N - C < K ? 1 : 1 - Math.exp(lchoose(N - C, K) - lchoose(N, K));
+      document.getElementById('pk-1').textContent = (C / N).toFixed(3);
+      document.getElementById('pk-k-est').textContent = est.toFixed(3);
+      document.getElementById('pk-naive').textContent = (1 - Math.pow(1 - C / N, K)).toFixed(3);
+    };
+    [n, c, k].forEach(i => i.addEventListener('input', show));
+    show();
+  })();
+
+  // Difficulty filter: chance a group of G binary rewards all agree.
+  (() => {
+    const p = document.getElementById('flt-p'), g = document.getElementById('flt-g');
+    const show = () => {
+      const P = Number(p.value), G = Number(g.value);
+      const z = Math.pow(P, G) + Math.pow(1 - P, G);
+      document.getElementById('flt-p-o').textContent = P.toFixed(2);
+      document.getElementById('flt-g-o').textContent = G;
+      document.getElementById('flt-z').textContent = (100 * z).toFixed(1) + '%';
+      document.getElementById('flt-w').textContent = z > 0.999 ? 'always: no gradient from this prompt' : (z > 0.2 ? 'often' : (z > 0.02 ? 'sometimes' : 'rarely'));
+      document.getElementById('flt-b').textContent = P >= 0.2 && P <= 0.8 ? 'yes, the chapter would keep it' : 'no, the chapter would filter it out';
+    };
+    [p, g].forEach(i => i.addEventListener('input', show));
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/policy_gradients/utils.py (L324-L359)", contents: "def _format_reward(completions: list[str]) -> list[float]:\n    \"\"\"Compute format reward based on presence of thinking/answer tags.\"\"\"\n\n    def count_tags(text: str) -> float:\n        count = 0.0\n        if re.search(r\"\\s*<think>\\s*\", text):\n            count += 0.25\n        if re.search(r\"\\s*<\/think>\\s*\", text):\n            count += 0.25\n        if re.search(r\"\\s*<answer>\\s*\", text):\n            count += 0.25\n        if re.search(r\"\\s*<\/answer>\\s*\", text):\n            count += 0.25\n        return count\n\n    return [count_tags(c) for c in completions]\n\n\ndef compute_rewards(\n    entries: list[dict],\n    completions: list[str],\n    lengths: list[int],\n    dataset: ProceduralDataset,\n    cfg: Config,\n    device: torch.device,\n) -> TensorDict:\n    \"\"\"Compute reward components for a rollout group as a single TensorDict.\n\n    Keys: ``total``, ``correctness``, ``format``, ``penalty``, ``binary``.\n    \"\"\"\n    correctness = _correctness_reward(dataset, completions, entries)\n    penalty = _response_penalties(lengths, cfg)\n    format = _format_reward(completions)\n    total = [\n        c + p + cfg.format_weight * f for c, p, f in zip(correctness, penalty, format, strict=True)\n    ]\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
