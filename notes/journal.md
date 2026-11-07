@@ -11,3 +11,4 @@ written anywhere under `notes/` is checked by `make check`.
 | 2026-11-07 | Walk me through Chapter 2 | [s03](../.lavish/s03_ch02-history.html) |
 | 2026-11-07 | Summarize Chapter 3 | [s04](../.lavish/s04_ch03-training-overview.html) |
 | 2026-11-07 | Walk me through Chapter 4 | [s05](../.lavish/s05_ch04-instruction-tuning.html) |
+| 2026-11-07 | Walk me through Chapter 5 | [s06](../.lavish/s06_ch05-reward-models.html) |
