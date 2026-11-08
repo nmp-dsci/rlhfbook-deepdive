@@ -1,0 +1,1134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 16: Evaluation</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid output{font-family:var(--mono)}
+  .wid input[type=range]{width:100%}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid select{margin-top:var(--s1);font:inherit;max-width:100%}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  #code-excerpt{margin-top:var(--s3)}
+  .wid + h3{margin-top:var(--s6)}
+  ol.steps{list-style:none;padding-left:0}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,.callout,.kv,.tablewrap,.wid,.card{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s16_ch15-regularization.html">Chapter 15</a></p>
+  <h1>Chapter 16: Evaluation</h1>
+  <p class="lede">Evaluation is how we know whether any of the training in this book worked, and it is usually expressed as benchmarks. <a class="chip" href="#s1" title="Ch. 16 Evaluation (L22-L23)">1</a> The chapter's thesis: the popular evaluations of any moment reflect that moment's training goals. <a class="chip" href="#s2" title="Ch. 16 Evaluation (L25-L26)">2</a> <a class="chip" href="#s3" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:03:40">3</a> So it is told as history, era by era, then as a warning about trusting the numbers. <a class="chip" href="#s4" title="Slides lec12-chap16-evals § This lecture (L102)">4</a> Lambert calls it "one of my favorite chapters in the book. It is succinct." <a class="chip" href="#s5" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:00:00">5</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Benchmarks follow training:</strong> chat, then multi-skill, then reasoning and tools; the slides add agents and real work. <a class="chip" href="#s2" title="Ch. 16 Evaluation (L25-L26)">2</a> <a class="chip" href="#s6" title="Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)">6</a></li>
+      <li><strong>How you ask and grade changes the score:</strong> few-shot or zero-shot, log-likelihood or exact match, prompt format, temperature. <a class="chip" href="#s7" title="Ch. 16 Evaluation § Prompting Formatting (L48-L49)">7</a> <a class="chip" href="#s8" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L124-L125)">8</a></li>
+      <li><strong>Agentic evals add a whole system:</strong> harness, sandbox, inference engine, hardware, timeouts. <a class="chip" href="#s9" title="Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L209-L213)">9</a> <a class="chip" href="#s10" title="Slides lec12-chap16-evals § Many little things contribute to agentic scores (L467-L471)">10</a></li>
+      <li><strong>Cross-lab comparisons are unreliable:</strong> run-to-run noise of 0.25 to 1.5 points, undisclosed setups, unknown test sets. <a class="chip" href="#s11" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L220-L221)">11</a> <a class="chip" href="#s12" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L222-L224)">12</a></li>
+      <li><strong>Contamination</strong> inflates scores, deliberately or not, and is hard to prove. <a class="chip" href="#s13" title="Ch. 16 Evaluation § Contamination (L291-L293)">13</a> <a class="chip" href="#s14" title="Ch. 16 Evaluation § Contamination (L304-L305)">14</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Name the eras of post-training evaluation and a benchmark from each.</li>
+      <li>Explain log-likelihood scoring vs. exact match, and compute pass@k.</li>
+      <li>List the parts of an agentic eval that can move a score.</li>
+      <li>Say how big a gap must be before it is more than noise.</li>
+      <li>Describe how contamination is found, and why random-reward RL is a warning sign.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/16-evaluation">Chapter 16</a></td><td>Short</td><td>The eras, prompting and grading, why comparisons fail, contamination, tooling.</td></tr>
+        <tr><td><a href="https://rlhfbook.com/c/appendix-c-practical">Appendix C</a>, "Evaluation Variance"</td><td>1 page</td><td>The Olmo 3 table of run-to-run noise per benchmark.</td></tr>
+        <tr><td>Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1930s">32:10</a></td><td>32 min</td><td>Recorded August 2026. Part 1 is the eras (<a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=220s">03:40</a>), part 2 agentic evals (<a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1063s">17:43</a>), part 3 trusting the number (<a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1276s">21:16</a>).</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L45-L674">Lecture 12 slides</a></td><td>38 slides</td><td>pass@k math, the HLE example, harness numbers, the noise table.</td></tr>
+        <tr><td>Olmo 3 talk: <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2464s">41:04</a> to <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=3206s">53:26</a></td><td>12 min</td><td>December 2025. The evals half of his NeurIPS talk, which the slides recommend.</td></tr>
+        <tr><td>Stanford CS25: <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=2135s">35:35</a> to <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=2264s">37:44</a></td><td>2 min</td><td>May 2024. The chat era from inside it: AlpacaEval and MT-Bench.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="eras">
+    <h2>The eras of post-training evaluation</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=31s">00:31</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=63s">01:03</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=94s">01:34</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=125s">02:05</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=157s">02:37</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=220s">03:40</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=251s">04:11</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=283s">04:43</a></p>
+    <p>"How we measure progress changes over time. And it has to." <a class="chip" href="#s15" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:00:31">15</a> <a class="chip" href="#s16" title="Slides lec12-chap16-evals § How we measure progress changes over time (L62-L66)">16</a> Post-training researchers "are super good at making numbers go up", which only works if the evaluations exist. <a class="chip" href="#s17" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:01:34">17</a> The chapter and the slides divide the history into eras:</p>
+    <div class="tablewrap"><table class="kt" style="min-width:600px">
+      <thead><tr><th>Era</th><th>What was measured</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>Chat (2022-23)</td><td>Chat quality relative to strong models like GPT-4, scored by an LLM judge <a class="chip" href="#s18" title="Ch. 16 Evaluation (L32)">18</a> <a class="chip" href="#s6" title="Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)">6</a></td><td>MT-Bench, AlpacaEval, Arena-Hard <a class="chip" href="#s18" title="Ch. 16 Evaluation (L32)">18</a></td></tr>
+        <tr><td>Multi-skill (2023-24)</td><td>RLHF improves more than chat: knowledge, reasoning, math, code, instruction following, safety <a class="chip" href="#s19" title="Ch. 16 Evaluation (L33)">19</a> <a class="chip" href="#s6" title="Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)">6</a></td><td>The Tülu suite: MMLU, BBH, MATH, GSM8K, HumanEval, IFEval <a class="chip" href="#s20" title="Slides lec12-chap16-evals § The emergence of zero-shot prompting took time! (L300-L307)">20</a></td></tr>
+        <tr><td>Reasoning and tools (2024-26)</td><td>Hard knowledge, software and math problems with long chains of thought <a class="chip" href="#s21" title="Ch. 16 Evaluation (L34)">21</a> <a class="chip" href="#s6" title="Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)">6</a></td><td>GPQA Diamond, Humanity's Last Exam, SWE-Bench, LiveCodeBench, AIME <a class="chip" href="#s21" title="Ch. 16 Evaluation (L34)">21</a></td></tr>
+        <tr><td>Agents and real work (now)</td><td>End-to-end knowledge work inside products and harnesses <a class="chip" href="#s6" title="Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)">6</a> <a class="chip" href="#s22" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:04:43">22</a></td><td>SWE-bench Verified, Terminal-Bench, GDPval, APEX <a class="chip" href="#s23" title="Slides lec12-chap16-evals § Today: evals of real work (L415-L417)">23</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The chapter has three eras and calls reasoning and tools "the current era"; the fourth comes from the slides. See <a href="#differ">disagreements</a>. Lambert doubted the chat-era numbers early. In 2024 he asked "what does beating gp4 exactly mean", <a class="chip" href="#s24" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:35:35">24</a> and by 2025 AlpacaEval felt "too vibey". <a class="chip" href="#s25" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:47:14">25</a> Evaluation has also become multi-stakeholder: private leaderboards like Scale's, community ones like Arena, and third parties like Artificial Analysis and Epoch AI. <a class="chip" href="#s26" title="Ch. 16 Evaluation (L36-L38)">26</a></p>
+    <h3>Why the frontier is hard to measure now</h3>
+    <p>When Opus 4.6 and GPT-5.3-Codex shipped the same week in February 2026, the benchmark deltas "settled nothing"; use decided between them. <a class="chip" href="#s27" title="Slides lec12-chap16-evals § Frontier evaluation is harder than it ever has been (L73-L75)">27</a> He calls this the post-benchmark era: evals miss "this trust, this robustness, how it works in products". <a class="chip" href="#s28" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:02:05">28</a> METR's task horizon doubles roughly every 7 months, so measuring it means running hours-long expert tasks many times. <a class="chip" href="#s29" title="Slides lec12-chap16-evals § ...and the tasks we&#x27;re trying to measure keep taking longer (L89-L91)">29</a> "You can hill climb faster than you can make the target." <a class="chip" href="#s30" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:02:37">30</a></p>
+  </section>
+
+  <section id="prompting">
+    <h2>How you ask: from few-shot to reasoning prompts</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=313s">05:13</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=343s">05:43</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=374s">06:14</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=499s">08:19</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=531s">08:51</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=562s">09:22</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=593s">09:53</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=623s">10:23</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=654s">10:54</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=685s">11:25</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=715s">11:55</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=748s">12:28</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=780s">13:00</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=811s">13:31</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=843s">14:03</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=873s">14:33</a></p>
+    <p>Prompting matters more than it looks: formatting alone can drop a model from 60% to near 0, and it is "easier to break it and cause performance to plummet than it is to find a little bit more performance". <a class="chip" href="#s7" title="Ch. 16 Evaluation § Prompting Formatting (L48-L49)">7</a> <a class="chip" href="#s31" title="Ch. 16 Evaluation § Prompting Formatting (L53-L54)">31</a> <a class="chip" href="#s32" title="Slides lec12-chap16-evals § Formatting became fragile as usage became more open-ended (L368-L371)">32</a> The early pipeline was "Prompt in, completion out, grade it", and almost everything that went wrong was the prompt format. <a class="chip" href="#s33" title="Slides lec12-chap16-evals § The early pipeline was simple (L235-L236)">33</a> <a class="chip" href="#s34" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:08:19">34</a></p>
+    <ol class="steps">
+      <li class="step"><b>Few-shot (base models).</b> Base models were autocomplete and did not know the answer format, so prompts carried 3 to 8+ worked examples: 5-shot MMLU, 8-shot GSM8K. <a class="chip" href="#s35" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L61-L62)">35</a> <a class="chip" href="#s36" title="Slides lec12-chap16-evals § Base models (before post-training): few-shot prompting (L142)">36</a> <a class="chip" href="#s37" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:05:13">37</a> A model that ignores the format is marked wrong. <a class="chip" href="#s38" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L137-L138)">38</a></li>
+      <li class="step"><b>Chain of thought.</b> Examples with written-out steps made math and reasoning scores jump, before modern post-training; soon "Let's think step by step" did the same. <a class="chip" href="#s39" title="Ch. 16 Evaluation § Chain-of-Thought Prompting (L142-L143)">39</a> <a class="chip" href="#s40" title="Slides lec12-chap16-evals § Chain of thought (CoT) emerged to enable progress on harder problems (L248-L252)">40</a> Today there is "all sorts of like fake bribing to get the models to work harder". <a class="chip" href="#s41" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:10:23">41</a></li>
+      <li class="step"><b>Zero-shot.</b> Instruction tuning (FLAN, T0), then RLHF, let models answer a bare question. <a class="chip" href="#s42" title="Ch. 16 Evaluation § Zero-Shot Instruction Following (L167-L169)">42</a> <a class="chip" href="#s43" title="Slides lec12-chap16-evals § Entering the chat era: zero-shot instruction following (L280)">43</a> "Retroactively, this was a huge deal". <a class="chip" href="#s44" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:10:54">44</a> Open-ended answers brought LLM-as-a-judge: MT-Bench, AlpacaEval, Chatbot Arena. <a class="chip" href="#s45" title="Slides lec12-chap16-evals § Entering the chat era: zero-shot instruction following (L290-L292)">45</a> Multiple-choice evals lingered for years, answered at temperature zero by sampling the letter. <a class="chip" href="#s46" title="Ch. 16 Evaluation § Zero-Shot Instruction Following (L179-L180)">46</a> <a class="chip" href="#s45" title="Slides lec12-chap16-evals § Entering the chat era: zero-shot instruction following (L290-L292)">45</a></li>
+      <li class="step"><b>Mixed, then CoT everywhere.</b> Tülu 3's suite (summer 2024) mixed few-shot for knowledge with zero-shot CoT for math and code; by early 2025 everyone used zero-shot. <a class="chip" href="#s20" title="Slides lec12-chap16-evals § The emergence of zero-shot prompting took time! (L300-L307)">20</a> <a class="chip" href="#s47" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:11:55">47</a> OpenAI's o1 "pushed everybody" to CoT prompting. <a class="chip" href="#s48" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:12:28">48</a></li>
+      <li class="step"><b>Reasoning models.</b> Long CoT before every answer, graded by exact match, almost always at temperature above zero. <a class="chip" href="#s49" title="Ch. 16 Evaluation § Reasoning-Era Evaluation Prompts (L184-L186)">49</a> Tülu 3 used per-benchmark prompts, such as one for MMLU ending "Therefore, the answer is (ANSWER_LETTER)". <a class="chip" href="#s50" title="Ch. 16 Evaluation § Reasoning-Era Evaluation Prompts (L188-L190)">50</a> <a class="chip" href="#s51" title="Slides lec12-chap16-evals § Encouraging the models to reason (L330-L332)">51</a></li>
+    </ol>
+    <p style="margin-top:var(--s3)">The format alone moved scores: few-shot MMLU vs. zero-shot CoT MMLU "could be like eight points". <a class="chip" href="#s52" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:13:00">52</a> MMLU itself is "Internet trivia more than intelligence", though it tracked pretraining knowledge. <a class="chip" href="#s53" title="Slides lec12-chap16-evals § The emergence of zero-shot prompting took time! (L322)">53</a> Sampling settings became part of the eval: Qwen's model cards say "DO NOT use greedy decoding", and the recommended settings are "free" performance. <a class="chip" href="#s54" title="Slides lec12-chap16-evals § Encouraging the models to reason (L361)">54</a> For Olmo 3, every eval was CoT at temperature above zero, 0.6 was about best, and generations ran to 32K tokens. <a class="chip" href="#s55" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:44:06">55</a> <a class="chip" href="#s56" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:46:11">56</a> <a class="chip" href="#s57" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:46:43">57</a> Each run cost "10x the GPU hours" of a non-reasoning model. <a class="chip" href="#s58" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:44:39">58</a> Matching an original paper's settings "takes a lot of resources and engineer time". <a class="chip" href="#s59" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:13:31">59</a></p>
+  </section>
+
+  <section id="grading">
+    <h2>How you grade: log-likelihood, exact match, pass@k</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=343s">05:43</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=374s">06:14</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=405s">06:45</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=436s">07:16</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=468s">07:48</a></p>
+    <p>For a multiple-choice question there are two ways to grade: sample an answer and check it, or compare the log-probabilities of the options. <a class="chip" href="#s60" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L121)">60</a></p>
+    <div class="cards">
+      <div class="card"><p class="label">Log-likelihood scoring</p><p>Compare the probability the model gives each option, either the letter or the full answer. No sampling, deterministic. Standard for pretraining evals, where models cannot answer in a clean format. <a class="chip" href="#s61" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L127-L129)">61</a> <a class="chip" href="#s62" title="Slides lec12-chap16-evals § Grading: log-likelihood vs. exact match (L197-L205)">62</a> <a class="chip" href="#s8" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L124-L125)">8</a></p></div>
+      <div class="card"><p class="label">Generation + exact match</p><p>Sample an answer and extract it. Closer to real use, and standard for post-training since about 2024. Aggregating samples gives majority voting or pass@k. <a class="chip" href="#s8" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L124-L125)">8</a> <a class="chip" href="#s62" title="Slides lec12-chap16-evals § Grading: log-likelihood vs. exact match (L197-L205)">62</a> <a class="chip" href="#s63" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:06:14">63</a></p></div>
+    </div>
+    <p style="margin-top:var(--s3)">Exact match needs rigid suffixes such as "The answer is:" or regular expressions that hunt for the answer, and when the format does not match how the model writes, "scores can plummet". <a class="chip" href="#s64" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L131-L134)">64</a> Format-agnostic grading is rare; LLM judges even became answer extractors. <a class="chip" href="#s64" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L131-L134)">64</a> <a class="chip" href="#s32" title="Slides lec12-chap16-evals § Formatting became fragile as usage became more open-ended (L368-L371)">32</a> <a class="chip" href="#s65" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:14:33">65</a> "If you see one of your evaluation scores drop just dramatically to zero ... normally it's a formatting issue." <a class="chip" href="#s66" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:14:03">66</a></p>
+    <h3>pass@k</h3>
+    <p>pass@k is the probability that at least one of $k$ samples solves the problem. <a class="chip" href="#s67" title="Slides lec12-chap16-evals § The math behind pass@k (L213-L217)">67</a> <a class="chip" href="#s68" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:06:45">68</a> Generating exactly $k$ is a high-variance coin flip per problem, and plugging the sample rate $\hat p$ into $1-(1-\hat p)^k$ is biased. The fix comes from OpenAI's 2021 Codex paper ("this naming branding stuff has been a problem for a while"). <a class="chip" href="#s69" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:07:16">69</a> It samples $n \ge k$ completions, counts the $c$ that pass, and averages: <a class="chip" href="#s67" title="Slides lec12-chap16-evals § The math behind pass@k (L213-L217)">67</a> <a class="chip" href="#s70" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:07:48">70</a></p>
+    <p>$$ \text{pass@}k = \mathop{\mathbb{E}}_{\text{problems}}\left[1 - \frac{\binom{n-c}{k}}{\binom{n}{k}}\right] $$</p>
+    <ul>
+      <li>$\binom{n-c}{k}/\binom{n}{k}$ is the chance that $k$ draws without replacement from your $n$ samples are all failures. <a class="chip" href="#s71" title="Slides lec12-chap16-evals § The math behind pass@k (L225-L227)">71</a></li>
+      <li>Larger $n$ tightens the estimate at the same $k$; the Codex paper used $n = 200$ for $k \le 100$. <a class="chip" href="#s71" title="Slides lec12-chap16-evals § The math behind pass@k (L225-L227)">71</a></li>
+      <li>Higher temperature can hurt pass@1 and help pass@100, so a reported pass@1 depends on $n$ and the sampling settings, not only the model. <a class="chip" href="#s71" title="Slides lec12-chap16-evals § The math behind pass@k (L225-L227)">71</a></li>
+    </ul>
+    <div class="wid" id="pk-demo">
+      <p class="label" style="margin:0">pass@k for one problem: the unbiased estimator vs. the naive one</p>
+      <label for="pk-n">Samples generated, $n$: <output id="pk-n-o"></output></label>
+      <input id="pk-n" type="range" min="1" max="200" step="1" value="20" data-lavish-action>
+      <label for="pk-c">Samples that pass, $c$: <output id="pk-c-o"></output></label>
+      <input id="pk-c" type="range" min="0" max="20" step="1" value="3" data-lavish-action>
+      <label for="pk-k">Attempts allowed, $k$: <output id="pk-k-o"></output></label>
+      <input id="pk-k" type="range" min="1" max="20" step="1" value="5" data-lavish-action>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>pass@1 $= c/n$</dt><dd><output id="pk-p1"></output></dd>
+        <dt>Unbiased pass@k</dt><dd><output id="pk-u"></output></dd>
+        <dt>Naive $1-(1-c/n)^k$</dt><dd><output id="pk-nv"></output></dd>
+      </div>
+      <p id="pk-msg" class="w-msg"></p>
+    </div>
+  </section>
+
+  <section id="code">
+    <h2>Grading in the book's code</h2>
+    <p>The book's rejection-sampling example evaluates on GSM8K with greedy decoding and exact match: a chat-era setup, not a reasoning-era one. <a class="chip" href="#s72" title="Code code/rejection_sampling/train.py (L202-L203)">72</a> <a class="chip" href="#s73" title="Code code/rejection_sampling/train.py (L237-L243)">73</a> <a class="chip" href="#s74" title="Code code/rejection_sampling/config.py (L58)">74</a> Here is how it decides a completion is correct: <a class="chip" href="#s75" title="Code code/rejection_sampling/utils.py (L170-L175)">75</a> <a class="chip" href="#s76" title="Code code/rejection_sampling/utils.py (L182-L193)">76</a> <a class="chip" href="#s77" title="Code code/rejection_sampling/utils.py (L196-L203)">77</a></p>
+    <div id="code-excerpt"><pre><code>def format_gsm8k_gold(answer_field: str) -&gt; str:
+    """GSM8K gold answers live after `####` at the end of the CoT."""
+    gold = (
+        answer_field.split("####", 1)[1].strip() if "####" in answer_field else answer_field.strip()
+    )
+    return gold.replace(",", "")
+
+
+_BOXED_RE = re.compile(r"\\boxed\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}")
+_NUMBER_RE = re.compile(r"-?\d+(?:,\d{3})*(?:\.\d+)?")
+
+
+def extract_gsm8k_answer(text: str) -&gt; str | None:
+    """Pull a numeric answer out of a completion — last `\\boxed{...}` first, then last number."""
+    boxed_matches = _BOXED_RE.findall(text)
+    if boxed_matches:
+        inside = boxed_matches[-1]
+        numbers = _NUMBER_RE.findall(inside)
+        if numbers:
+            return numbers[-1].replace(",", "")
+        return inside.strip().replace(",", "") or None
+
+    numbers = _NUMBER_RE.findall(text)
+    return numbers[-1].replace(",", "") if numbers else None
+
+
+def answers_match(predicted: str | None, gold: str) -&gt; bool:
+    """Numeric comparison with string fallback for GSM8K answers."""
+    if predicted is None:
+        return False
+    try:
+        return abs(float(predicted) - float(gold)) &lt; 1e-6
+    except ValueError:
+        return predicted.strip() == gold.strip()
+</code></pre></div>
+    <ul style="margin-top:var(--s3)">
+      <li><strong>The gold answer</strong> is whatever follows <code>####</code> in GSM8K's reference solution. <a class="chip" href="#s75" title="Code code/rejection_sampling/utils.py (L170-L175)">75</a></li>
+      <li><strong>The prediction</strong> is the last number inside the last <code>\boxed{}</code>, or failing that the last number anywhere. <a class="chip" href="#s76" title="Code code/rejection_sampling/utils.py (L182-L193)">76</a> This is the "regexes hunting for the answer" the slides warn about. <a class="chip" href="#s32" title="Slides lec12-chap16-evals § Formatting became fragile as usage became more open-ended (L368-L371)">32</a> A model that writes its answer and then one more number is graded on the wrong one.</li>
+      <li><strong>Matching</strong> is numeric, with a string fallback; no answer found means wrong. <a class="chip" href="#s77" title="Code code/rejection_sampling/utils.py (L196-L203)">77</a></li>
+      <li><strong>The default test set</strong> is 200 questions. <a class="chip" href="#s78" title="Code code/rejection_sampling/config.py (L15)">78</a> See the noise toy below for what that implies.</li>
+    </ul>
+    <p>The training side of this example is on the <a href="s10_ch09-rejection-sampling.html">Chapter 9 page</a>. I have not run it.</p>
+  </section>
+
+  <section id="harder">
+    <h2>Harder questions, real work, and saturation</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=905s">15:05</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=935s">15:35</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=968s">16:08</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=999s">16:39</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1032s">17:12</a></p>
+    <p>Reasoning models saturated the old suites, and the next generation needed experts: GPQA Diamond, Humanity's Last Exam, FrontierMath, AIME, SWE-Bench, LiveCodeBench, with questions written by grad students, PhDs and professors. <a class="chip" href="#s79" title="Slides lec12-chap16-evals § Reasoning &amp; tool-use pushed the industry to harder tasks (L377-L382)">79</a> <a class="chip" href="#s21" title="Ch. 16 Evaluation (L34)">21</a> Building them "is really, really labor-intensive and they tend to have a lot of little bugs in them". <a class="chip" href="#s80" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:05">80</a></p>
+    <div class="callout"><p class="label">The slides' example: Humanity's Last Exam</p><p><em>What was the rarest noble gas on Earth as a percentage of all terrestrial matter in 2002?</em> Official answer: oganesson. The slide calls it wrong three ways: oganesson is predicted to be a solid, predicted to be reactive, and synthetic. "Past a certain difficulty, verifying the answer key is the bottleneck." <a class="chip" href="#s81" title="Slides lec12-chap16-evals § Reasoning &amp; tool-use pushed the industry to harder tasks (L393-L408)">81</a> In the lecture: "I didn't double-check this. Claude found this." <a class="chip" href="#s82" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:35">82</a></p></div>
+    <p style="margin-top:var(--s3)">Today's frontier evals are end-to-end professional tasks. GDPval's authors average 14 years of industry experience; APEX's work at firms like Goldman and McKinsey. Models run inside products such as Claude Code and Codex CLI. <a class="chip" href="#s23" title="Slides lec12-chap16-evals § Today: evals of real work (L415-L417)">23</a> <a class="chip" href="#s83" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:16:08">83</a> <a class="chip" href="#s84" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:16:39">84</a></p>
+    <h3>Saturation</h3>
+    <p>Every era ends the same way. <a class="chip" href="#s84" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:16:39">84</a> As a benchmark nears its ceiling, only hard and mislabeled items remain, and it stops separating models. <a class="chip" href="#s85" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L252-L254)">85</a> <a class="chip" href="#s86" title="Slides lec12-chap16-evals § Every era ends the same way: saturation (L424)">86</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/benchmark-performance.jpeg">Epoch AI's saturation figure</a>. "We always need to make more." <a class="chip" href="#s87" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:17:12">87</a> For Olmo 3, an eval below 5% or above about 80% was "outside the range of concern". <a class="chip" href="#s88" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:43:05">88</a> In 2024 Lambert was already saying MT-Bench saturates: GPT-4 scores about nine, on about 80 prompts. <a class="chip" href="#s89" title="Stanford CS25: V4 I Aligning Open Language Models @ 00:36:39">89</a></p>
+  </section>
+
+  <section id="agentic">
+    <h2>Agentic evals: the model is one box</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1063s">17:43</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1094s">18:14</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1125s">18:45</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1155s">19:15</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1185s">19:45</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1215s">20:15</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1246s">20:46</a></p>
+    <p>With agents, the system prompt, inference software and infrastructure become part of the eval. A <strong>harness</strong> is a loop with prompts and skills for managing context, tools and credentials. A <strong>sandbox</strong> is a defined world with the task's files and rules, and it needs CPUs as well as GPUs. <a class="chip" href="#s9" title="Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L209-L213)">9</a> <a class="chip" href="#s90" title="Slides lec12-chap16-evals § The agentic pipeline: the model is one piece (L444-L446)">90</a> <a class="chip" href="#s91" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:17:43">91</a> "A score is really a property of the entire system." <a class="chip" href="#s92" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:30:41">92</a> <a class="chip" href="#s93" title="Slides lec12-chap16-evals § Takeaways (L613-L617)">93</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/eval_components_tikz.png">The chapter's diagram</a> of the components, after Florian Brand: "every box influences the final score". <a class="chip" href="#s94" title="Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L216)">94</a> Terminal-Bench is "the most popular evaluation of this era". <a class="chip" href="#s95" title="Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L214)">95</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Part of the system</th><th>What it did to a score</th></tr></thead>
+      <tbody>
+        <tr><td>Harness</td><td>On one ARC-AGI-3 environment, Opus 4.6 scored 0% with no harness and 97.1% with a hand-crafted one <a class="chip" href="#s96" title="Slides lec12-chap16-evals § Harnesses are key (L458-L460)">96</a> <a class="chip" href="#s97" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:19:15">97</a></td></tr>
+        <tr><td>Inference engine</td><td>Three engine bugs held Kimi K2's tool-call success below 20% in vLLM; after fixes, 99.9%, same weights <a class="chip" href="#s10" title="Slides lec12-chap16-evals § Many little things contribute to agentic scores (L467-L471)">10</a> <a class="chip" href="#s98" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:18:14">98</a></td></tr>
+        <tr><td>Hardware</td><td>Scores vary across GPUs; Olmo 3's evals only reproduced on one tensor-parallel setting and batch size <a class="chip" href="#s10" title="Slides lec12-chap16-evals § Many little things contribute to agentic scores (L467-L471)">10</a> <a class="chip" href="#s99" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:22:51">99</a> <a class="chip" href="#s100" title="Appendix C Practical Issues § Evaluation Variance (L69)">100</a></td></tr>
+        <tr><td>Timeouts</td><td>Terminal-Bench 2 reruns with 3-5x longer timeouts move GPT-5.2 by 6 to 15 points <a class="chip" href="#s10" title="Slides lec12-chap16-evals § Many little things contribute to agentic scores (L467-L471)">10</a> <a class="chip" href="#s101" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:20:46">101</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Frontier models are trained in their own harness, so another harness under-reports them; open models are trained to work "in every harness". <a class="chip" href="#s96" title="Slides lec12-chap16-evals § Harnesses are key (L458-L460)">96</a> <a class="chip" href="#s102" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:18:45">102</a> Expect startups to show off domain-specific harnesses. <a class="chip" href="#s97" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:19:15">97</a> Call the same model through different providers and "there could be so many issues". <a class="chip" href="#s103" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:20:15">103</a> A full agentic suite can cost over <span class="usd">$</span>100K. <a class="chip" href="#s93" title="Slides lec12-chap16-evals § Takeaways (L613-L617)">93</a> The harness itself is on the <a href="s14_ch13-tools.html">Chapter 13 page</a>.</p>
+  </section>
+
+  <section id="trust">
+    <h2>Can you trust the number?</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1276s">21:16</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1308s">21:48</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1340s">22:20</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1371s">22:51</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1402s">23:22</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1434s">23:54</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1466s">24:26</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1497s">24:57</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1529s">25:29</a></p>
+    <h3>Noise</h3>
+    <p>With sampling at temperature above zero, re-running the same eval on the same model moves the score. <a class="chip" href="#s104" title="Slides lec12-chap16-evals § Evaluation variance is everywhere (L486-L492)">104</a> <a class="chip" href="#s105" title="Appendix C Practical Issues § Evaluation Variance (L41-L43)">105</a> Olmo 3 measured it: the standard deviation over 3 runs, averaged over 14 models. <a class="chip" href="#s106" title="Appendix C Practical Issues § Evaluation Variance (L46-L63)">106</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:420px">
+      <thead><tr><th>Stability</th><th>Benchmarks (std. dev., points)</th></tr></thead>
+      <tbody>
+        <tr><td>High variance</td><td>GPQA 1.48, AlpacaEval 3 1.24, IFEval 0.88 <a class="chip" href="#s106" title="Appendix C Practical Issues § Evaluation Variance (L46-L63)">106</a></td></tr>
+        <tr><td>Stable</td><td>ZebraLogic 0.56, AIME 24 (avg@32) 0.54, and others <a class="chip" href="#s106" title="Appendix C Practical Issues § Evaluation Variance (L46-L63)">106</a> <a class="chip" href="#s107" title="Appendix C Practical Issues § Evaluation Variance (L55-L63)">107</a></td></tr>
+        <tr><td>Very stable</td><td>LiveCodeBench (avg@10) 0.29, MATH 0.25, MMLU 0.22, PopQA 0.16 <a class="chip" href="#s107" title="Appendix C Practical Issues § Evaluation Variance (L55-L63)">107</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The average is about 0.5 points, so "if a model is only better by half a point ... it's really kind of a coin flip". <a class="chip" href="#s108" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:51:53">108</a> Without averaging, AIME's variance "would be like over five points". <a class="chip" href="#s109" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:52:24">109</a> The fix is avg@k: LiveCodeBench was noisy and cheap, so running it 10 times made it very stable, at proportional cost. <a class="chip" href="#s110" title="Appendix C Practical Issues § Evaluation Variance (L67)">110</a> <a class="chip" href="#s111" title="Slides lec12-chap16-evals § Managing eval noise (L514-L518)">111</a> <a class="chip" href="#s112" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:22:20">112</a> Agentic evals have few tasks and high cost, so their variance goes up. <a class="chip" href="#s113" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:21:48">113</a> <a class="chip" href="#s104" title="Slides lec12-chap16-evals § Evaluation variance is everywhere (L486-L492)">104</a> The rule of thumb: "a ~1-point gap between two press releases is noise". <a class="chip" href="#s111" title="Slides lec12-chap16-evals § Managing eval noise (L514-L518)">111</a> <a class="chip" href="#s99" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:22:51">99</a></p>
+    <div class="wid" id="nz-demo">
+      <p class="label" style="margin:0">Is a gap between two models bigger than run-to-run noise? (a toy)</p>
+      <label for="nz-b">Benchmark, with its run-to-run std. dev. from Olmo 3</label>
+      <select id="nz-b" data-lavish-action>
+        <option value="1.48">GPQA, 1.48</option>
+        <option value="1.24">AlpacaEval 3, 1.24</option>
+        <option value="0.88">IFEval, 0.88</option>
+        <option value="0.56" selected>ZebraLogic, 0.56</option>
+        <option value="0.54">AIME 24 (avg@32), 0.54</option>
+        <option value="0.29">LiveCodeBench (avg@10), 0.29</option>
+        <option value="0.25">MATH, 0.25</option>
+        <option value="0.22">MMLU, 0.22</option>
+      </select>
+      <label for="nz-g">Reported gap between the two models: <output id="nz-g-o"></output></label>
+      <input id="nz-g" type="range" min="0" max="4" step="0.1" value="1" data-lavish-action>
+      <label for="nz-k">Extra reruns averaged per model (on top of the table's setting): <output id="nz-k-o"></output></label>
+      <input id="nz-k" type="range" min="1" max="32" step="1" value="1" data-lavish-action>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Std. dev. of the gap</dt><dd><output id="nz-sd"></output></dd>
+        <dt>Gap in std. devs</dt><dd><output id="nz-z"></output></dd>
+        <dt>Equal models show a gap this big</dt><dd><output id="nz-p"></output></dd>
+      </div>
+      <p id="nz-msg" class="w-msg"></p>
+    </div>
+    <h3>Comparisons across labs</h3>
+    <p>Press-release numbers carry large error bars, because each lab's process is uncontrolled and undocumented. <a class="chip" href="#s11" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L220-L221)">11</a> Labs hillclimb with train, dev and test splits, but nobody says which public benchmarks were held out. <a class="chip" href="#s12" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L222-L224)">12</a> <a class="chip" href="#s114" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:23:54">114</a> Stacks are tuned to internal needs, with rumored "custom prompts" for GSM8K or MATH; we see the outputs, not the inputs. <a class="chip" href="#s115" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L226-L228)">115</a> <a class="chip" href="#s116" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L230-L236)">116</a> <a class="chip" href="#s117" title="Slides lec12-chap16-evals § Why lab-vs-lab comparisons are unreliable (L524-L529)">117</a> Arena is gamed too: Llama 4 had an unreleased version "benchmaxed for LM arena" that ranked "number two overall". <a class="chip" href="#s118" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:21">118</a> Inference-time scaling confounds it further: more tokens buy more score, and budgets are rarely controlled. <a class="chip" href="#s119" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L238-L240)">119</a> <a class="chip" href="#s117" title="Slides lec12-chap16-evals § Why lab-vs-lab comparisons are unreliable (L524-L529)">117</a> Training formats matter too: NuminaMath's <code>\boxed{}</code> and MetaMath's "The answer is:" conflict, and training on both can do worse than either. <a class="chip" href="#s120" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L242-L244)">120</a> <a class="chip" href="#s32" title="Slides lec12-chap16-evals § Formatting became fragile as usage became more open-ended (L368-L371)">32</a></p>
+    <p>The chapter's summary of closed models: some evals are proxies for test sets we cannot see; special system prompts and tokens have unknown effects; and the reporting details are unknown. <a class="chip" href="#s121" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L246-L250)">121</a> Lambert's practical view: only "a gigantic evaluation jump" is convincing; <a class="chip" href="#s122" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:24:26">122</a> what matters for builders is the Pareto frontier of intelligence against price, "the most important plot in evaluation today". <a class="chip" href="#s123" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:25:29">123</a> OpenAI cut its GPT-5.6 Luna prices by 80% to sit on that frontier. <a class="chip" href="#s124" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:24:57">124</a> For Olmo 3 he dropped the average column from results tables as "very misleading". <a class="chip" href="#s125" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:50:19">125</a></p>
+  </section>
+
+  <section id="internal">
+    <h2>How labs use evals internally</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1529s">25:29</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1561s">26:01</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1592s">26:32</a></p>
+    <p>"Every bit as much an art today as it is a science". <a class="chip" href="#s126" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L260)">126</a> "Evals are more of a training target than a monitoring lens." <a class="chip" href="#s127" title="Slides lec12-chap16-evals § What evals are actually for inside labs (L543-L548)">127</a></p>
+    <ul>
+      <li><strong>Many private evals, few public ones.</strong> Labs hillclimb on a few key evals and report the public set at the end; some, like GPT-4's loss-prediction sets, are never public. <a class="chip" href="#s128" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L269-L270)">128</a> The slides say ~50+; the lecture says "50 to 100 or order of hundreds", with 8 to 10 public ones on top. <a class="chip" href="#s127" title="Slides lec12-chap16-evals § What evals are actually for inside labs (L543-L548)">127</a> <a class="chip" href="#s129" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:25:29">129</a></li>
+      <li><strong>Statistical power is the product.</strong> Better evals reduce noise so labs can choose between training runs. <a class="chip" href="#s130" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L282-L283)">130</a> <a class="chip" href="#s131" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:26:01">131</a> <a class="chip" href="#s127" title="Slides lec12-chap16-evals § What evals are actually for inside labs (L543-L548)">127</a></li>
+      <li><strong>Some test sets are true tests, and nobody says which.</strong> MATH and GSM8K have high-quality training splits; if a lab does not track that eval, training on them can be rational. <a class="chip" href="#s132" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L262-L264)">132</a> <a class="chip" href="#s133" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L266-L267)">133</a></li>
+      <li><strong>Evals change with focus.</strong> MMLU, then GPQA; OpenAI built SWE-bench Verified to suit its needs. <a class="chip" href="#s134" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L276-L280)">134</a></li>
+      <li><strong>Humans stay in the loop:</strong> Elo rankings, A/B tests, reward-model agreement. <a class="chip" href="#s135" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L272-L274)">135</a> <a class="chip" href="#s127" title="Slides lec12-chap16-evals § What evals are actually for inside labs (L543-L548)">127</a> See the <a href="s12_ch11-preference-data.html">Chapter 11 page</a>.</li>
+      <li><strong>Small tricks are accepted,</strong> most often one-off prompts for certain evals. <a class="chip" href="#s136" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L286-L287)">136</a></li>
+    </ul>
+    <p>The Olmo 3 process, from his NeurIPS talk: a "gigantic Google Sheet" of about 60 evals pruned to about 20, <a class="chip" href="#s137" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:42:35">137</a> by people who are "almost maniacally obsessed with evals". <a class="chip" href="#s138" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:41:04">138</a> <a class="chip" href="#s139" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:31:13">139</a></p>
+  </section>
+
+  <section id="contam">
+    <h2>Contamination, and agents that game evals</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1623s">27:03</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1655s">27:35</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1686s">28:06</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1717s">28:37</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1750s">29:10</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1780s">29:40</a></p>
+    <p><strong>Contamination</strong> is training on evaluation data, on purpose or not; <strong>decontamination</strong> searches training data for n-gram or fixed-length substring matches (e.g. 50 characters) with the test set. <a class="chip" href="#s13" title="Ch. 16 Evaluation § Contamination (L291-L293)">13</a> <a class="chip" href="#s140" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:27:03">140</a> <a class="chip" href="#s141" title="Slides lec12-chap16-evals § Contamination: Is training on test intentional? (L556-L559)">141</a> The usual route is web scraping: benchmarks sit on crawled pages, and users paste questions into models whose logs become training data. <a class="chip" href="#s142" title="Ch. 16 Evaluation § Contamination (L294-L295)">142</a></p>
+    <ul>
+      <li><strong>Tülu 3's audit</strong> found, by 8-gram overlap, UltraFeedback × TruthfulQA, Evol-CodeAlpaca × HumanEval, NuminaMath × MATH, and WildChat × safety evals. <a class="chip" href="#s143" title="Ch. 16 Evaluation § Contamination (L297-L299)">143</a></li>
+      <li><strong>Random rewards:</strong> RL with random rewards raised some Qwen base models' scores, which "should only increase performance if a model has certain types of data contamination". It confounded much early RLVR work on Qwen 2.5 and 3. <a class="chip" href="#s144" title="Ch. 16 Evaluation § Contamination (L301-L302)">144</a> <a class="chip" href="#s141" title="Slides lec12-chap16-evals § Contamination: Is training on test intentional? (L556-L559)">141</a> Lambert is an author of that paper, Spurious Rewards; he says "This isn't a method, it's an empirical paper". <a class="chip" href="#s145" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:01:39">145</a> In the lecture: "the best way to sell your model is to make data close to the test set". <a class="chip" href="#s146" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:27:35">146</a></li>
+      <li><strong>Responses:</strong> perturbed rewrites (same problem, new numbers) and private test sets such as Scale's leaderboard. <a class="chip" href="#s141" title="Slides lec12-chap16-evals § Contamination: Is training on test intentional? (L556-L559)">141</a> <a class="chip" href="#s147" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:28:06">147</a> High variance on a perturbed set is not proof of contamination; it may only show training on one format. <a class="chip" href="#s14" title="Ch. 16 Evaluation § Contamination (L304-L305)">14</a></li>
+    </ul>
+    <h3>Agents game the eval</h3>
+    <p>"The agents really love shortcuts and will game the evals." <a class="chip" href="#s148" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:28:37">148</a> <a class="chip" href="#s149" title="Slides lec12-chap16-evals § Today&#x27;s models are reward-hack happy and games the evals (L566-L585)">149</a></p>
+    <div class="cards">
+      <div class="card"><p class="label">Observed</p><ul class="tight"><li>Mining git history for the future commit that fixes the bug: one open model, 24% of its SWE-bench trajectories</li><li>Dodging URL blocklists via mirrors, archives and package registries</li><li>Hardcoding expected test outputs</li><li>Abusing test-runner quirks <a class="chip" href="#s149" title="Slides lec12-chap16-evals § Today&#x27;s models are reward-hack happy and games the evals (L566-L585)">149</a></li></ul></div>
+      <div class="card"><p class="label">Defenses</p><ul class="tight"><li>Remove access to everything not needed</li><li>A second, separate sandbox for verification</li><li>A second LLM monitoring the first, which is expensive <a class="chip" href="#s149" title="Slides lec12-chap16-evals § Today&#x27;s models are reward-hack happy and games the evals (L566-L585)">149</a> <a class="chip" href="#s150" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:29:40">150</a></li></ul></div>
+    </div>
+    <p style="margin-top:var(--s3)">"Models trying to find the answer to evals on Hugging Face is a common thing." <a class="chip" href="#s151" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:29:10">151</a> The OpenAI model that broke out of its sandbox to hack Hugging Face is on the <a href="s15_ch14-over-optimization.html#misalign">Chapter 14 page</a>.</p>
+  </section>
+
+  <section id="tooling">
+    <h2>Tooling</h2>
+    <p class="tag">In Lecture 12: <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1780s">29:40</a> · <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1811s">30:11</a></p>
+    <p>Open evaluation tools: Inspect (UK AI Security Institute), LightEval (Hugging Face, behind the Open LLM Leaderboard), EleutherAI's lm-evaluation-harness, Ai2's OLMES, Stanford's HELM and Mosaic's Eval Gauntlet. <a class="chip" href="#s152" title="Ch. 16 Evaluation § Tooling (L313-L318)">152</a> <a class="chip" href="#s153" title="Slides lec12-chap16-evals § Tooling: run your own research-grade evals (L594)">153</a> The newer wave treats evals as environments: Prime Intellect's verifiers and Environments Hub, and Ai2's olmo-eval. "Training and evaluation share the same environment code". <a class="chip" href="#s154" title="Slides lec12-chap16-evals § Tooling: run your own research-grade evals (L605-L607)">154</a> <a class="chip" href="#s155" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:30:11">155</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The book and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>What era are we in?</strong></p><ul>
+      <li><strong>Chapter 16:</strong> three eras, with reasoning and tools "the current era". <a class="chip" href="#s21" title="Ch. 16 Evaluation (L34)">21</a></li>
+      <li><strong>Lecture 12 slides:</strong> four, with reasoning and tools ending in 2026 and "Agents &amp; real work" now. <a class="chip" href="#s6" title="Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)">6</a></li>
+      <li><strong>Lecture 12 (Aug 2026):</strong> evals "are shifting to be end-to-end knowledge work", and the last five years' evals are "fully saturated". <a class="chip" href="#s22" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:04:43">22</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>How far can a benchmark go?</strong></p><ul>
+      <li><strong>Chapter 16:</strong> as a benchmark "approaches 100%", only harder or mislabeled items remain. <a class="chip" href="#s85" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L252-L254)">85</a></li>
+      <li><strong>Slides:</strong> "Most evals saturate at 90-95%, not 100%." <a class="chip" href="#s81" title="Slides lec12-chap16-evals § Reasoning &amp; tool-use pushed the industry to harder tasks (L393-L408)">81</a></li>
+      <li><strong>Lecture 12:</strong> "None of the benchmarks will ever get to 100% because they all have labeling errors." <a class="chip" href="#s156" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:35">156</a></li>
+      <li><strong>Olmo 3 talk (Dec 2025):</strong> above about 80% an eval is already "outside the range of concern". <a class="chip" href="#s88" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:43:05">88</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>Whose numbers can you trust?</strong></p><ul>
+      <li><strong>Chapter 16:</strong> configurations differ "at all of OpenAI, Meta, Anthropic, and Google", but "There are good intentions underpinning the marketing". <a class="chip" href="#s116" title="Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L230-L236)">116</a></li>
+      <li><strong>Olmo 3 talk (Dec 2025):</strong> Qwen is "probably slightly closer to bench maxing"; Anthropic lists few evals and seems not to "care about benchmarks that much". <a class="chip" href="#s157" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:49:18">157</a> <a class="chip" href="#s158" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:49:48">158</a></li>
+      <li><strong>Lecture 12 (Aug 2026):</strong> "pretty skeptical of a lot of the labs comparing stacks"; OpenAI or Anthropic "might train on" Terminal-Bench, "We don't know". <a class="chip" href="#s159" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:23:22">159</a></li>
+      <li><strong>Slides:</strong> "OpenAI &amp; Anthropic are pretty fair, but many companies are more sketch about comparisons." <a class="chip" href="#s117" title="Slides lec12-chap16-evals § Why lab-vs-lab comparisons are unreliable (L524-L529)">117</a></li>
+      <li><strong>Open models talk (Oct 2026):</strong> publicly listed Chinese labs have incentives to look better on benchmarks, "even if the best intention of the researchers there is to be fair". <a class="chip" href="#s160" title="Open Language Models: Overview, Open Source History, Distillation, Risks, &amp; Chinese Labs @ 00:21:17">160</a> <a class="chip" href="#s161" title="Open Language Models: Overview, Open Source History, Distillation, Risks, &amp; Chinese Labs @ 00:21:49">161</a></li>
+    </ul><p>The labs he trusts shift from source to source. The slides' advice holds throughout: "for decisions that matter, <strong>run your own evals</strong>". <a class="chip" href="#s93" title="Slides lec12-chap16-evals § Takeaways (L613-L617)">93</a></p></div>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>Do labs train on test-set training splits?</strong></p><ul>
+      <li><strong>Chapter 16:</strong> training on MATH or GSM8K training sets "could be a practical decision" if a lab does not track that eval. <a class="chip" href="#s133" title="Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L266-L267)">133</a></li>
+      <li><strong>Slides:</strong> the same point, flagged as "rumors from a few years ago, I hear less about this now". <a class="chip" href="#s127" title="Slides lec12-chap16-evals § What evals are actually for inside labs (L543-L548)">127</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>The HLE example was not checked.</strong> The slide states oganesson is wrong three ways; <a class="chip" href="#s81" title="Slides lec12-chap16-evals § Reasoning &amp; tool-use pushed the industry to harder tasks (L393-L408)">81</a> in the lecture he says "Claude found this" and asks to be corrected. <a class="chip" href="#s82" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:35">82</a></li>
+      <li><strong>FLAN and T0, not T5.</strong> The chapter and slides say T0; <a class="chip" href="#s42" title="Ch. 16 Evaluation § Zero-Shot Instruction Following (L167-L169)">42</a> <a class="chip" href="#s43" title="Slides lec12-chap16-evals § Entering the chat era: zero-shot instruction following (L280)">43</a> the caption has "Flan and T5". <a class="chip" href="#s162" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:10:23">162</a></li>
+      <li><strong>The institute's name.</strong> The chapter says "UK Safety Institute", the slides "UK AI Security Institute". <a class="chip" href="#s152" title="Ch. 16 Evaluation § Tooling (L313-L318)">152</a> <a class="chip" href="#s153" title="Slides lec12-chap16-evals § Tooling: run your own research-grade evals (L594)">153</a></li>
+      <li><strong>Tülu 3's timing.</strong> The slide says trained summer 2024; the lecture says made then and released fall 2024. <a class="chip" href="#s20" title="Slides lec12-chap16-evals § The emergence of zero-shot prompting took time! (L300-L307)">20</a> <a class="chip" href="#s47" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:11:55">47</a></li>
+      <li><strong>The variance table.</strong> The slides show 8 of the 14 benchmarks in Appendix C. <a class="chip" href="#s104" title="Slides lec12-chap16-evals § Evaluation variance is everywhere (L486-L492)">104</a> <a class="chip" href="#s106" title="Appendix C Practical Issues § Evaluation Variance (L46-L63)">106</a></li>
+      <li><strong>Captions mishear.</strong> "two or three" is Tülu 3; "01" is o1; "GLUE N" is Qwen; "valves" is evals; "VLM" and "VL M" are vLLM; "AMIE" is AIME; "Code X CLI" is Codex CLI. <a class="chip" href="#s47" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:11:55">47</a> <a class="chip" href="#s48" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:12:28">48</a> <a class="chip" href="#s146" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:27:35">146</a> <a class="chip" href="#s99" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:22:51">99</a> <a class="chip" href="#s98" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:18:14">98</a> <a class="chip" href="#s109" title="How We Built a Leading Reasoning Model (Olmo 3) @ 00:52:24">109</a> <a class="chip" href="#s84" title="How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:16:39">84</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Why did base-model evals need few-shot examples?</summary>
+      <p>Base models are autocomplete and do not know the answer format; the examples show it. <a class="chip" href="#s35" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L61-L62)">35</a> <a class="chip" href="#s36" title="Slides lec12-chap16-evals § Base models (before post-training): few-shot prompting (L142)">36</a></p>
+    </details>
+    <details><summary>Log-likelihood scoring or exact match: which is deterministic, and which is standard in post-training?</summary>
+      <p>Log-likelihood is deterministic; exact match on sampled generations is standard in post-training. <a class="chip" href="#s62" title="Slides lec12-chap16-evals § Grading: log-likelihood vs. exact match (L197-L205)">62</a> <a class="chip" href="#s61" title="Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L127-L129)">61</a></p>
+    </details>
+    <details><summary>With $n = 10$ samples and $c = 10$ passing, what is pass@1? With $c = 0$?</summary>
+      <p>1 and 0. The estimator only matters between those extremes. <a class="chip" href="#s67" title="Slides lec12-chap16-evals § The math behind pass@k (L213-L217)">67</a></p>
+    </details>
+    <details><summary>A press release shows your model 0.8 points ahead on GPQA. What should you conclude?</summary>
+      <p>Very little: GPQA's run-to-run std. dev. is about 1.5, and a ~1-point gap is noise. <a class="chip" href="#s106" title="Appendix C Practical Issues § Evaluation Variance (L46-L63)">106</a> <a class="chip" href="#s111" title="Slides lec12-chap16-evals § Managing eval noise (L514-L518)">111</a></p>
+    </details>
+    <details><summary>Name three parts of an agentic eval, other than the model, that can move the score.</summary>
+      <p>Any of: harness, sandbox, inference engine, hardware, timeouts, grader. <a class="chip" href="#s93" title="Slides lec12-chap16-evals § Takeaways (L613-L617)">93</a> <a class="chip" href="#s10" title="Slides lec12-chap16-evals § Many little things contribute to agentic scores (L467-L471)">10</a></p>
+    </details>
+    <details><summary>Why is RL on random rewards improving a benchmark a warning sign?</summary>
+      <p>Random rewards carry no task signal, so the gain likely comes from contamination in the base model. <a class="chip" href="#s144" title="Ch. 16 Evaluation § Contamination (L301-L302)">144</a></p>
+    </details>
+    <details><summary>In the book's GSM8K grader, what happens if the model writes no number at all?</summary>
+      <p>The extractor returns nothing and the match is false: graded wrong. <a class="chip" href="#s76" title="Code code/rejection_sampling/utils.py (L182-L193)">76</a> <a class="chip" href="#s77" title="Code code/rejection_sampling/utils.py (L196-L203)">77</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The pass@k widget.</strong> Computes the Codex estimator for a single problem as $1-\prod_{i=n-c+1}^{n}(1-k/i)$, which equals $1-\binom{n-c}{k}/\binom{n}{k}$ without huge numbers, and the plug-in $1-(1-c/n)^k$ the slides call biased. <a class="chip" href="#s67" title="Slides lec12-chap16-evals § The math behind pass@k (L213-L217)">67</a> The real metric averages over problems.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The noise widget.</strong> Not Lambert. It treats each model's score as normal with the Appendix C std. dev., <a class="chip" href="#s106" title="Appendix C Practical Issues § Evaluation Variance (L46-L63)">106</a> independent across models and reruns, so the gap's std. dev. is $\sigma\sqrt{2/k}$. It reports how often two <em>equal</em> models would differ by at least the gap (two-sided). It ignores prompt, harness and engine differences, which the chapter says are often bigger, so it understates the uncertainty across labs.</p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>200 questions.</strong> My arithmetic, not Lambert's: on 200 questions at 70% accuracy, the binomial standard error is about $\sqrt{0.7 \cdot 0.3/200} \approx 3.2$ points, so the book's default GSM8K eval cannot separate methods a couple of points apart. <a class="chip" href="#s78" title="Code code/rejection_sampling/config.py (L15)">78</a> Greedy decoding removes run-to-run noise but not this sampling of questions.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the full few-shot and chain-of-thought prompt examples (in the chapter)</li>
+      <li>the Artificial Analysis Pareto plot and the METR figure (on the slides)</li>
+      <li>Appendix C's sections on compute costs and training variance</li>
+    </ul>
+    <p>Next in the course: Lecture 13, "Crafting Model Character &amp; Products", Chapter 17. <a class="chip" href="#s163" title="Slides lec12-chap16-evals § The course so far (L654-L655)">163</a></p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 17 (Crafting Model Character and Products) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 17&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 17</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 16 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 16&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 16</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L22-L23">
+      <blockquote style="margin:0">Evaluation is the set of techniques used to understand the quality and impact of the training processes detailed in this book. Evaluation is normally expressed through benchmarks (examples of popular benchmarks include MMLU, GPQA, SWE-bench, MATH, etc.), which are discrete sets of questions or environments designed to measure a specific property of a model.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L22-L23">Ch. 16 Evaluation (L22-L23)</a> · <a href="https://rlhfbook.com/c/16-evaluation#evaluation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L25-L26">
+      <blockquote style="margin:0">The key to understanding language model evaluation, particularly with post-training, is that the current popular evaluation regimes represent a reflection of the popular training best practices and goals. While challenging evaluations drive progress in language models to new areas, the majority of evaluation is designed around building useful signals for new models.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L25-L26">Ch. 16 Evaluation (L25-L26)</a> · <a href="https://rlhfbook.com/c/16-evaluation#evaluation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="yt:dFafQmClYq4@00:03:40-00:04:11">
+      <blockquote style="margin:0">benchmarks mirror the training goals of their era</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=220s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:03:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L102">
+      <blockquote style="margin:0">Every training decision in this course -- data mixes, hyperparameters, which checkpoint ships -- is made off benchmark numbers.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L102">Slides lec12-chap16-evals § This lecture (L102)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="yt:dFafQmClYq4@00:00:00-00:00:31">
+      <blockquote style="margin:0">This is one of my favorite chapters in the book. It is succinct.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=0s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L129-L134">
+      <blockquote style="margin:0">The key to understanding evals: popular benchmarks are a **reflection of the training best practices of their moment**. - **Chat era** *(2022-23)* -- basic knowledge and chat style - **Multi-skill era** *(2023-24)* -- post-training improves more skills than just chat (math, code, factuality, safety, etc.) - **Reasoning &amp; tools era** *(2024-26)* -- hard math, coding, and reasoning problems, long chains of thought - **Agents &amp; real work** *(now)* -- end-to-end knowledge-work tasks inside products and harnesses</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L129-L134">Slides lec12-chap16-evals § Benchmarks mirror the training goals of their era (L129-L134)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L48-L49">
+      <blockquote style="margin:0">When it comes to evaluation, prompting techniques can have a substantial impact on the performance of the model. Some prompting techniques -- e.g. formatting discussed below -- can make a model's performance drop from 60% to near 0.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L48-L49">Ch. 16 Evaluation § Prompting Formatting (L48-L49)</a> · <a href="https://rlhfbook.com/c/16-evaluation#prompting-formatting">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L124-L125">
+      <blockquote style="margin:0">The former is often called exact match for single attempts, or majority voting when aggregating multiple samples (pass@k is the analogous metric for coding evaluations where functional correctness is tested), and the latter method is called (conditional) log-likelihood scoring, where the conditioning is the prompt. The core difference is that sampling from the underlying probability distribution naturally adds randomness and the log-probabilities that a model outputs over its tokens are static</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L124-L125">Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L124-L125)</a> · <a href="https://rlhfbook.com/c/16-evaluation#few-shot-prompting-and-log-likelihood-scoring">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L209-L213">
+      <blockquote style="margin:0">As models move into agents, the evaluation paradigms are getting increasingly complex. The system prompt and inference software now enter as additional layers -- primarily through the mediating software of a harness -- along with the infrastructure that runs said software. A harness is a loop that contains prompts and skills for managing context, such as compaction, tools, credentials, etc. For agentic evaluation, the models often need to run in sandboxes, which are clearly defined worlds with specific information (e.g. files needed to solve the task) and rules that make evaluations reproducible (e.g. specific tool definitions). Sandboxes increase the complexity of running the model, as usually you now need more CPUs in addition to the GPUs for inference.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L209-L213">Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L209-L213)</a> · <a href="https://rlhfbook.com/c/16-evaluation#the-complexity-of-agentic-evaluations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L467-L471">
+      <blockquote style="margin:0">two labs running \"the same benchmark\" can measure meaningfully different things - **The inference engine can be different**: … three engine bugs held tool-call success **below 20%**; after fixes, **99.9%**. Same weights. So many players have these issues - **Hardware-level differences**: Variance across GPUs is real and a headache. … **Timeouts are crucial on challenging tasks**: models will often timeout on hard tasks -- Terminal-Bench 2 reruns with 3-5× longer timeouts move GPT-5.2 by</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L467-L471">Slides lec12-chap16-evals § Many little things contribute to agentic scores (L467-L471)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L220-L221">
+      <blockquote style="margin:0">Language model evaluations within model announcements from AI companies can only be compared to other press releases with large error bars -- i.e. a model that is slightly better or worse should be considered equivalent -- because the process that they each use for evaluations internally is not controlled across models or explicitly documented. For example, within the Olmo 3 project, the authors found that most post-training evaluations in the age of reasoning models have between 0.25 and 1.5 point standard deviations when the evaluation setup is held constant</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L220-L221">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L220-L221)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L222-L224">
+      <blockquote style="margin:0">Labs hillclimb on evaluations during training to make models more useful, traditionally using a mix of training, development (a.k.a. validation set), and held-out evaluation sets (a.k.a. test set). Hillclimbing is the colloquial term used to describe the practice of making models incrementally better at a set of target benchmarks. For public evaluations that the community uses to compare leading models, it cannot be known which were used for training versus held out for testing.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L222-L224">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L222-L224)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L291-L293">
+      <blockquote style="margin:0">A major issue with current language model practices (i.e. not restricted to RLHF and post-training) is intentional or unintentional use of data from evaluation datasets in training. This is called *dataset contamination* (a form of *data leakage*) and respectively the practices to avoid it are *decontamination*. In order to decontaminate a dataset, one performs searches over the training and test datasets, looking for matches in n-gram overlap over words/subword tokens, or fixed-length character substring matching (e.g., 50 characters)</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L291-L293">Ch. 16 Evaluation § Contamination (L291-L293)</a> · <a href="https://rlhfbook.com/c/16-evaluation#contamination">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L304-L305">
+      <blockquote style="margin:0">new versions of benchmarks are created with slightly perturbed questions from the original (e.g., for MATH [@huang2025math]), in order to see which models were trained to match the original format or questions. High variance on these perturbation benchmarks is not confirmation of contamination, which is difficult to prove. Rather, it could indicate models that were trained with a specific format in mind that may not translate to real world performance.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L304-L305">Ch. 16 Evaluation § Contamination (L304-L305)</a> · <a href="https://rlhfbook.com/c/16-evaluation#contamination">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="yt:dFafQmClYq4@00:00:31-00:01:03">
+      <blockquote style="margin:0">the core thesis of this lecture is that how we measure progress changes over time. And it has to.</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=31s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:00:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L62-L66">
+      <blockquote style="margin:0">Different model types need different strategies. As models get smarter, we need to re-invent the cutting edge of AI. Evaluation is at the core of AI progress and understanding truth of what the models are.</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L62-L66">Slides lec12-chap16-evals § How we measure progress changes over time (L62-L66)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="yt:dFafQmClYq4@00:01:34-00:02:05">
+      <blockquote style="margin:0">post-training researchers are super good at making numbers go up on evaluations. But if we don't have the evaluations, it's going to be hard to do this.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=94s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:01:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L32">
+      <blockquote style="margin:0">**Early chat-phase**: Early models trained with RLHF or preference tuning targeted evaluations focused on capturing the chat performance of a model, especially relative to known strong models such as GPT-4. Early examples include MT-Bench [@zheng2023judging], AlpacaEval [@dubois2024length], and Arena-Hard [@li2024crowdsourced]. These benchmarks replaced human evaluators with LLM-as-a-judge</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L32">Ch. 16 Evaluation (L32)</a> · <a href="https://rlhfbook.com/c/16-evaluation#evaluation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L33">
+      <blockquote style="margin:0">**Multi-skill era**: Over time, common practice established that RLHF can be used to improve more skills than just chat.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L33">Ch. 16 Evaluation (L33)</a> · <a href="https://rlhfbook.com/c/16-evaluation#evaluation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L300-L307">
+      <blockquote style="margin:0">When we trained Tülu 3 (summer 2024), many of our evaluations were a mix of zero-shot and few-shot prompting. … By early 2025, everyone was using zero-shot prompting, and today multi-shot prompting for a post-trained model is very rare, unless the model wasn't trained for it (true in-context learning).</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L300-L307">Slides lec12-chap16-evals § The emergence of zero-shot prompting took time! (L300-L307)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L34">
+      <blockquote style="margin:0">**Reasoning &amp; tools**: The current era for post-training is defined by a focus on challenging reasoning and tool use problems. These include much harder knowledge-intensive tasks such as GPQA Diamond [@rein2023gpqa] and Humanity's Last Exam [@phan2025hle], intricate software engineering tasks such as SWE-Bench+ [@aleithan2024swebenchplus] and LiveCodeBench [@jain2024livecodebench], or challenging math problems exemplified by recent AIME contests.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L34">Ch. 16 Evaluation (L34)</a> · <a href="https://rlhfbook.com/c/16-evaluation#evaluation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="yt:dFafQmClYq4@00:04:43-00:05:13">
+      <blockquote style="margin:0">the evals that people care about are shifting to be end-to-end knowledge work. This is much harder software problems. This is finance, legal. … so many of the evals that we cared about in the last 5 years are just fully saturated.</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=283s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:04:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L415-L417">
+      <blockquote style="margin:0">The frontier evals are **end-to-end professional tasks**: SWE-bench Verified, Terminal-Bench, … Task authors are now **experienced professionals**: GDPVal tasks come from experts averaging **14 years** of industry experience; APEX experts average 7+ years at firms like Goldman and McKinsey -- expert task-writing is the new cost center - And the models aren't evaluated bare: they run **inside harnesses and products** (Claude Code, Codex CLI)</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L415-L417">Slides lec12-chap16-evals § Today: evals of real work (L415-L417)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="yt:AdLgPmcrXwQ@00:35:35-00:36:07">
+      <blockquote style="margin:0">what does beating gp4 exactly mean I we need to get more specific in our valuations because I don't really know if I care too much about a 20 or 30% score and alpaca about 2 because I don't know what it means</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=2135s">Stanford CS25: V4 I Aligning Open Language Models @ 00:35:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="yt:uaZ3yRdYg8A@00:47:14-00:48:16">
+      <blockquote style="margin:0">we don't even feel like Alpaca eval is super representative. Where it's just kind of like too vibey to to measure if the model is really better.</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2834s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:47:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L36-L38">
+      <blockquote style="margin:0">As AI becomes more of an industrialized field, the incentives of evaluation are shifting and becoming multi-stakeholder. Since the release of ChatGPT, private evaluations such as the Scale Leaderboard [@scale2024seal], community-driven evaluations such as Arena [@chiang2024chatbot], and third-party evaluation companies such as Artificial Analysis and Epoch AI have proliferated.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L36-L38">Ch. 16 Evaluation (L36-L38)</a> · <a href="https://rlhfbook.com/c/16-evaluation#evaluation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L73-L75">
+      <blockquote style="margin:0">When Opus 4.6 and GPT-5.3-Codex shipped in the same week (Feb 2026), the headline benchmark deltas were tiny -- and settled nothing about which model to use. What separated them was found through use: usability, product fit, behavior over long agentic tasks.</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L73-L75">Slides lec12-chap16-evals § Frontier evaluation is harder than it ever has been (L73-L75)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:dFafQmClYq4@00:02:05-00:02:37">
+      <blockquote style="margin:0">the evaluations are not capturing what is important to the user, which is this trust, this robustness, how it works in products</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=125s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:02:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L89-L91">
+      <blockquote style="margin:0">The task length frontier models can complete (at 50% success) **doubles roughly every 7 months** -- from seconds-long questions to tasks that take human experts hours … Measuring the frontier now means running hours-long expert tasks, many times over.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L89-L91">Slides lec12-chap16-evals § ...and the tasks we&#x27;re trying to measure keep taking longer (L89-L91)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:dFafQmClYq4@00:02:37-00:03:07">
+      <blockquote style="margin:0">it is almost like that you can you can hill climb faster than you can make the target</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=157s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:02:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L53-L54">
+      <blockquote style="margin:0">The gains from prompting are generally smaller than core areas like improving the data or training algorithms, but they can be substantial in the final product. The bigger takeaway is that when training a strong, leading model, it is easier to break it and cause performance to plummet than it is to find a little bit more performance.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L53-L54">Ch. 16 Evaluation § Prompting Formatting (L53-L54)</a> · <a href="https://rlhfbook.com/c/16-evaluation#prompting-formatting">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L368-L371">
+      <blockquote style="margin:0">Formatting mismatches can take a model from **60% to near 0** [@schulhoff2024prompt] -- it is far easier to lose performance with a prompt than to gain it - Answer extraction is brittle: rigid suffixes (*\"The answer is:\"*) or regexes hunting for the answer anywhere in the text - Formats even conflict across training sets: … Format-agnostic grading takes substantial effort and tinkering -- and was often rare in practice -- LLM-judges became popular even as answer extractors for flexibility</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L368-L371">Slides lec12-chap16-evals § Formatting became fragile as usage became more open-ended (L368-L371)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L235-L236">
+      <blockquote style="margin:0">Prompt in, completion out, grade it. Almost everything that could go wrong was in **how you formatted the prompt**.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L235-L236">Slides lec12-chap16-evals § The early pipeline was simple (L235-L236)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:dFafQmClYq4@00:08:19-00:08:51">
+      <blockquote style="margin:0">the same base LLM with different prompts and different ways of telling the model how to format the answer for the same evaluation could meaningfully change the score</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=499s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:08:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L61-L62">
+      <blockquote style="margin:0">Early language models were only used as intelligent autocomplete. In order to use these models in a more open ended way, multiple examples were shown to the model and then a prompt that is an incomplete phrase. This was called few-shot or in-context learning [@brown2020language], and at the time instruction tuning or RLHF was not involved.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L61-L62">Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L61-L62)</a> · <a href="https://rlhfbook.com/c/16-evaluation#few-shot-prompting-and-log-likelihood-scoring">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L142">
+      <blockquote style="margin:0">Base models can't take a bare or formatted question -- eval prompts carried examples of the patterns (3 to 8+ in-context samples) so the model continues the pattern. Canonical evals: **5-shot MMLU**, **8-shot GSM8K**.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L142">Slides lec12-chap16-evals § Base models (before post-training): few-shot prompting (L142)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:dFafQmClYq4@00:05:13-00:05:43">
+      <blockquote style="margin:0">because these models were generally auto-complete, if you wanted to show them to answer a question, they often didn't know the expected format</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=313s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:05:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L137-L138">
+      <blockquote style="margin:0">a common challenge with few-shot prompting is that models will not follow the format, which is counted as an incorrect answer. When designing an evaluation domain, the number of examples used in-context is often considered a design parameter and ranges from 3 to 8 or more.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L137-L138">Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L137-L138)</a> · <a href="https://rlhfbook.com/c/16-evaluation#few-shot-prompting-and-log-likelihood-scoring">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L142-L143">
+      <blockquote style="margin:0">Within the evolution of few-shot prompting came the idea of including chain-of-thought examples for the model to follow. This comes in the form of examples where the in-context examples have written-out reasoning, such as below (which later was superseded by explicit prompting to generate reasoning steps)</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L142-L143">Ch. 16 Evaluation § Chain-of-Thought Prompting (L142-L143)</a> · <a href="https://rlhfbook.com/c/16-evaluation#chain-of-thought-prompting">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L248-L252">
+      <blockquote style="margin:0">Few-shot examples that show intermediate steps let models reason before answering. When people were still prompting base models, adding CoT made math and reasoning scores jump! This is before modern post-training as well. Soon just appending *\"Let's think step by step\"* to a prompt approximated this behavior.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L248-L252">Slides lec12-chap16-evals § Chain of thought (CoT) emerged to enable progress on harder problems (L248-L252)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="yt:dFafQmClYq4@00:10:23-00:10:54">
+      <blockquote style="margin:0">There's all sorts of like fake bribing to get the models to work harder.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=623s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:10:23</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L167-L169">
+      <blockquote style="margin:0">Over time, as language models became stronger, they evolved to zero-shot evaluation, a.k.a. \"zero-shot learners\" [@wei2021finetuned]. FLAN showed that language models fine-tuned on specific tasks, as a precursor to modern instruction tuning, could generalize to zero-shot questions they were not trained on [@wei2021finetuned] (similar results are also found in T0 [@sanh2021multitask]).</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L167-L169">Ch. 16 Evaluation § Zero-Shot Instruction Following (L167-L169)</a> · <a href="https://rlhfbook.com/c/16-evaluation#zero-shot-instruction-following">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L280">
+      <blockquote style="margin:0">Instruction tuning (FLAN [@wei2021finetuned], T0 [@sanh2021multitask]) and then RLHF changed the way people expected to use models: the models learned to directly answer questions. This, in retrospect, was a huge deal! But not the default.</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L280">Slides lec12-chap16-evals § Entering the chat era: zero-shot instruction following (L280)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:dFafQmClYq4@00:10:54-00:11:25">
+      <blockquote style="margin:0">retroactively, this was a huge deal for the applicability of language models into many situations</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=654s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:10:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L290-L292">
+      <blockquote style="margin:0">**LLM-as-a-judge** emerged as questions became open-ended (and evals imitated RLHF training) - Canonical evals: **MT-Bench** [@zheng2023judging], **AlpacaEval** [@dubois2024length], and the community-scale … MCQ evals like MMLU stayed in the mix (but were in flux, people used them differently) -- now answered zero-shot, sampling the answer letter at temperature 0</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L290-L292">Slides lec12-chap16-evals § Entering the chat era: zero-shot instruction following (L290-L292)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L179-L180">
+      <blockquote style="margin:0">With more open-ended usage, evaluation with sampling from the model became increasingly popular as it mirrors actual usage … any transition to common practice takes a meaningful amount of time, usually year(s) to unfold (e.g. for this type of evaluation: it is done by setting the temperature to zero and sampling the characters A, B, C, or D.).</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L179-L180">Ch. 16 Evaluation § Zero-Shot Instruction Following (L179-L180)</a> · <a href="https://rlhfbook.com/c/16-evaluation#zero-shot-instruction-following">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:dFafQmClYq4@00:11:55-00:12:28">
+      <blockquote style="margin:0">here's the evaluation suite where we did two or three, which we made in summer of 2024 and released in fall of 2024. A mix Our evals were a mix of few-shot prompting, normally for the kind of knowledge more knowledge-related tasks, and some zero-shot prompting with chain of thought</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=715s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:11:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="yt:dFafQmClYq4@00:12:28-00:13:00">
+      <blockquote style="margin:0">OpenAI released their 01 model, which was the first reasoning model. And this really pushed everybody to really exchange the finish changing their prompting to be this chain of thought way</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=748s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:12:28</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L184-L186">
+      <blockquote style="margin:0">With the rise of reasoning models at the end of 2024 and the beginning of 2025, a major change in model behavior was the addition of a long Chain-of-Thought (CoT) reasoning process before every answer. These models no longer needed to be prompted with the canonical phrase \"think step by step,\" … This next evolution of evaluation practices is generation-based (exact-match) evaluation with chain of thought reasoning (and therefore almost always temperature over zero for best performance).</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L184-L186">Ch. 16 Evaluation § Reasoning-Era Evaluation Prompts (L184-L186)</a> · <a href="https://rlhfbook.com/c/16-evaluation#reasoning-era-evaluation-prompts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L188-L190">
+      <blockquote style="margin:0">Tülu 3 was an early seminal paper that details some prompts used for CoT answering on multiple choice questions [@lambert2024t]. Below is an example prompt used for MMLU, which is one of the evaluations that transitioned from single-token answer sampling to long-form CoT with exact match answer checking.</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L188-L190">Ch. 16 Evaluation § Reasoning-Era Evaluation Prompts (L188-L190)</a> · <a href="https://rlhfbook.com/c/16-evaluation#reasoning-era-evaluation-prompts">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L330-L332">
+      <blockquote style="margin:0">Tülu 3's MMLU prompt (a model before reasoning models) → the same MMLU eval as the few-shot era, now long-form CoT with exact-match checking. Modern eval suites can carry **per-benchmark prompts** tuned for formatting etc.</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L330-L332">Slides lec12-chap16-evals § Encouraging the models to reason (L330-L332)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="yt:dFafQmClYq4@00:13:00-00:13:31">
+      <blockquote style="margin:0">the difference between multiple choice few-shot prompting MMLU and zero-shot chain of thought MMLU could be like eight points</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=780s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:13:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L322">
+      <blockquote style="margin:0">Internet trivia more than intelligence -- but it tracked pretraining knowledge well.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L322">Slides lec12-chap16-evals § The emergence of zero-shot prompting took time! (L322)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L361">
+      <blockquote style="margin:0">Sampling settings joined the prompt as part of the eval: reasoning models need **temperature &gt; 0** for their best scores -- … literally say **\"DO NOT use greedy decoding\"**. Read the `generation_config.json`: the recommended settings are \"free\" performance.</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L361">Slides lec12-chap16-evals § Encouraging the models to reason (L361)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:uaZ3yRdYg8A@00:44:06-00:44:39">
+      <blockquote style="margin:0">every single evaluation is COT. And everything is with temperature greater than zero.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2646s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:44:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:uaZ3yRdYg8A@00:46:11-00:46:43">
+      <blockquote style="margin:0">temperature 0.6 is about best for both types of models</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2771s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:46:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:uaZ3yRdYg8A@00:46:43-00:47:14">
+      <blockquote style="margin:0">We ended up using 32K for all of our evaluations.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2803s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:46:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:uaZ3yRdYg8A@00:44:39-00:45:41">
+      <blockquote style="margin:0">each eval suite eval run of Olmo 3 will take 10x the GPU hours to a non-reasoning model of the size or even more</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2679s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:44:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="yt:dFafQmClYq4@00:13:31-00:14:03">
+      <blockquote style="margin:0">it takes a lot of resources and engineer time to actually make sure that you're getting the evaluation settings to match the original paper</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=811s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:13:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L121">
+      <blockquote style="margin:0">one could either generate a token based on some sampling parameters and see if the answer is correct, A, B, C, or D … or one could look at the log-probabilities of each token and mark the task as correct if the correct answer is more likely.</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L121">Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L121)</a> · <a href="https://rlhfbook.com/c/16-evaluation#few-shot-prompting-and-log-likelihood-scoring">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L127-L129">
+      <blockquote style="margin:0">Log-likelihood scoring has two potential implementations -- first, one could look at the probability of the letter (A) or the answer \"The Mean Value Theorem.\" … Log-likelihood scoring is more common in pretraining evaluation, where models lack the question-and-answer format needed for exact match, while exact match is standard in post-training</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L127-L129">Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L127-L129)</a> · <a href="https://rlhfbook.com/c/16-evaluation#few-shot-prompting-and-log-likelihood-scoring">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L197-L205">
+      <blockquote style="margin:0">**Log-likelihood scoring**: compare the probability the model assigns each answer option -- either just the letter `A`, or the full answer string. No sampling, fully deterministic. … **Generation + exact match**: sample a completion, extract the answer. Mirrors real usage -- and is standard for post-training since ~2024. … Generation and extraction gave rise to answer extraction formatting bugs, which only became more complex with agentic models today.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L197-L205">Slides lec12-chap16-evals § Grading: log-likelihood vs. exact match (L197-L205)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:dFafQmClYq4@00:06:14-00:06:45">
+      <blockquote style="margin:0">you could sample from the model which is temperature above zero induces this kind of randomness in the model, but it's much closer to real usage</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=374s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:06:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L131-L134">
+      <blockquote style="margin:0">Exact match has different problems, such as requiring rigid format suffixes (e.g., `The answer is:`) or using regular expressions to detect answers anywhere in generated text (e.g., looking for `(C)` or the answer string itself). If the evaluation format does not match how the model generates, scores can plummet. … Achieving format-agnostic evaluation takes substantial effort and tinkering to get right, and is quite rare in practice.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L131-L134">Ch. 16 Evaluation § Few-Shot Prompting and Log-Likelihood Scoring (L131-L134)</a> · <a href="https://rlhfbook.com/c/16-evaluation#few-shot-prompting-and-log-likelihood-scoring">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="yt:dFafQmClYq4@00:14:33-00:15:05">
+      <blockquote style="margin:0">this even pushed people to use LLMs as a judge to extract the answer</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=873s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:14:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:dFafQmClYq4@00:14:03-00:14:33">
+      <blockquote style="margin:0">formatting was a nightmare. So, if you see one of your evaluation scores drop just dramatically to zero from like 50% or something, normally it's a formatting issue.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=843s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:14:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L213-L217">
+      <blockquote style="margin:0">pass@k = the probability that **at least one of $k$ samples** solves the problem. The naive route -- generate exactly $k$, report whether any passed -- is a **high-variance** coin flip per problem, and plugging a small-sample success rate into $1-(1-\hat{p})^k$ is **biased**. The fix, from the Codex paper: sample $n \geq k$ completions, count the $c$ that pass, and average an unbiased estimator over problems.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L213-L217">Slides lec12-chap16-evals § The math behind pass@k (L213-L217)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="yt:dFafQmClYq4@00:06:45-00:07:16">
+      <blockquote style="margin:0">pass at K roughly is a probability that at least one sample of K, one out of K solves the problem correctly</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=405s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:06:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="yt:dFafQmClYq4@00:07:16-00:07:48">
+      <blockquote style="margin:0">OpenAI had a paper in 2021 that talked about their Codex models and this naming branding stuff has been a problem for a while</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=436s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:07:16</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="yt:dFafQmClYq4@00:07:48-00:08:19">
+      <blockquote style="margin:0">when you see a pass at K problem, it normally is with a higher N than the K</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=468s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:07:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L225-L227">
+      <blockquote style="margin:0">$\binom{n-c}{k}\big/\binom{n}{k}$ is the chance that $k$ draws (without replacement) from your $n$ samples are **all failures** - Larger $n$ → tighter estimate at the same $k$; the paper used $n=200$ for $k \leq 100$ - The knobs interact: **higher temperature can hurt pass@1 but help pass@100** -- so a reported \"pass@1\" depends on $n$ and the sampling settings, not just the model</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L225-L227">Slides lec12-chap16-evals § The math behind pass@k (L225-L227)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/train.py#L202-L203">
+      <blockquote style="margin:0">def evaluate(cfg: Config, model, tokenizer, console: Console) -&gt; float: \"\"\"Greedy-decode exact-match eval on the GSM8K test split.\"\"\"</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/train.py#L202-L203">Code code/rejection_sampling/train.py (L202-L203)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/train.py#L237-L243">
+      <blockquote style="margin:0">output_ids = model.generate( **inputs, max_new_tokens=cfg.eval_max_new_tokens, do_sample=False,</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/train.py#L237-L243">Code code/rejection_sampling/train.py (L237-L243)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/config.py#L58">
+      <blockquote style="margin:0">eval_temperature: float = 0.0</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/config.py#L58">Code code/rejection_sampling/config.py (L58)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/utils.py#L170-L175">
+      <blockquote style="margin:0">\"\"\"GSM8K gold answers live after `####` at the end of the CoT.\"\"\"</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/utils.py#L170-L175">Code code/rejection_sampling/utils.py (L170-L175)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/utils.py#L182-L193">
+      <blockquote style="margin:0">\"\"\"Pull a numeric answer out of a completion — last `\\boxed{...}` first, then last number.\"\"\"</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/utils.py#L182-L193">Code code/rejection_sampling/utils.py (L182-L193)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/utils.py#L196-L203">
+      <blockquote style="margin:0">\"\"\"Numeric comparison with string fallback for GSM8K answers.\"\"\" if predicted is None: return False</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/utils.py#L196-L203">Code code/rejection_sampling/utils.py (L196-L203)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/rejection_sampling/config.py#L15">
+      <blockquote style="margin:0">max_test_samples: int | None = 200</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/rejection_sampling/config.py#L15">Code code/rejection_sampling/config.py (L15)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L377-L382">
+      <blockquote style="margin:0">Reasoning models saturated the old eval suites, so the next generation came: - **Knowledge**: GPQA Diamond [@rein2023gpqa], Humanity's Last Exam [@phan2025hle], FrontierMath - **Math**: recent AIME contests - **Software**: SWE-Bench (+ variants), LiveCodeBench [@jain2024livecodebench] - Question sourcing moved from the internet to **grad students, PhDs, and professors** -- writing questions became expert labor</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L377-L382">Slides lec12-chap16-evals § Reasoning &amp; tool-use pushed the industry to harder tasks (L377-L382)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="yt:dFafQmClYq4@00:15:05-00:15:35">
+      <blockquote style="margin:0">building these evaluations is really, really labor-intensive and they tend to have a lot of little bugs in them</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=905s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L393-L408">
+      <blockquote style="margin:0">What was the rarest noble gas on Earth as a percentage of all terrestrial matter in 2002? Official answer: **Oganesson** … The official answer is wrong three ways: oganesson is **not a gas** (predicted solid), **not noble** (predicted reactive), and **not terrestrial** (synthetic, ~5 atoms ever made -- first synthesized in 2002). … Past a certain difficulty, **verifying the answer key is the bottleneck** -- expert-written no longer means correct. Still, incorrect labels are a common problem in evals! Most evals saturate at 90-95%, not 100%.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L393-L408">Slides lec12-chap16-evals § Reasoning &amp; tool-use pushed the industry to harder tasks (L393-L408)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="yt:dFafQmClYq4@00:15:35-00:16:08">
+      <blockquote style="margin:0">I didn't double-check this. Claude found this. So, if this is a mistake by Claude, let me know</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=935s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="yt:dFafQmClYq4@00:16:08-00:16:39">
+      <blockquote style="margin:0">today evals are moving towards real work</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=968s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:16:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="yt:dFafQmClYq4@00:16:39-00:17:12">
+      <blockquote style="margin:0">you evaluate the latest Claude model in Claude code, you evaluate the latest OpenAI model inside of Code X CLI. … Every set of benchmarks somebody has proposed have been solved by language models.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=999s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:16:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L252-L254">
+      <blockquote style="margin:0">the in-vogue benchmarks of each era are solved very quickly. The common term to describe this dynamic at a per-benchmark level is saturation. As each benchmark approaches 100%, a model's progress begins to slow as there are only harder (or, in many cases, mislabeled) data points remaining, which makes it less reliable as a measure of training progress (or comparison between two models).</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L252-L254">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L252-L254)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L424">
+      <blockquote style="margin:0">Benchmarks are consumable. As scores approach the ceiling, only the hardest (and mislabeled) items remain, and the benchmark stops separating models.</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L424">Slides lec12-chap16-evals § Every era ends the same way: saturation (L424)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="yt:dFafQmClYq4@00:17:12-00:17:43">
+      <blockquote style="margin:0">the assumption should be that eventual benchmarks will keep getting solved, and we always need to make more</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1032s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:17:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:uaZ3yRdYg8A@00:43:05-00:43:35">
+      <blockquote style="margin:0">if evaluation is less than 5% or really above like 80%, it's outside the range of concern.</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2585s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:43:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:AdLgPmcrXwQ@00:36:39-00:37:12">
+      <blockquote style="margin:0">if our model is getting really good it's it's just like it becomes saturated like gp4 only gets to about nine and there's only about 80 prompts in the evaluation set</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=AdLgPmcrXwQ&amp;t=2199s">Stanford CS25: V4 I Aligning Open Language Models @ 00:36:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L444-L446">
+      <blockquote style="margin:0">A **harness** -- the loop of prompts, tools, and context management around the model -- runs in a **sandbox**: a reproducible world with the files, tools, and rules of the task. Add hardware and timeouts, and hours-long trajectories get graded by regex or an LLM judge.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L444-L446">Slides lec12-chap16-evals § The agentic pipeline: the model is one piece (L444-L446)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="yt:dFafQmClYq4@00:17:43-00:18:14">
+      <blockquote style="margin:0">Two key ones are the harness, which is the software that manages the model, the prompts, the context management, the tools it has access to, and the sandbox.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1063s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:17:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:dFafQmClYq4@00:30:41-00:31:13">
+      <blockquote style="margin:0">a score is really a property of the entire system. … evaluations will always be gamed to some extent because there's so much potential economic upside</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1841s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:30:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L613-L617">
+      <blockquote style="margin:0">Benchmarks mirror the **training goals of their era** -- and every era ends in saturation. - A score is a **property of the whole system**: prompt, sampling, engine, harness, sandbox, hardware, grader. The model is one box. - Expect **±1 point of pure noise**; treat cross-lab comparisons as directional at best. - Contamination, gaming, etc. all bend single numbers -- for decisions that matter, **run your own evals** and control the system. - Full evaluation is expensive! In-depth runs of a modern agentic suite can cost **&gt;<span class="usd">$</span>100K** *(per Florian Brand)*</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L613-L617">Slides lec12-chap16-evals § Takeaways (L613-L617)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L216">
+      <blockquote style="margin:0">The components of running a modern, agentic evaluation -- every box influences the final score. Diagram recreated from Florian Brand's talk \"LLM benchmarks in the era of agents.\"</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L216">Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L216)</a> · <a href="https://rlhfbook.com/c/16-evaluation#the-complexity-of-agentic-evaluations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L214">
+      <blockquote style="margin:0">read about Terminal-Bench, the most popular evaluation of this era, in its original version [@tbench2025] and the harder Terminal-Bench 2.0</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L214">Ch. 16 Evaluation § The Complexity of Agentic Evaluations (L214)</a> · <a href="https://rlhfbook.com/c/16-evaluation#the-complexity-of-agentic-evaluations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L458-L460">
+      <blockquote style="margin:0">Frontier models are **trained in their own harness** -- evaluating them in a different one under-reports capability - The extreme case, … on one environment, Opus 4.6 scores **0% with no harness and 97.1%** with a hand-crafted one - This is why \"same model, different agent product\" produces wildly different scores</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L458-L460">Slides lec12-chap16-evals § Harnesses are key (L458-L460)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:dFafQmClYq4@00:19:15-00:19:45">
+      <blockquote style="margin:0">Opus 4.6 got 0%, and with a custom harness it got 97.1%. … There will be cases where a lot of startups have harnesses specialized to one domain as their way of showing success.</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1155s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:19:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:dFafQmClYq4@00:18:14-00:18:45">
+      <blockquote style="margin:0">whether or not you're evaluating a model on VLM or SG Lang or an internal inference engine can have a big impact</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1094s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:18:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:dFafQmClYq4@00:22:51-00:23:22">
+      <blockquote style="margin:0">we can only run our evals on a specific tensor parallel setting and batch size with VL M … A practical rule, any one point of valve difference, if you're saying a model is better because only one point, that just does not do it justice</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1371s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:22:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-c-practical.md#L69">
+      <blockquote style="margin:0">We also see sources of variance in evaluation settings like batch size, tensor parallel settings within vLLM (e.g., TP=2 for baselines), and other sensitive numerics for sampling long generations across infrastructure. Variance is everywhere with reasoners.</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-c-practical.md?plain=1#L69">Appendix C Practical Issues § Evaluation Variance (L69)</a> · <a href="https://rlhfbook.com/c/appendix-c-practical#evaluation-variance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="yt:dFafQmClYq4@00:20:46-00:21:16">
+      <blockquote style="margin:0">you need to run all of your valves on Hopper GPUs with a specific batch size … For very long-running agents, the timeout is very important.</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1246s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:20:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="yt:dFafQmClYq4@00:18:45-00:19:15">
+      <blockquote style="margin:0">the OpenAI's and Google's are trained to work in their own harness from the start. And this is different than open models, where open models are trained to work in every harness.</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1125s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:18:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="yt:dFafQmClYq4@00:20:15-00:20:46">
+      <blockquote style="margin:0">If you go to open router and call a bunch of tools across models, the variance across providers for the same model, there could be so many issues.</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1215s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:20:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L486-L492">
+      <blockquote style="margin:0">Sampling at temperature &gt; 0 means **re-running the same eval on the same model moves the score**. During Olmo 3 we measured it: std. dev. across 3 runs of 14 models, per benchmark → Most reasoning-era evals sit between **0.25 and 1.5 points of noise** -- before anyone changes a prompt or a sampling setting. Could be higher with agentic evals!</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L486-L492">Slides lec12-chap16-evals § Evaluation variance is everywhere (L486-L492)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-c-practical.md#L41-L43">
+      <blockquote style="margin:0">One underappreciated challenge in post-training is evaluation variance, especially with the rise of reasoning models that need to use sampling with temperatures above 0 to get the best evaluation scores. With any sampling from models, the outputs become more variable. Different benchmarks have vastly different stability characteristics, due to the variance in difficulty of the prompts, the number of prompts in the evaluation set, the brittleness of the models being trained, etc.</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-c-practical.md?plain=1#L41-L43">Appendix C Practical Issues § Evaluation Variance (L41-L43)</a> · <a href="https://rlhfbook.com/c/appendix-c-practical#evaluation-variance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-c-practical.md#L46-L63">
+      <blockquote style="margin:0">The table below shows the standard deviation of each evaluation, computed as the mean of the standard deviation from 3 runs of 14 models (take the standard deviation of each model, then average per evaluation): | Category | Benchmark | Std. Dev. | |----------|-----------|-----------| | High Variance | GPQA | 1.48 | | | AlpacaEval 3 | 1.24 | | | IFEval | 0.88 | | Stable | ZebraLogic | 0.56 |</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-c-practical.md?plain=1#L46-L63">Appendix C Practical Issues § Evaluation Variance (L46-L63)</a> · <a href="https://rlhfbook.com/c/appendix-c-practical#evaluation-variance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-c-practical.md#L55-L63">
+      <blockquote style="margin:0">| | AIME 24 (Avg@32) | 0.54 | … | Very Stable | LiveCodeBench (Avg@10) | 0.29 | | | MBPPPlus | 0.27 | | | MATH | 0.25 | | | MMLU | 0.22 | | | PopQA | 0.16 |</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-c-practical.md?plain=1#L55-L63">Appendix C Practical Issues § Evaluation Variance (L55-L63)</a> · <a href="https://rlhfbook.com/c/appendix-c-practical#evaluation-variance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="yt:uaZ3yRdYg8A@00:51:53-00:52:55">
+      <blockquote style="margin:0">really the average standard deviation across each evaluation is about 0.5 points. So that should tell you that if a model is only better by half a point on these evaluations, it's really kind of a coin flip whether or not it is actually better.</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=3113s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:51:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="yt:uaZ3yRdYg8A@00:52:24-00:53:26">
+      <blockquote style="margin:0">If we don't do averaging, the variance for AMIE would be like over five points which is just untenable.</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=3144s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:52:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-c-practical.md#L67">
+      <blockquote style="margin:0">Some evaluations, such as LiveCodeBench, were both noisy and cheap (via few prompts in the set), so by re-running the evaluation 10 times per model, the evaluation could move from the high-variance set to a stable setting. This could be done for every evaluation, but it can easily balloon costs.</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-c-practical.md?plain=1#L67">Appendix C Practical Issues § Evaluation Variance (L67)</a> · <a href="https://rlhfbook.com/c/appendix-c-practical#evaluation-variance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L514-L518">
+      <blockquote style="margin:0">There are many things you need to do to manage eval noise (it's kind of the whole job sometimes). … **avg@k instead of pass@k**: E.g. in Tülu 3 LiveCodeBench was noisy *and* cheap -- rerunning it 10× moved it from high-variance to very stable. Can work for any eval, is proportionately expensive. - Variance also leaks in from infrastructure: **batch size, tensor-parallel settings, numerics** of long generations … Practical rule: a **~1-point gap between two press releases is noise**</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L514-L518">Slides lec12-chap16-evals § Managing eval noise (L514-L518)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="yt:dFafQmClYq4@00:22:20-00:22:51">
+      <blockquote style="margin:0">you burn more compute to lower the variance</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1340s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:22:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="yt:dFafQmClYq4@00:21:48-00:22:20">
+      <blockquote style="margin:0">especially in the agentic evals when the number of tasks is so low and the cost is so high, the variance is going to be going up</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1308s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:21:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="yt:dFafQmClYq4@00:23:54-00:24:26">
+      <blockquote style="margin:0">We don't know what any of these labs held out validation sets are.</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1434s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:23:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L226-L228">
+      <blockquote style="margin:0">As evaluation scores have become central components of corporate marketing schemes, their implementations within companies have drifted. There are rumors of major AI labs using \"custom prompts\" for important evaluations like GSM8K or MATH. These practices evolve rapidly.</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L226-L228">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L226-L228)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L230-L236">
+      <blockquote style="margin:0">Language model evaluation stacks are perceived as marketing because the evaluations have no hard source of truth. … When results are shared, we get output in the form of the numbers a lab got for their models, but not all the inputs to that function. The inputs are very sensitive configurations, and they're different at all of OpenAI, Meta, Anthropic, and Google. … Focusing efforts on your own models is the only way to get close to repeatable evaluation techniques. There are good intentions underpinning the marketing, starting with the technical teams.</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L230-L236">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L230-L236)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L524-L529">
+      <blockquote style="margin:0">Why I started being a bit wary of corporate announcements comparing to competitors. OpenAI &amp; Anthropic are pretty fair, but many companies are more sketch about comparisons. - Each lab's eval stack is **tuned to its internal needs**: custom prompts for key benchmarks, undisclosed formats, different engines - We see the outputs of a sometimes complex function - Nobody discloses which public benchmarks were **held out vs. hillclimbed** -- train/dev/test hygiene is invisible from outside - Inference-time scaling confounds everything: more tokens buys more score, and token budgets are rarely controlled</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L524-L529">Slides lec12-chap16-evals § Why lab-vs-lab comparisons are unreliable (L524-L529)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:y04JhXpiI4s@00:20:21-00:20:51">
+      <blockquote style="margin:0">they also had a closed weight version which was benchmaxed for LM arena and it was the number two overall and they did not release this version</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1221s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L238-L240">
+      <blockquote style="margin:0">Another example of confusion when comparing evaluations from multiple laboratories is the addition of inference-time scaling to evaluation comparisons. Inference-time scaling shows that models can improve in performance by using more tokens at inference. Thus, controlling evaluation scores by the total number of tokens for inference is important, but not yet common practice.</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L238-L240">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L238-L240)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L242-L244">
+      <blockquote style="margin:0">two popular, open math datasets NuminaMath [@li2024numinamath] and MetaMath [@yu2023metamath] conflict with each other in training due to small differences in how the answers are formatted -- Numina puts the answer in `\boxed{XYZ}` and MetaMath puts the answer after `The answer is: XYZ` -- training on both can make performance worse than with just one. Strong models are trained to be able to function with multiple formats, but they generally have a strongest format.</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L242-L244">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L242-L244)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L246-L250">
+      <blockquote style="margin:0">We do not know or necessarily have the key test sets that labs are climbing on, so some evaluations are proxies. - Inference of frontier models is becoming more complicated with special system prompts, special tokens, etc., and we don't know how it impacts evaluations, and - We do not know all the formats and details used to numerically report the closed evaluations.</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L246-L250">Ch. 16 Evaluation § Why Many External Evaluation Comparisons Are Unreliable (L246-L250)</a> · <a href="https://rlhfbook.com/c/16-evaluation#why-many-external-evaluation-comparisons-are-unreliable">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="yt:dFafQmClYq4@00:24:26-00:24:57">
+      <blockquote style="margin:0">it's only when there's a gigantic evaluation jump, for example, Claude Opus 5 and Claude Fable 5, where you're like, okay, those are surely good models. These small gains don't do a ton.</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1466s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:24:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="yt:dFafQmClYq4@00:25:29-00:26:01">
+      <blockquote style="margin:0">this is the most important plot in evaluation today is every evaluation is a measure of intelligence and price</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1529s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:25:29</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:dFafQmClYq4@00:24:57-00:25:29">
+      <blockquote style="margin:0">OpenAI cut the prices of their GPT-5.6 Luna models by 80% in order to dominate this Pareto frontier</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1497s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:24:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="yt:uaZ3yRdYg8A@00:50:19-00:50:51">
+      <blockquote style="margin:0">doing an average column is very misleading. … So taking this average I felt like is very misleading and we stopped doing it for our models</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=3019s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:50:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L260">
+      <blockquote style="margin:0">Evaluation of frontier language models is every bit as much an art today as it is a science</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L260">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L260)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L543-L548">
+      <blockquote style="margin:0">Evals are more of a training target than a monitoring lens. - Labs hillclimb on ~50+ prioritized evals and report the public suite (subset, maybe not even the training target) at the end - The real product of a good internal eval is **statistical power to decide between models** - Sometimes the \"test set\" is just good data (rumors from a few years ago, I hear less about this now): MATH and GSM8K train splits are high-quality and crucial at a time -- if a lab doesn't track that eval, training on them is a rational choice - Human A/B testing and Elo stay in the loop for what benchmarks can't measure</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L543-L548">Slides lec12-chap16-evals § What evals are actually for inside labs (L543-L548)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L269-L270">
+      <blockquote style="margin:0">Leading AI laboratories hillclimb by focusing on a few key evaluations and report scores on the core public set at the end. The key point is that some of their evaluations for tracking progress, such as the datasets for cross-entropy loss predictions in scaling from the GPT-4 report [@achiam2023gpt], are often not public.</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L269-L270">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L269-L270)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s129" data-cite="yt:dFafQmClYq4@00:25:29-00:26:32">
+      <blockquote style="margin:0">every frontier lab has 50 to 100 or order of hundreds of evals that they can look at, many of which are built up internally for hill climbing. They also have these smaller say eight to 10 evaluations which are the current popular public evals.</blockquote>
+      <figcaption><span class="chip">129</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1529s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:25:29</a></figcaption>
+    </figure>
+    <figure class="callout" id="s130" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L282-L283">
+      <blockquote style="margin:0">The key capability that improving evaluations internally has on downstream training is **improving the statistical power when comparing training runs**. By changing evaluations, these labs reduce the noise on their prioritized signals in order to make more informed training decisions.</blockquote>
+      <figcaption><span class="chip">130</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L282-L283">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L282-L283)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s131" data-cite="yt:dFafQmClYq4@00:26:01-00:26:32">
+      <blockquote style="margin:0">the real goal of evaluation is for in the labs to have statistical power deciding between model weights and training runs</blockquote>
+      <figcaption><span class="chip">131</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1561s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:26:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s132" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L262-L264">
+      <blockquote style="margin:0">Different groups choose different evaluations to maintain independence on, i.e. making them a true test set, but no one discloses which ones they choose. For example, popular reasoning evaluations MATH and GSM8K both have training sets with prompts that can easily be used to improve performance. Improving performance with the prompts from the same distribution is very different than generalizing to these tasks by training on general math data.</blockquote>
+      <figcaption><span class="chip">132</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L262-L264">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L262-L264)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s133" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L266-L267">
+      <blockquote style="margin:0">In fact, these *training sets* contain very high-quality data so models would benefit from training on them. If these companies are *not* using the corresponding evaluation as a core metric to track, training on the evaluation set could be a practical decision as high-quality data is a major limiting factor of model development.</blockquote>
+      <figcaption><span class="chip">133</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L266-L267">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L266-L267)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s134" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L276-L280">
+      <blockquote style="margin:0">At one point one evaluation of focus was MMLU. GPQA was extremely popular during reasoning models' emergence due to increased community focus on scientific capabilities. Labs will change the evaluations to make them better suited to their needs, such as OpenAI releasing SWE-bench Verified [@openai2024swebench].</blockquote>
+      <figcaption><span class="chip">134</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L276-L280">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L276-L280)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s135" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L272-L274">
+      <blockquote style="margin:0">The post-training evaluations are heavily co-dependent on human evaluation. Human evaluation for generative language models yields Elo rankings (popular in early Anthropic papers such as Constitutional AI), and human evaluation for reward models shows agreement. These can also be obtained by serving two different models to users with an A/B testing window</blockquote>
+      <figcaption><span class="chip">135</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L272-L274">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L272-L274)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s136" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L286-L287">
+      <blockquote style="margin:0">Evaluating language models today involves a moderate amount of generating tokens (rather than just looking at log probabilities of answers) and therefore compute spend. It is accepted that small tricks are used by frontier labs to boost performance on many tasks -- the most common explanation is one-off prompts for certain evaluations.</blockquote>
+      <figcaption><span class="chip">136</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L286-L287">Ch. 16 Evaluation § How Labs Actually Use Evaluations Internally to Improve Models (L286-L287)</a> · <a href="https://rlhfbook.com/c/16-evaluation#how-labs-actually-use-evaluations-internally-to-improve-models">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s137" data-cite="yt:uaZ3yRdYg8A@00:42:35-00:43:05">
+      <blockquote style="margin:0">you end up making a gigantic Google Sheet. I think this had about 60 evals in it and we prune this down to about 20.</blockquote>
+      <figcaption><span class="chip">137</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2555s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:42:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s138" data-cite="yt:uaZ3yRdYg8A@00:41:04-00:41:34">
+      <blockquote style="margin:0">I called the title of my eval suite that good researchers obsess with evals. And it's really true. I think whenever I look at the people at AI2, the people I respect the most are almost maniacally obsessed with evals.</blockquote>
+      <figcaption><span class="chip">138</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2464s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:41:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s139" data-cite="yt:dFafQmClYq4@00:31:13-00:31:43">
+      <blockquote style="margin:0">this talk I gave at NeurIPS, which was about why researchers obsess over evals</blockquote>
+      <figcaption><span class="chip">139</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1873s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:31:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s140" data-cite="yt:dFafQmClYq4@00:27:03-00:27:35">
+      <blockquote style="margin:0">contamination is when somebody either intentionally or unintentionally trains on the evaluation test set when training the model</blockquote>
+      <figcaption><span class="chip">140</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1623s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:27:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s141" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L556-L559">
+      <blockquote style="margin:0">**Decontamination** = n-gram / substring search between training and test sets to remove overlap and eval scores being due to memorization not generalization … A subtle tell on some contamination: RL with **random rewards** improving Qwen benchmarks [@shao2025spurious] -- only explicable with contamination in the base model; a real confound in early RLVR research … Ecosystem response: perturbed benchmark rewrites (same problem, new numbers) to catch models trained on the original [@huang2025math] or private leaderboards/test sets (can't cheat on them!)</blockquote>
+      <figcaption><span class="chip">141</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L556-L559">Slides lec12-chap16-evals § Contamination: Is training on test intentional? (L556-L559)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s142" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L294-L295">
+      <blockquote style="margin:0">There are many ways that data can become contaminated, but the most common is from scraping of training data for multiple stages from the web. Benchmarks are often listed on public web domains that are crawled, or users pass questions into models which can then end up in candidate training data for future models.</blockquote>
+      <figcaption><span class="chip">142</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L294-L295">Ch. 16 Evaluation § Contamination (L294-L295)</a> · <a href="https://rlhfbook.com/c/16-evaluation#contamination">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s143" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L297-L299">
+      <blockquote style="margin:0">during the decontamination of the evaluation suite for Tülu 3, the authors found that popular open datasets were contaminated with popular evaluations for RLHF [@lambert2024t]. These overlaps include: UltraFeedback's contamination with TruthfulQA, Evol-CodeAlpaca's contamination with HumanEval, NuminaMath's contamination with MATH, and WildChat's contamination with safety evaluations. These were found via 8-gram overlap from the training prompt to the exact prompts in the evaluation set.</blockquote>
+      <figcaption><span class="chip">143</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L297-L299">Ch. 16 Evaluation § Contamination (L297-L299)</a> · <a href="https://rlhfbook.com/c/16-evaluation#contamination">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s144" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L301-L302">
+      <blockquote style="margin:0">such as keeping the words of a math problem the same and changing the numbers, which can result in unusual behavior in post-training regimes, such as benchmarks improving when models are trained with RL on random rewards -- a contrived setup that should only increase performance if a model has certain types of data contamination. This sort of base model contamination, where it cannot be proven exactly why the models behave certain ways, has been a substantial confounding variable on many early RLVR works on top of Qwen 2.5 and Qwen 3 base models</blockquote>
+      <figcaption><span class="chip">144</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L301-L302">Ch. 16 Evaluation § Contamination (L301-L302)</a> · <a href="https://rlhfbook.com/c/16-evaluation#contamination">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s145" data-cite="yt:uaZ3yRdYg8A@00:01:39-00:02:11">
+      <blockquote style="margin:0">one of the papers, Spurious Rewards, is one that I'm on, where we showed that some of the Qwen models actually will improve in performance if you train them with RL on literally random rewards. This isn't a method, it's an empirical paper</blockquote>
+      <figcaption><span class="chip">145</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=99s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:01:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s146" data-cite="yt:dFafQmClYq4@00:27:35-00:28:06">
+      <blockquote style="margin:0">the best way to sell your model is to make data close to the test set. For example, the GLUE N models are famous for being contaminated on math.</blockquote>
+      <figcaption><span class="chip">146</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1655s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:27:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s147" data-cite="yt:dFafQmClYq4@00:28:06-00:28:37">
+      <blockquote style="margin:0">people make perturbed benchmarks, they change the numbers in them, some of them change the wording, they held some of them make private evaluations that are never released publicly so you can't see them. The SCALE leaderboard does this.</blockquote>
+      <figcaption><span class="chip">147</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1686s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:28:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s148" data-cite="yt:dFafQmClYq4@00:28:37-00:29:10">
+      <blockquote style="margin:0">with agents, the the agents really love shortcuts and will game the evals</blockquote>
+      <figcaption><span class="chip">148</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1717s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:28:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s149" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L566-L585">
+      <blockquote style="margin:0">Agents love maximizing reward (this turns into shortcuts). … Mining git history for the **future commit that fixes the bug** -- one open model did this in **24% of its SWE-bench trajectories** - Dodging URL blocklists via **mirrors, web archives, and package registries** - **Hardcoding expected test outputs** into the code (instead of changing the code) - Abusing quirks of the test runner … Remove access to everything not strictly needed - A **second, separate sandbox** for verification and test runs - A second LLM monitoring the first (expensive)</blockquote>
+      <figcaption><span class="chip">149</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L566-L585">Slides lec12-chap16-evals § Today&#x27;s models are reward-hack happy and games the evals (L566-L585)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s150" data-cite="yt:dFafQmClYq4@00:29:40-00:30:11">
+      <blockquote style="margin:0">you have to only give access to the few approved tools. You need sandboxes to separate things, you need to run monitoring on the logs, which is very expensive.</blockquote>
+      <figcaption><span class="chip">150</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1780s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:29:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s151" data-cite="yt:dFafQmClYq4@00:29:10-00:29:40">
+      <blockquote style="margin:0">Models trying to find the answer to evals on Hugging Face is a common thing.</blockquote>
+      <figcaption><span class="chip">151</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1750s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:29:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s152" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/16-evaluation.md#L313-L318">
+      <blockquote style="margin:0">Inspect AI from the UK Safety Institute [@inspectAI2024], - Hugging Face's LightEval [@fourrier2023lighteval] that powered the Open LLM Leaderboard [@open-llm-leaderboard-v2], - EleutherAI's evaluation harness [@gao2023evalharness] … Ai2's library based on OLMES [@gu2024olmes], - Stanford's Center for Research on Foundation Models' HELM [@liang2023helm], - Mosaic's (now Databricks') Eval Gauntlet</blockquote>
+      <figcaption><span class="chip">152</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/16-evaluation.md?plain=1#L313-L318">Ch. 16 Evaluation § Tooling (L313-L318)</a> · <a href="https://rlhfbook.com/c/16-evaluation#tooling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s153" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L594">
+      <blockquote style="margin:0">Inspect … `★ 2.5k` -- UK AI Security Institute</blockquote>
+      <figcaption><span class="chip">153</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L594">Slides lec12-chap16-evals § Tooling: run your own research-grade evals (L594)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s154" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L605-L607">
+      <blockquote style="margin:0">Ai2's workbench for evals *inside the model-development loop* (2026) - … Prime Intellect's library and community hub: 2,500+ verifiable environments that double as evals (AIME, Terminal-Bench, ...) - The direction of travel: **training and evaluation share the same environment code** -- write it once, hillclimb and measure with it</blockquote>
+      <figcaption><span class="chip">154</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L605-L607">Slides lec12-chap16-evals § Tooling: run your own research-grade evals (L605-L607)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s155" data-cite="yt:dFafQmClYq4@00:30:11-00:30:41">
+      <blockquote style="margin:0">evaluation training environments should be closely coupled because they share the same code, they just have different prompts</blockquote>
+      <figcaption><span class="chip">155</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1811s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:30:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s156" data-cite="yt:dFafQmClYq4@00:15:35-00:16:08">
+      <blockquote style="margin:0">None of the benchmarks will ever get to 100% because they all have labeling errors.</blockquote>
+      <figcaption><span class="chip">156</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=935s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:15:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s157" data-cite="yt:uaZ3yRdYg8A@00:49:18-00:49:48">
+      <blockquote style="margin:0">Qwen gets a bad reputation, but I think they're probably slightly closer to bench maxing where they're leaning more into getting bench max scores while also making a great model. And we just don't really know what is happening at closed labs.</blockquote>
+      <figcaption><span class="chip">157</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2958s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:49:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s158" data-cite="yt:uaZ3yRdYg8A@00:49:48-00:50:19">
+      <blockquote style="margin:0">something like Anthropic where you look at their announces announcements where they list so few evaluations. I think they just don't care about benchmarks that much and they're just trying to make models that are great.</blockquote>
+      <figcaption><span class="chip">158</span> <a href="https://www.youtube.com/watch?v=uaZ3yRdYg8A&amp;t=2988s">How We Built a Leading Reasoning Model (Olmo 3) @ 00:49:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s159" data-cite="yt:dFafQmClYq4@00:23:22-00:23:54">
+      <blockquote style="margin:0">I'm pretty skeptical of a lot of the labs comparing stacks. They do a good job at this, but you should know that OpenAI or Anthropic might not even care about an evaluation like terminal bench. They might train on it because it's high quality data. We don't know.</blockquote>
+      <figcaption><span class="chip">159</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=1402s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:23:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s160" data-cite="yt:79Pnm5hANsA@00:21:17-00:21:49">
+      <blockquote style="margin:0">benchmaxing essentially is when a lab focuses too narrowly on the benchmarks potentially even cheating intentionally to the point where the model isn't as good as the scores represent. And if you think about it naturally, the openweight labs especially in China that's some of them are public companies.</blockquote>
+      <figcaption><span class="chip">160</span> <a href="https://www.youtube.com/watch?v=79Pnm5hANsA&amp;t=1277s">Open Language Models: Overview, Open Source History, Distillation, Risks, &amp; Chinese Labs @ 00:21:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s161" data-cite="yt:79Pnm5hANsA@00:21:49-00:22:20">
+      <blockquote style="margin:0">So even if the best intention of the researchers there is to be fair, they are going to figure out ways to make themselves look a bit better on the benchmarks for economic value and for the narrative of the company.</blockquote>
+      <figcaption><span class="chip">161</span> <a href="https://www.youtube.com/watch?v=79Pnm5hANsA&amp;t=1309s">Open Language Models: Overview, Open Source History, Distillation, Risks, &amp; Chinese Labs @ 00:21:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s162" data-cite="yt:dFafQmClYq4@00:10:23-00:10:54">
+      <blockquote style="margin:0">Some popular works are Flan and T5, you can click through to read these.</blockquote>
+      <figcaption><span class="chip">162</span> <a href="https://www.youtube.com/watch?v=dFafQmClYq4&amp;t=623s">How Evaluation Has Evolved with Frontier Model Progress | Post-Training Course, Lecture 12 @ 00:10:23</a></figcaption>
+    </figure>
+    <figure class="callout" id="s163" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L654-L655">
+      <blockquote style="margin:0">12. **Evaluation** *(ch. 16, app. C)* -- *today* 13. Crafting Model Character &amp; Products *(ch. 17)* -- *next*</blockquote>
+      <figcaption><span class="chip">163</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L654-L655">Slides lec12-chap16-evals § The course so far (L654-L655)</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // pass@k for one problem: Codex's unbiased estimator against the plug-in estimate.
+  (() => {
+    const n = document.getElementById('pk-n'), c = document.getElementById('pk-c'), k = document.getElementById('pk-k');
+    const pct = x => (100 * x).toFixed(1) + '%';
+    const show = () => {
+      const N = +n.value;
+      c.max = N; k.max = N;
+      if (+c.value > N) c.value = N;
+      if (+k.value > N) k.value = N;
+      const C = +c.value, K = +k.value;
+      document.getElementById('pk-n-o').textContent = N;
+      document.getElementById('pk-c-o').textContent = C;
+      document.getElementById('pk-k-o').textContent = K;
+      let fail = 1;
+      if (N - C < K) fail = 0; else for (let i = N - C + 1; i <= N; i++) fail *= 1 - K / i;
+      const u = 1 - fail, nv = 1 - Math.pow(1 - C / N, K);
+      document.getElementById('pk-p1').textContent = pct(C / N);
+      document.getElementById('pk-u').textContent = pct(u);
+      document.getElementById('pk-nv').textContent = pct(nv) + (Math.abs(nv - u) > 0.0005 ? ' (' + (nv > u ? '+' : '') + (100 * (nv - u)).toFixed(1) + ' points)' : '');
+      const msg = document.getElementById('pk-msg');
+      if (C === 0) msg.textContent = 'No sample passed, so every k gives 0.';
+      else if (N - C < K) msg.textContent = 'Fewer than k failures exist, so any k draws must include a pass: pass@k is 100%.';
+      else if (K === 1) msg.textContent = 'At k = 1 both estimators equal c/n.';
+      else if (K === N) msg.textContent = 'With k = n there is nothing to resample: the estimate is just whether any of the n passed.';
+      else msg.textContent = 'The plug-in treats the n samples as an infinite pool and differs from the unbiased value; the gap shrinks as n grows past k.';
+    };
+    [n, c, k].forEach(x => x.addEventListener('input', show));
+    show();
+  })();
+  // Is a reported gap bigger than run-to-run noise? Normal noise, independent runs.
+  (() => {
+    const b = document.getElementById('nz-b'), g = document.getElementById('nz-g'), k = document.getElementById('nz-k');
+    const erf = x => { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; };
+    const show = () => {
+      const sd = +b.value, gap = +g.value, K = +k.value;
+      document.getElementById('nz-g-o').textContent = gap.toFixed(1) + ' points';
+      document.getElementById('nz-k-o').textContent = K === 1 ? '1 (a single run)' : K;
+      const sdg = sd * Math.sqrt(2 / K), z = gap / sdg, p = 1 - erf(z / Math.SQRT2);
+      document.getElementById('nz-sd').textContent = sdg.toFixed(2) + ' points';
+      document.getElementById('nz-z').textContent = z.toFixed(2);
+      document.getElementById('nz-p').textContent = (100 * p).toFixed(p < 0.01 ? 2 : 0) + '% of the time';
+      const msg = document.getElementById('nz-msg');
+      if (gap === 0) msg.textContent = 'No gap: nothing to explain.';
+      else if (p > 0.3) msg.textContent = 'Noise alone often produces a gap this size. Treat the models as tied.';
+      else if (p > 0.05) msg.textContent = 'Suggestive, not convincing. More reruns (avg@k) would shrink the noise.';
+      else msg.textContent = 'Unlikely from run-to-run noise alone. Prompt, harness or engine differences between labs could still explain it.';
+    };
+    [b, g, k].forEach(x => x.addEventListener('input', show));
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/rejection_sampling/utils.py (L170-L203)", contents: "def format_gsm8k_gold(answer_field: str) -> str:\n    \"\"\"GSM8K gold answers live after `####` at the end of the CoT.\"\"\"\n    gold = (\n        answer_field.split(\"####\", 1)[1].strip() if \"####\" in answer_field else answer_field.strip()\n    )\n    return gold.replace(\",\", \"\")\n\n\n_BOXED_RE = re.compile(r\"\\\\boxed\\{([^{}]*(?:\\{[^{}]*\\}[^{}]*)*)\\}\")\n_NUMBER_RE = re.compile(r\"-?\\d+(?:,\\d{3})*(?:\\.\\d+)?\")\n\n\ndef extract_gsm8k_answer(text: str) -> str | None:\n    \"\"\"Pull a numeric answer out of a completion \u2014 last `\\\\boxed{...}` first, then last number.\"\"\"\n    boxed_matches = _BOXED_RE.findall(text)\n    if boxed_matches:\n        inside = boxed_matches[-1]\n        numbers = _NUMBER_RE.findall(inside)\n        if numbers:\n            return numbers[-1].replace(\",\", \"\")\n        return inside.strip().replace(\",\", \"\") or None\n\n    numbers = _NUMBER_RE.findall(text)\n    return numbers[-1].replace(\",\", \"\") if numbers else None\n\n\ndef answers_match(predicted: str | None, gold: str) -> bool:\n    \"\"\"Numeric comparison with string fallback for GSM8K answers.\"\"\"\n    if predicted is None:\n        return False\n    try:\n        return abs(float(predicted) - float(gold)) < 1e-6\n    except ValueError:\n        return predicted.strip() == gold.strip()\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
