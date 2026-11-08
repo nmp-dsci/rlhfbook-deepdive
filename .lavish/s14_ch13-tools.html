@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 13: Tool Use and Function Calling</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid output{font-family:var(--mono)}
+  .wid input[type=range]{width:100%}
+  .wid label{display:block;margin-top:var(--s2)}
+  .wid .grp-pre label{display:inline-flex;margin:0;gap:var(--s1);align-items:center}
+  .grp-pre{margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  svg.pl{display:block;width:100%;max-width:560px;height:auto;margin-top:var(--s2)}
+  svg.pl .ax{stroke:var(--line-3);stroke-width:1}
+  svg.pl .la{fill:none;stroke:var(--accent);stroke-width:2}
+  svg.pl .lb{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4}
+  svg.pl .ma{fill:var(--accent)}
+  svg.pl .mb{fill:var(--muted)}
+  svg.pl .mk{stroke:var(--line-3);stroke-dasharray:2 3}
+  svg.pl text{fill:var(--ink-2);font-size:11px;font-family:var(--mono)}
+  .kl-legend,.lp-legend{margin:var(--s1) 0 0;font-size:var(--t-1);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:2px}
+  .sw-s{background:var(--accent)}
+  .sw-t{background:var(--muted)}
+  .sw-gen{background:var(--accent-soft);border:1px solid var(--accent)}
+  .sw-call{background:var(--accent-soft);border:2px solid var(--accent)}
+  .lg{display:inline-flex;gap:var(--s1);align-items:center}
+  .sw-out{background:var(--panel);border:1px dashed var(--ink-2)}
+  .lp-log{margin:var(--s2) 0 0;padding-left:var(--s5);font-size:var(--t-1)}
+  .lp-stream{margin-top:var(--s2);display:flex;flex-direction:column;gap:4px}
+  .lp-seg{margin:0;padding:var(--s2);border-radius:var(--r);font-family:var(--mono);font-size:var(--t-2);white-space:pre-wrap;overflow-wrap:anywhere;position:relative}
+  .lp-seg .who{display:block;font-family:var(--sans);font-size:var(--t-2);color:var(--ink-2);margin-bottom:2px}
+  .lp-prompt{background:var(--bg);border:1px solid var(--line-2)}
+  .lp-gen{background:var(--accent-soft);border:1px solid var(--accent)}
+  .lp-call{background:var(--accent-soft);border:2px solid var(--accent)}
+  .lp-out{background:var(--bg);border:1px dashed var(--ink-2)}
+  .lp-stream.masked .lp-prompt,.lp-stream.masked .lp-out{opacity:.45;text-decoration:line-through;text-decoration-color:var(--ink-2)}
+  .lp-new{outline:2px solid var(--focus);outline-offset:1px}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  th .katex{text-transform:none}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,figure.callout[data-cite],.kv,.tablewrap{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s13_ch12-synthetic-data.html">Chapter 12</a></p>
+  <h1>Chapter 13: Tool Use and Function Calling</h1>
+  <p class="lede">Model weights alone cannot know today's news or move a file. Tools fix both, and tool use is a skill that RLHF and every other method in the book can train. <a class="chip" href="#s1" title="Ch. 13 Tool Use and Function Calling (L22-L23)">1</a> <a class="chip" href="#s2" title="Ch. 13 Tool Use and Function Calling (L28)">2</a> <a class="chip" href="#s3" title="Ch. 13 Tool Use and Function Calling (L33)">3</a> Lambert nearly skipped the chapter as "pretty light", then kept it as "really great introductory material", <a class="chip" href="#s4" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:00:00">4</a> and calls tool use "probably the most lasting skill". <a class="chip" href="#s5" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:03:06">5</a> The lecture goes well past the book, into 2026 agentic RL. <a class="chip" href="#s6" title="Slides lec11-chap13-tools § Two asks, two failure modes (L75)">6</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Three terms, nested.</strong> Tool use is general; function calling adds a declared schema; code execution is the case where the tool is an interpreter. <a class="chip" href="#s7" title="Ch. 13 Tool Use and Function Calling (L37-L39)">7</a></li>
+      <li><strong>It is all one token stream.</strong> The model emits a call, an orchestrator runs it and appends the result, and the model continues. <a class="chip" href="#s8" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L196)">8</a> <a class="chip" href="#s9" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L199-L210)">9</a></li>
+      <li><strong>Mask the tool output.</strong> The model trains on its own calls, not on what the tool returned. <a class="chip" href="#s10" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L296)">10</a> <a class="chip" href="#s11" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L212)">11</a></li>
+      <li><strong>MCP standardizes the tool side.</strong> Servers, clients and hosts, over JSON-RPC 2.0. <a class="chip" href="#s12" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L232-L234)">12</a> <a class="chip" href="#s13" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L240-L242)">13</a></li>
+      <li><strong>SFT, then preferences, then RL.</strong> Multi-step agents learn from environment feedback over a whole trajectory. <a class="chip" href="#s14" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L330-L333)">14</a> <a class="chip" href="#s15" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L226)">15</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Tell tool use, function calling and code execution apart.</li>
+      <li>Trace an orchestration loop and say which tokens are trained.</li>
+      <li>Explain MCP's servers, clients and hosts, and what a harness adds.</li>
+      <li>Compare pass@k and pass^k.</li>
+      <li>Say why agentic RL needs environments, and what makes it unstable.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/13-tools">Chapter 13</a></td><td>Short</td><td>Terms, history, the token stream, MCP, implementation details.</td></tr>
+        <tr><td>Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2266s">37:46</a></td><td>38 min</td><td>Recorded July 2026. The last third covers agentic RL at scale.</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L29-L607">Lecture 11 slides</a></td><td>38 slides</td><td>Harnesses, TMax, Kimi K3, harness randomization, reward hacking.</td></tr>
+        <tr><td>TMax video: <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=371s">06:11</a></td><td>6 min</td><td>June 2026. Lambert on a terminal-agent paper he was an author on.</td></tr>
+        <tr><td>Q&amp;A 3: <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">04:42</a></td><td>5 min</td><td>August 2026. Training capabilities separately, and regularization returning.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="why">
+    <h2>Why models need tools</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=31s">00:31</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=94s">01:34</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=126s">02:06</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=217s">03:37</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=310s">05:10</a></p>
+    <p>"Who is the president today?" fails on the knowledge cutoff but is one search away. <a class="chip" href="#s2" title="Ch. 13 Tool Use and Function Calling (L28)">2</a> Lambert's research models, shown as raw weights, "get things like this wrong because they don't know the future". <a class="chip" href="#s16" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:01:34">16</a> "Move all the arXiv papers in my downloads folder…" the weights "cannot even attempt". <a class="chip" href="#s3" title="Ch. 13 Tool Use and Function Calling (L33)">3</a> Weights only produce tokens; something must "translate tokens into the real world". <a class="chip" href="#s17" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:02:06">17</a></p>
+    <p>So an LLM is now a system: "model weights, tools and harnesses". <a class="chip" href="#s18" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:03:37">18</a> <a class="chip" href="#s19" title="Slides lec11-chap13-tools § An LLM today is: model weights + tools + harness (L81-L87)">19</a> Tools began as "call a calculator"; now search and code execution are the most general primitives on a computer. <a class="chip" href="#s20" title="Slides lec11-chap13-tools § Where we are today (L95-L100)">20</a> <a class="chip" href="#s21" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:05:10">21</a> Deep research and computer use came first, culminating in Claude Code and Codex. <a class="chip" href="#s22" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:06:11">22</a></p>
+    <h3>Three terms, from general to specific</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>Term</th><th>What it adds</th></tr></thead>
+      <tbody>
+        <tr><td>Tool use</td><td>The model emits a tool name and arguments; an orchestrator runs it; the result is appended; generation continues. <a class="chip" href="#s7" title="Ch. 13 Tool Use and Function Calling (L37-L39)">7</a></td></tr>
+        <tr><td>Function calling</td><td>The arguments must fit a declared schema, usually JSON Schema, so they can be parsed and validated. <a class="chip" href="#s7" title="Ch. 13 Tool Use and Function Calling (L37-L39)">7</a></td></tr>
+        <tr><td>Code execution</td><td>The tool is an interpreter, "the most general tool of all". <a class="chip" href="#s7" title="Ch. 13 Tool Use and Function Calling (L37-L39)">7</a> <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Code execution lets a model escape its "probabilistic, generative nature". The chapter's example prints pi to 50 digits with the Chudnovsky algorithm instead of reciting it. <a class="chip" href="#s24" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L43-L45)">24</a> <a class="chip" href="#s25" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L46)">25</a> Lambert calls this "a deterministic form of thinking in code", <a class="chip" href="#s26" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:08:45">26</a> and the slides say tools "remove some of the stochastic elements of 'stochastic parrots'". <a class="chip" href="#s27" title="Slides lec11-chap13-tools § Escaping probabilistic generation -- an example tool-use task (L158-L159)">27</a> He also asks which open model recites the most digits of pi correctly <em>without</em> a tool. <a class="chip" href="#s28" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:09:15">28</a></p>
+  </section>
+
+  <section id="history">
+    <h2>A short history</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=586s">09:46</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=617s">10:17</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=648s">10:48</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=710s">11:50</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=741s">12:21</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=773s">12:53</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th>When</th><th>What</th></tr></thead>
+      <tbody>
+        <tr><td>2015–2020</td><td>Neural Programmer-Interpreters; retrieval-augmented generation <a class="chip" href="#s29" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L76-L77)">29</a> <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></td></tr>
+        <tr><td>2021</td><td>WebGPT browses the web, trained with human feedback; Lambert: "super ahead of its time" <a class="chip" href="#s30" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:48">30</a></td></tr>
+        <tr><td>2022</td><td>TALM, PAL, and ReAct, which interleaves reasoning and acting; "react is the one to know" <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a> <a class="chip" href="#s31" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:48">31</a></td></tr>
+        <tr><td>2023</td><td>Toolformer; Gorilla with 1,645 APIs; ToolLLM with 16,000+; OpenAI ships function calling and Code Interpreter <a class="chip" href="#s32" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L83-L84)">32</a> <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></td></tr>
+        <tr><td>2024</td><td>Model Context Protocol <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></td></tr>
+        <tr><td>2025</td><td>o3 calls tools inside its reasoning <a class="chip" href="#s33" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L219-L221)">33</a> <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></td></tr>
+        <tr><td>2026</td><td>Terminal and coding agents are the frontier of post-training <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">RAG was one of the first popular tools, now "getting superseded by general search". <a class="chip" href="#s34" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:17">34</a> ReAct's point, quoted in the chapter: "reasoning traces help the model induce, track, and update action plans … while actions allow it to interface with" outside sources. <a class="chip" href="#s35" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L223)">35</a> Before it, reasoning and acting were "separate literatures"; o3 is the same idea "scaled up with RL". <a class="chip" href="#s36" title="Slides lec11-chap13-tools § ReAct: Reasoning and acting are one generation (L209-L210)">36</a> Lambert says tool use "became very real" in 2025 and calls o3 "one of my favorite models that I've ever tried". <a class="chip" href="#s37" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:12:21">37</a></p>
+    <p>Toolformer taught itself tools with synthetic data. The model inserts candidate API calls into its own text, runs them, keeps the calls that "reduce perplexity" on what follows, and fine-tunes on the result. <a class="chip" href="#s38" title="Slides lec11-chap13-tools § Toolformer: Models &quot;teach themselves&quot; tools (L226-L231)">38</a> Lambert likens it to the self-instruct line of work. <a class="chip" href="#s39" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:13:24">39</a></p>
+    <h3>How tool use is evaluated</h3>
+    <p>Exact match on tool name and arguments, schema validity, and end-to-end task completion. <a class="chip" href="#s40" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L91-L93)">40</a> The slides order these as "format → selection → consistency → full tasks", <a class="chip" href="#s41" title="Slides lec11-chap13-tools § How tool use is evaluated (L241-L248)">41</a> and Lambert describes a shift from "can language models follow the format" to "can language models use tools to do complex task". <a class="chip" href="#s42" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:13:55">42</a> Terminal-Bench 2.0 is now "the most popular evaluation". <a class="chip" href="#s43" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:14:58">43</a> For consistency, τ-bench introduced <strong>pass^k</strong>: succeed on <em>all</em> $k$ trials, unlike pass@k's <em>any</em>. <a class="chip" href="#s40" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L91-L93)">40</a> <a class="chip" href="#s41" title="Slides lec11-chap13-tools § How tool use is evaluated (L241-L248)">41</a></p>
+    <div class="wid" id="pk-demo">
+      <p class="label" style="margin:0">Same agent, two reliability metrics (my illustration)</p>
+      <label for="pk-p">Chance one trial succeeds, $p$: <output id="pk-p-o"></output></label>
+      <input id="pk-p" type="range" min="0.05" max="0.99" step="0.01" value="0.7" data-lavish-action>
+      <label for="pk-k">Trials, $k$: <output id="pk-k-o"></output></label>
+      <input id="pk-k" type="range" min="1" max="16" step="1" value="8" data-lavish-action>
+      <svg class="pl" id="pk-plot" viewBox="0 0 400 190" role="img" aria-label="Two curves against k from 1 to 16: pass@k rises toward 1 and pass^k falls toward 0."></svg>
+      <p class="kl-legend"><span class="lg"><span class="sw sw-s"></span> pass@k: at least one of $k$ succeeds</span> <span class="lg"><span class="sw sw-t"></span> pass^k: all $k$ succeed</span></p>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>pass@k $= 1-(1-p)^k$</dt><dd><output id="pk-at"></output></dd>
+        <dt>pass^k $= p^k$</dt><dd><output id="pk-hat"></output></dd>
+      </div>
+      <p id="pk-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">At $p = 0.7$ and $k = 8$, pass@8 is almost certain while pass^8 is under 6%. An agent that "usually works" can be unreliable by the second measure. The formulas assume independent trials; see <a href="#notes">agent notes</a>.</p>
+  </section>
+
+  <section id="stream">
+    <h2>Interweaving tool calls in generation</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=929s">15:29</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=960s">16:00</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=992s">16:32</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1023s">17:03</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1054s">17:34</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1084s">18:04</a></p>
+    <p>Function-calling data is ordinary post-training data plus a system prompt listing the tools, as JSON schemas. <a class="chip" href="#s44" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L97)">44</a> Given the chapter's movie tools, a model would emit <code>search_movies("Star Wars")</code>, usually inside special formatting tokens, and the tool's output becomes the next tokens. <a class="chip" href="#s45" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L163-L165)">45</a> "The model never 'connects' to anything." <a class="chip" href="#s46" title="Slides lec11-chap13-tools § The model only sees tokens: Tools live in the system prompt (L273-L275)">46</a> <a class="chip" href="#s47" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:17:03">47</a></p>
+    <p>An orchestrator sits between model and tools. The chapter's loop: call the model; if it made no tool calls, return its text; otherwise run each call and append the result as a <code>tool</code> message. <a class="chip" href="#s9" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L199-L210)">9</a> Lambert: "the most basic harness … is a while loop". <a class="chip" href="#s48" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:17:34">48</a> Executing tools adds a delay, which "makes for a very complex inference situation". <a class="chip" href="#s49" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:15:29">49</a></p>
+    <p>Code execution works the same way, even inside a reasoning model's thinking: tags for the code, then tags for the output. <a class="chip" href="#s50" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L167-L169)">50</a> Step through the chapter's example: <a class="chip" href="#s51" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L171-L193)">51</a></p>
+    <div class="wid" id="lp-demo">
+      <p class="label" style="margin:0">Run the orchestration loop on the chapter's Fibonacci example</p>
+      <p class="grp-pre"><button class="btn btn-sm" type="button" id="lp-step" data-lavish-action>Next step</button> <button class="btn btn-sm" type="button" id="lp-reset" data-lavish-action>Start over</button> <label class="lp-tg"><input type="checkbox" id="lp-mask" data-lavish-action> Show the training loss mask</label></p>
+      <ol class="lp-log" id="lp-log"></ol>
+      <div class="lp-stream" id="lp-stream" aria-live="polite"></div>
+      <p class="lp-legend" id="lp-legend"><span class="lg"><span class="sw sw-gen"></span> model-generated</span> <span class="lg"><span class="sw sw-call"></span> tool call</span> <span class="lg"><span class="sw sw-out"></span> tool output, injected</span></p>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Characters in context</dt><dd><output id="lp-n"></output></dd>
+        <dt>Trained on, if masked as the chapter says</dt><dd><output id="lp-t"></output></dd>
+      </div>
+    </div>
+    <p style="margin-top:var(--s3)">The tool output is masked from the loss; the model's own tool call is still a training target. <a class="chip" href="#s11" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L212)">11</a> Training is about behaving predictably in this token flow: when to call, how to format arguments, how to use results. <a class="chip" href="#s52" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L214-L215)">52</a> <a class="chip" href="#s53" title="Slides lec11-chap13-tools § An orchestrator sits between the model and its tools (L326-L327)">53</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/tool_use_generation.png">The chapter's figure</a>.</p>
+    <p>Tool use now appears in office copilots, science, medicine and coding agents such as Claude Code and Cursor. <a class="chip" href="#s54" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L88-L89)">54</a> Open models face a harder version: they "must be trained to work with a variety of tools that users may connect off the shelf". <a class="chip" href="#s52" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L214-L215)">52</a> Lambert contrasts ChatGPT and Claude Code, "designed for vertical experience". <a class="chip" href="#s55" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:17:03">55</a></p>
+  </section>
+
+  <section id="multistep">
+    <h2>Multistep tool reasoning, and RL</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1460s">24:20</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1491s">24:51</a></p>
+    <p>o3 was "a substantial step-change" in combining multi-step tool use with a model, building on ReAct. <a class="chip" href="#s33" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L219-L221)">33</a> Training such behavior with RL looks like classic RL, not the per-sample RLHF loop: the agent acts over a whole trajectory, alternating actions and observations, and gets one reward $r_T$ at the end. <a class="chip" href="#s15" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L226)">15</a> <a class="chip" href="#s56" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L228)">56</a> Lambert: "this environment has come back. In RLVR … there's really no environment. There's just grading." <a class="chip" href="#s57" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:24:20">57</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/tool_use_rl_loop.png">The chapter's RL figure</a>.</p>
+  </section>
+
+  <section id="mcp">
+    <h2>Model Context Protocol</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1084s">18:04</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1115s">18:35</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1146s">19:06</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1176s">19:36</a></p>
+    <p>MCP is an open standard for connecting models to data and systems, using JSON-RPC 2.0 underneath. <a class="chip" href="#s12" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L232-L234)">12</a> The chapter calls it "a simple addition" to tool use: a predictable JSON schema for passing data and actions to models. <a class="chip" href="#s58" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L236-L237)">58</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:480px">
+      <thead><tr><th>Layer</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Server</td><td>Wraps one data source or capability; offers resources (read-only data), prompts (templates) and tools (callable functions) <a class="chip" href="#s13" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L240-L242)">13</a> <a class="chip" href="#s58" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L236-L237)">58</a></td></tr>
+        <tr><td>Client</td><td>Aggregates one or more servers, e.g. Claude Desktop or an IDE plug-in <a class="chip" href="#s13" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L240-L242)">13</a></td></tr>
+        <tr><td>Host</td><td>The app the user talks to, e.g. Claude or ChatGPT <a class="chip" href="#s13" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L240-L242)">13</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The payoff: tool builders write one interface for many models. <a class="chip" href="#s59" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L244-L245)">59</a> Lambert is cooler on it; see <a href="#differ">disagreements</a>. The chapter gives a minimal Python server with one <code>get_weather</code> tool. <a class="chip" href="#s12" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L232-L234)">12</a></p>
+  </section>
+
+  <section id="harness">
+    <h2>Harnesses (the lecture's addition)</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1176s">19:36</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1206s">20:06</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1238s">20:38</a></p>
+    <p>MCP standardized the tool side. The <strong>harness</strong> is everything on the model side: the system prompt and tool definitions, the loop, context management, permissions and sandboxing, and subagents. <a class="chip" href="#s60" title="Slides lec11-chap13-tools § What is a harness? (L369-L377)">60</a> "Benchmark scores are model × harness scores." <a class="chip" href="#s61" title="Slides lec11-chap13-tools § What is a harness? (L384-L386)">61</a> Lambert: "harnesses can genuinely improve performance in a substantial way". <a class="chip" href="#s62" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:20:38">62</a> He adds that he is "not an expert" in implementation and wants to study it more. <a class="chip" href="#s63" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:20:38">63</a> The chapter does not use the word.</p>
+  </section>
+
+  <section id="impl">
+    <h2>Implementation details</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1269s">21:09</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1302s">21:42</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1334s">22:14</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1365s">22:45</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1398s">23:18</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1429s">23:49</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Decision</th><th>Chapter</th><th>Lecture adds</th></tr></thead>
+      <tbody>
+        <tr><td>Mask tool outputs</td><td>Masked from the loss, so the model does not learn to predict the tool <a class="chip" href="#s10" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L296)">10</a></td><td>It was "generated by computer in a deterministic way" <a class="chip" href="#s64" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:21:09">64</a></td></tr>
+        <tr><td>Python vs. JSON</td><td>Models settle on one; providers differ <a class="chip" href="#s65" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L295)">65</a></td><td>People often pick the format with the "lowest token usage" <a class="chip" href="#s66" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:22:45">66</a></td></tr>
+        <tr><td>Message structure</td><td>A model's turn is split into pieces at each tool call <a class="chip" href="#s67" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L297)">67</a></td><td></td></tr>
+        <tr><td>Chat templates</td><td>Turn structured JSON into tokens; some use special tokens <a class="chip" href="#s68" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L322)">68</a></td><td></td></tr>
+        <tr><td>Reasoning continuity</td><td>Usually kept within a turn, erased between turns, a design choice <a class="chip" href="#s69" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L323)">69</a></td><td>Kimi K3 keeps it across turns; within a turn, Lambert is "pretty sure" all models keep it <a class="chip" href="#s70" title="Slides lec11-chap13-tools § Implementation details are everywhere (L395)">70</a> <a class="chip" href="#s71" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:21:42">71</a> <a class="chip" href="#s72" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:21:42">72</a></td></tr>
+        <tr><td>Provider formats</td><td>OpenAI <code>tool_calls</code> or <code>function_call</code>; Anthropic <code>tool_use</code>/<code>tool_result</code>; Gemini modes <a class="chip" href="#s73" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L324)">73</a></td><td></td></tr>
+        <tr><td>Schema conformance</td><td>Constrained decoding or "strict mode"; an inference flag for open models <a class="chip" href="#s74" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L325)">74</a></td><td>Heard about less now that models are reliable <a class="chip" href="#s75" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:23:18">75</a></td></tr>
+        <tr><td>Context consumption</td><td>Truncate, summarize or paginate tool outputs <a class="chip" href="#s76" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L326)">76</a></td><td>Early Claude Code was "really really bad at compaction" <a class="chip" href="#s77" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:23:49">77</a> <a class="chip" href="#s78" title="Slides lec11-chap13-tools § Implementation details are everywhere (L398)">78</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="training">
+    <h2>Training for tool use</h2>
+    <p class="tag">In Lecture 11: <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1491s">24:51</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1523s">25:23</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1584s">26:24</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1616s">26:56</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1647s">27:27</a> · <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1678s">27:58</a></p>
+    <p>Human tool traces are expensive, so most data is synthetic: Toolformer-style self-labeling or large-scale generation like ToolBench. <a class="chip" href="#s79" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L329)">79</a> SFT on trajectories teaches format and tool choice and "is often enough for establishing the foundation"; DPO can improve <em>when</em> to call a tool; multi-step agents learn best from RL with environment feedback. <a class="chip" href="#s14" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L330-L333)">14</a> The slides: preference tuning "still works, but is less popular today"; RL is "where the action is". <a class="chip" href="#s80" title="Slides lec11-chap13-tools § Same post-training applies (L417-L421)">80</a> <a class="chip" href="#s81" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:24:51">81</a> For SFT data, the slides point to OpenThoughts-Agent, about 100K trajectories, <a class="chip" href="#s82" title="Slides lec11-chap13-tools § Data example: OpenThoughts-Agent (L428)">82</a> which Lambert finds "really lightweight on RL details". <a class="chip" href="#s83" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:25:53">83</a></p>
+    <h3>Environments are the bottleneck</h3>
+    <p>Math RL needed prompts and checkers; agentic RL needs environments: containers, file systems, services and tests. <a class="chip" href="#s84" title="Slides lec11-chap13-tools § For RL, environments are the bottleneck (L443-L448)">84</a> "What we have now is prompt with environments with test cases." <a class="chip" href="#s85" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:26:24">85</a> Making them is hard: it is easy to make trivial tasks and easy to make impossible ones. <a class="chip" href="#s86" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:26:56">86</a> Much of the generated data gets thrown out. <a class="chip" href="#s87" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:27:27">87</a> Then the infrastructure: Docker bandwidth limits idle the GPUs, API keys expire, "all these little knife cuts". <a class="chip" href="#s88" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:27:58">88</a></p>
+    <h3>A worked case: TMax</h3>
+    <p>Lambert was on the TMax paper, "one of the last papers for my time at AI2". <a class="chip" href="#s89" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:00:00">89</a> <a class="chip" href="#s90" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:26:56">90</a> It released about 15,000 terminal environments and trained small open models with outcome-only rewards; TMax-9B reached 27.2% on Terminal-Bench 2.0. <a class="chip" href="#s91" title="Slides lec11-chap13-tools § TMax: An open recipe for terminal agents (L456-L459)">91</a> He says the data could "sell … for millions of dollars to labs". <a class="chip" href="#s92" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:00:30">92</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:480px">
+      <thead><tr><th>What was hard</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Stability</td><td>Runs collapsed past about 300 steps <a class="chip" href="#s93" title="Slides lec11-chap13-tools § What actually made it hard (L470-L475)">93</a> <a class="chip" href="#s94" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:29:30">94</a></td></tr>
+        <tr><td>Train/inference mismatch</td><td>Trainer and inference engine disagree on log-probs; fixed with an FP32 LM head and DPPO masking <a class="chip" href="#s93" title="Slides lec11-chap13-tools § What actually made it hard (L470-L475)">93</a> <a class="chip" href="#s95" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:29:30">95</a> <a class="chip" href="#s96" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:06">96</a></td></tr>
+        <tr><td>Cost per run</td><td>2 training and 6 inference H100 nodes for 2–3 days, plus about <span class="usd">$</span>3,150 of sandboxes <a class="chip" href="#s93" title="Slides lec11-chap13-tools § What actually made it hard (L470-L475)">93</a>; "between 5 and 10K" all in <a class="chip" href="#s97" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:30:00">97</a></td></tr>
+        <tr><td>Return</td><td>"one or two points" now, against "10 to 20 points" on math in 2025 <a class="chip" href="#s98" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:31:04">98</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">His view in the TMax video: today's RL "is so much harder" than 2025's math RL, <a class="chip" href="#s99" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:01:01">99</a> and "hundreds of RL steps is not a lot". <a class="chip" href="#s100" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:37">100</a></p>
+    <h3>Frontier practice, from the lecture</h3>
+    <ul>
+      <li><strong>Sandboxes over algorithms.</strong> Kimi K3 gives its RL algorithm one sentence and environments about seven pages: 51,219,741 sandboxes, idle up to 98% of the time. <a class="chip" href="#s101" title="Slides lec11-chap13-tools § Frontier practice: Kimi K3 environment management (L482)">101</a> <a class="chip" href="#s102" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:31:34">102</a></li>
+      <li><strong>Depth is learned.</strong> More RL compute raised both scores and the number of steps the model takes. <a class="chip" href="#s103" title="Slides lec11-chap13-tools § Frontier practice: K3 scaling RL (L489)">103</a> <a class="chip" href="#s104" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:32:04">104</a></li>
+      <li><strong>Harness randomization.</strong> Kimi K3 and Nemotron 3 Ultra train across several harnesses, since one fixed harness "can cause a model to overfit". <a class="chip" href="#s105" title="Slides lec11-chap13-tools § Frontier practice: Harness randomization (L496-L499)">105</a> In NVIDIA's Polar, RL through an unfamiliar harness gained 22.6 points, a familiar one 0.6. <a class="chip" href="#s106" title="Slides lec11-chap13-tools § Frontier practice: Harness randomization (L507)">106</a> <a class="chip" href="#s107" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:32:34">107</a></li>
+      <li><strong>The mixing wall.</strong> With many domains, each gets few samples per batch, so labs train domain experts and merge them with multi-teacher on-policy distillation. <a class="chip" href="#s108" title="Slides lec11-chap13-tools § Frontier practice: The RLVR mixing wall (L516-L518)">108</a> <a class="chip" href="#s109" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:33:05">109</a> On Terminal-Bench 2.0 in Nemotron 3 Ultra, the merged student (54.0) beat its teacher (50.0). <a class="chip" href="#s110" title="Slides lec11-chap13-tools § Frontier practice: The RLVR mixing wall (L522-L527)">110</a> See the <a href="s13_ch12-synthetic-data.html#opd">Chapter 12 page</a>. Q&amp;A 3 adds that industry post-training has "a shocking number of stages", forking and merging. <a class="chip" href="#s111" title="Slides qa-03 § Q1: &quot;Should capabilities be trained separately, then merged?&quot; (L47)">111</a></li>
+      <li><strong>Reward hacking.</strong> GLM-5's slide policy used <code>overflow: hidden</code> to make slides <em>measure</em> 16:9; Nemotron deletes future git commits; Kimi K3 ships an exploit detector. <a class="chip" href="#s112" title="Slides lec11-chap13-tools § Frontier practice: Reward hacking (L535-L537)">112</a> <a class="chip" href="#s113" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:33:38">113</a> Lambert calls GLM's example "really benign". <a class="chip" href="#s114" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:09">114</a></li>
+    </ul>
+    <h3>More headaches</h3>
+    <p>Long-tail rollouts (2 tool calls or 200), credit assignment over $10^5$ to $10^6$ tokens, and verifier gaming; TMax rollouts replaced test files with no-ops. <a class="chip" href="#s115" title="Slides lec11-chap13-tools § More headaches (L553-L556)">115</a> With models "working for eight hours at a time", <a class="chip" href="#s116" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:11">116</a> group sampling gets expensive, one reason he thinks GLM-5 used PPO. <a class="chip" href="#s117" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41">117</a> Agents "manipulate the world so that it passes the test". <a class="chip" href="#s118" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41">118</a> "So over optimization is back." <a class="chip" href="#s119" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41">119</a> In Q&amp;A 3 he describes RL as how a model adapts "to the harnesses it'll be used in at deployment". <a class="chip" href="#s120" title="Slides qa-03 § Q4: &quot;RL is basically just SFT with a regularization term?&quot; (L145)">120</a> The model and its harness are co-designed, "always a moving target". <a class="chip" href="#s121" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:36:12">121</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The chapter and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How much does MCP matter?</strong></p><ul>
+      <li><strong>Chapter:</strong> it gives "a far more predictable development environment" for tool-use models. <a class="chip" href="#s59" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L244-L245)">59</a></li>
+      <li><strong>Slides:</strong> it "acts as some standardization". <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></li>
+      <li><strong>Lecture 11 (Jul 2026):</strong> its popularity "was kind of annoying to me"; "nice to do, but far from required". <a class="chip" href="#s122" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:18:04">122</a> "I actually don't know how much MCP is used in modern systems." <a class="chip" href="#s123" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:19:06">123</a> A model trainer need not care unless customers ask. <a class="chip" href="#s124" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:19:36">124</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is schema conformance still a training problem?</strong></p><ul>
+      <li><strong>Chapter:</strong> production systems enforce it with constrained decoding; some closed providers post-train for it. <a class="chip" href="#s74" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L325)">74</a></li>
+      <li><strong>Slides:</strong> "closed labs also post-train specific models for flags like this". <a class="chip" href="#s125" title="Slides lec11-chap13-tools § Implementation details are everywhere (L397)">125</a></li>
+      <li><strong>Lecture 11:</strong> today models "all follow the tool format perfectly all the time"; <a class="chip" href="#s126" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:08:15">126</a> he hasn't "heard about them as much anymore", since RLVR "eliminates a lot of these issues". <a class="chip" href="#s75" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:23:18">75</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is preference tuning useful for tool use?</strong></p><ul>
+      <li><strong>Chapter:</strong> DPO over trajectories "can improve decisions about when to call a tool". <a class="chip" href="#s14" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L330-L333)">14</a></li>
+      <li><strong>Slides:</strong> "still works, but is less popular today". <a class="chip" href="#s80" title="Slides lec11-chap13-tools § Same post-training applies (L417-L421)">80</a></li>
+      <li><strong>Lecture 11:</strong> "you can use preference learning"; most discussion is on RL. <a class="chip" href="#s81" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:24:51">81</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>Is over-optimization still a worry?</strong></p><ul>
+      <li><strong>Chapter 13:</strong> does not raise it.</li>
+      <li><strong>Lecture 11 (Jul 2026):</strong> it faded with math and code RL, but with long tool trajectories graded by rubrics, "over optimization is back". <a class="chip" href="#s127" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:40">127</a> <a class="chip" href="#s119" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41">119</a></li>
+      <li><strong>Q&amp;A 3 (Aug 2026):</strong> in tool use, over-optimization "can come into many different forms and the regularization is starting to come back". <a class="chip" href="#s128" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">128</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>When did tool use become central?</strong></p><ul>
+      <li><strong>Talk (Jun 2025):</strong> "more reliable tool use … has totally transformed" what models can do. <a class="chip" href="#s129" title="Traits of next generation reasoning models @ 00:08:20">129</a></li>
+      <li><strong>Lecture 11 (Jul 2026):</strong> "In 2025 … this all became very real", with o3. <a class="chip" href="#s37" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:12:21">37</a></li>
+      <li><strong>Slides:</strong> by 2026, terminal and coding agents "become the frontier of post-training". <a class="chip" href="#s23" title="Slides lec11-chap13-tools § A short history of models using tools (L193-L199)">23</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>Who introduced pass^k.</strong> The chapter and slides credit τ-bench; <a class="chip" href="#s40" title="Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L91-L93)">40</a> <a class="chip" href="#s41" title="Slides lec11-chap13-tools § How tool use is evaluated (L241-L248)">41</a> the captions say "tool bench", probably "tau bench" misheard. <a class="chip" href="#s130" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:14:26">130</a></li>
+      <li><strong>Cost, two ways.</strong> The slides give about <span class="usd">$</span>3,150 in sandboxes for one 9B run; <a class="chip" href="#s93" title="Slides lec11-chap13-tools § What actually made it hard (L470-L475)">93</a> the lecture's spoken estimate, "between 5 and 10K", covers the whole run. <a class="chip" href="#s97" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:30:00">97</a></li>
+      <li><strong>Reasoning between turns.</strong> Not a rule: the chapter calls erasing it "a design decision", and Kimi K3 keeps it. <a class="chip" href="#s69" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L323)">69</a> <a class="chip" href="#s70" title="Slides lec11-chap13-tools § Implementation details are everywhere (L395)">70</a></li>
+      <li><strong>Captions mishear.</strong> "Chimney K3" is Kimi K3, "Nematron" is Nemotron, "MOPED" is MOPD, "Amy" is AIME, "tool form" is Toolformer, "cloud code" is Claude Code, and "Tool Use 3" in Q&amp;A 3 is Tülu 3. <a class="chip" href="#s102" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:31:34">102</a> <a class="chip" href="#s109" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:33:05">109</a> <a class="chip" href="#s98" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:31:04">98</a> <a class="chip" href="#s39" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:13:24">39</a> <a class="chip" href="#s131" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">131</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>What does function calling add to tool use, and what does code execution specialize?</summary>
+      <p>A declared schema the arguments must fit; code execution is tool use where the tool is an interpreter. <a class="chip" href="#s7" title="Ch. 13 Tool Use and Function Calling (L37-L39)">7</a></p>
+    </details>
+    <details><summary>In the Fibonacci example, which segments does the model train on?</summary>
+      <p>Its reasoning, its <code>&lt;code&gt;</code> call and its answer. The <code>&lt;output&gt;</code> block is masked, since the tool produced it. <a class="chip" href="#s11" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L212)">11</a> <a class="chip" href="#s10" title="Ch. 13 Tool Use and Function Calling § Implementation Details (L296)">10</a></p>
+    </details>
+    <details><summary>When does the orchestration loop stop?</summary>
+      <p>When the model's response contains no tool calls; the loop returns its text. <a class="chip" href="#s9" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L199-L210)">9</a></p>
+    </details>
+    <details><summary>An agent succeeds on 90% of single trials. Roughly what are pass@4 and pass^4?</summary>
+      <p>About 1.00 and 0.66, if trials are independent. pass^k asks for success on all $k$ trials. <a class="chip" href="#s41" title="Slides lec11-chap13-tools § How tool use is evaluated (L241-L248)">41</a></p>
+    </details>
+    <details><summary>Name MCP's three server primitives.</summary>
+      <p>Resources (read-only data), prompts (templates) and tools (callable functions). <a class="chip" href="#s58" title="Ch. 13 Tool Use and Function Calling § Model Context Protocol (L236-L237)">58</a></p>
+    </details>
+    <details><summary>Why is multi-step tool RL "closer to classic RL" than RLHF?</summary>
+      <p>The agent acts over a whole trajectory in an environment before one reward arrives at the end. <a class="chip" href="#s15" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L226)">15</a> <a class="chip" href="#s56" title="Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L228)">56</a></p>
+    </details>
+    <details><summary>Why do Kimi K3 and Nemotron 3 Ultra train under several harnesses?</summary>
+      <p>One fixed harness "can cause a model to overfit"; scores are model × harness. <a class="chip" href="#s105" title="Slides lec11-chap13-tools § Frontier practice: Harness randomization (L496-L499)">105</a> <a class="chip" href="#s61" title="Slides lec11-chap13-tools § What is a harness? (L384-L386)">61</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The pass^k widget.</strong> Not Lambert. It treats trials as independent with one success rate $p$, so pass@k $= 1-(1-p)^k$ and pass^k $= p^k$. Real tasks vary in difficulty, and trials on one task are correlated, so real curves fall less steeply. The definitions are from the slides. <a class="chip" href="#s41" title="Slides lec11-chap13-tools § How tool use is evaluated (L241-L248)">41</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The loop widget.</strong> Not Lambert. It counts characters, not tokens, and treats the user prompt as untrained, as usual in SFT. The segment text is copied from the chapter. <a class="chip" href="#s51" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L171-L193)">51</a> The chapter's figure says only that tool outputs are masked and tool calls are targets. <a class="chip" href="#s11" title="Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L212)">11</a></p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the chapter's full movie-tool schemas, MCP server code and GamerPower message example (linked through citations)</li>
+      <li>the papers themselves, described only as Lambert describes them</li>
+      <li>the lecture's slide images (TMax results, Kimi K3 scaling, GLM-5's hack)</li>
+    </ul>
+    <p>The slides' takeaways: tools fix limits of weights; standards and harnesses made the research tractable; and scaling RL for agents "is a very hard problem". <a class="chip" href="#s132" title="Slides lec11-chap13-tools § Takeaways (L562-L564)">132</a> Lambert: "we're very early". <a class="chip" href="#s133" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:36:12">133</a> Chapter 14 covers over-optimization, which this lecture says "is back".</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 14 (Over-Optimization) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 14&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 14</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 13 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 13&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 13</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L22-L23">
+      <blockquote style="margin:0">Language models using tools is a natural way to expand their capabilities, especially for high-precision tasks where external tools contain the information or for agents that need to interact with complex web systems. Tool-use is a skill that language models need to be trained to have, and RLHF and all the other methods presented in this book can refine it.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L22-L23">Ch. 13 Tool Use and Function Calling (L22-L23)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-and-function-calling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L28">
+      <blockquote style="margin:0">A language model without tools will have a hard time answering this question due to the knowledge cutoff of pretraining data, but this is readily accessible information with one search query.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L28">Ch. 13 Tool Use and Function Calling (L28)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-and-function-calling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L33">
+      <blockquote style="margin:0">This is a task that the model weights alone cannot even attempt -- the use of tools enables language models to address a far broader range of tasks.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L33">Ch. 13 Tool Use and Function Calling (L33)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-and-function-calling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="yt:GMry2DzC304@00:00:00-00:00:31">
+      <blockquote style="margin:0">I almost skipped this chapter because the chapter content is pretty light, but then I decided that it's actually a really great introductory material</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=0s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="yt:GMry2DzC304@00:03:06-00:03:37">
+      <blockquote style="margin:0">tool use is probably the most lasting skill and it's almost like a property of models. This is why it's the only lecture that has it as a standalone concept.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=186s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:03:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L75">
+      <blockquote style="margin:0">Tool use is what closes both gaps. It started by addressing structural limitations in LLMs and grew into the central way to push performance. Tool use is a trained skill -- everything in this course (SFT, preference tuning, RL) applies to it.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L75">Slides lec11-chap13-tools § Two asks, two failure modes (L75)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L37-L39">
+      <blockquote style="margin:0">**Tool use**: the model emits a structured request (tool name and arguments); an orchestrator executes the tool; results are appended to the context; the model continues generating. - **Function calling**: tool use where the arguments must conform to a declared schema for a set of functions (usually JSON Schema), enabling reliable parsing and validation. - **Code execution**: a special case of tool use where the \"tool\" is a code interpreter (e.g., Python); results are returned as tool output.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L37-L39">Ch. 13 Tool Use and Function Calling (L37-L39)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-and-function-calling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L196">
+      <blockquote style="margin:0">What is happening under the hood is the language model is interleaving tool inputs and outputs with standard autoregressively generated tokens.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L196">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L196)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L199-L210">
+      <blockquote style="margin:0">while True: response = model(messages, tools=tools) if not response.tool_calls: return response.text</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L199-L210">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L199-L210)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L296">
+      <blockquote style="margin:0">**Masking tool outputs**: An important detail when training tool-use models is that the tokens in the tool output are masked from the model's training loss. This ensures the model is not learning to predict the output of the system that processes the tool call (as the results are not tokens generated by the model).</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L296">Ch. 13 Tool Use and Function Calling § Implementation Details (L296)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L212">
+      <blockquote style="margin:0">the model generates tokens until it emits a tool call (orange), an external system executes the tool and injects the output (purple) into the sequence, then the model continues generating. Models can emit multiple tool calls in a single generation. During training, tool output tokens are typically masked from the loss, while the model-generated tool calls remain training targets.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L212">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L212)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L232-L234">
+      <blockquote style="margin:0">Model Context Protocol (MCP) is an open standard for connecting language models to external data sources and information systems [@anthropic_mcp_2024]. At the data layer, MCP uses JSON-RPC 2.0 with discovery and execution methods for its primitives. Rather than requiring specific tool call formatting per external system, MCP enables models to access rich contextual information through a standardized protocol.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L232-L234">Ch. 13 Tool Use and Function Calling § Model Context Protocol (L232-L234)</a> · <a href="https://rlhfbook.com/c/13-tools#model-context-protocol">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L240-L242">
+      <blockquote style="margin:0">MCP servers wrap a specific data source or capability. - MCP clients (e.g., Claude Desktop, IDE plug-ins) aggregate one or more servers. - Hosts, e.g. Claude or ChatGPT applications, provide the user/LLM interface; switching model vendors or back-end tools only means swapping the client in the middle.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L240-L242">Ch. 13 Tool Use and Function Calling § Model Context Protocol (L240-L242)</a> · <a href="https://rlhfbook.com/c/13-tools#model-context-protocol">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L330-L333">
+      <blockquote style="margin:0">supervised fine-tuning (SFT) on tool trajectories teaches basic formatting and tool selection. This bootstraps the behavior and is often enough for establishing the foundation of the skill. Preference optimization (e.g., DPO) over trajectories can improve decisions about when to call a tool versus answer directly. For agentic tasks with multi-step tool use, RL with environment feedback (task success, constraint satisfaction) becomes the natural objective</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L330-L333">Ch. 13 Tool Use and Function Calling § Implementation Details (L330-L333)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L226">
+      <blockquote style="margin:0">Training these multi-step behaviors with RL resembles classic reinforcement learning more than the per-sample RLHF loop: the agent interacts with an environment and its tools over a full trajectory before any reward is assigned</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L226">Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L226)</a> · <a href="https://rlhfbook.com/c/13-tools#multistep-tool-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="yt:GMry2DzC304@00:01:34-00:02:06">
+      <blockquote style="margin:0">when you look at demos for models like Olmo that I have built in a lot of research models where they're really showing you the raw model weights, they will get things like this wrong because they don't know the future</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=94s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:01:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="yt:GMry2DzC304@00:02:06-00:02:36">
+      <blockquote style="margin:0">the model weights only generate tokens and you need a system that can translate tokens into the real world.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=126s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:02:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:GMry2DzC304@00:03:37-00:04:07">
+      <blockquote style="margin:0">A language model is model weights, tools and harnesses.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=217s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:03:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L81-L87">
+      <blockquote style="margin:0">### An LLM today is: model weights + tools + harness - **Model weights** -- the trained network: foundation of knowledge, reasoning, style. - **Tools** -- the actions the model can request: search, code execution, file edits, APIs. - **Harness** -- the software loop around the weights that executes those requests and feeds the results back into the context. LLMs are now systems</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L81-L87">Slides lec11-chap13-tools § An LLM today is: model weights + tools + harness (L81-L87)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L95-L100">
+      <blockquote style="margin:0">Tool use started as \"call a calculator.\" … The hardest current evals today are *end-to-end tasks in complex containers*</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L95-L100">Slides lec11-chap13-tools § Where we are today (L95-L100)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:GMry2DzC304@00:05:10-00:05:41">
+      <blockquote style="margin:0">today, it is kind of this general thing where tools are almost seen as general primitives on computers. I think of search and some sort of code execution as the most general tools.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=310s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:05:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="yt:GMry2DzC304@00:06:11-00:06:42">
+      <blockquote style="margin:0">through things like deep research which was using search tools computer use which was using structured browser tools and navigation tools and it kind of culminated in what we're seeing with cloud code and codex.</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=371s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:06:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L193-L199">
+      <blockquote style="margin:0">**2015--2020, precursors**: Neural Programmer-Interpreters execute programs with neural networks … **2021**: WebGPT browses the web, trained with human feedback … **2023**: Toolformer teaches itself APIs w/ synthetic data … OpenAI ships function calling in the API and Code Interpreter in ChatGPT - **2024**: Model Context Protocol acts as some standardization … - **2025**: o3 makes multistep tool calls *inside* its reasoning … - **2026**: terminal and coding agents become the frontier of post-training</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L193-L199">Slides lec11-chap13-tools § A short history of models using tools (L193-L199)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L43-L45">
+      <blockquote style="margin:0">An AI model uses any external tools by outputting special tokens to trigger a certain endpoint. … there are also tools such as code execution, which lets language models get around their probabilistic, generative nature and return precise answers.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L43-L45">Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L43-L45)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L46">
+      <blockquote style="margin:0">Consider the task of printing an approximation of pi to 50 digits (without reciting it from memory and risking hallucination).</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L46">Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L46)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:GMry2DzC304@00:08:45-00:09:15">
+      <blockquote style="margin:0">This is what can give the model kind of um a deterministic form of thinking in code, where language models otherwise are probabilistic entities</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=525s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:08:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L158-L159">
+      <blockquote style="margin:0">The model writes the program; the interpreter provides the answer. Tools let models remove some of the stochastic elements of \"stochastic parrots.\"</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L158-L159">Slides lec11-chap13-tools § Escaping probabilistic generation -- an example tool-use task (L158-L159)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:GMry2DzC304@00:09:15-00:09:46">
+      <blockquote style="margin:0">what is the open weight model that gets the most digits of pi correct? I'm pretty curious about this.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=555s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:09:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L76-L77">
+      <blockquote style="margin:0">The exact origin of the term \"tool use\" is not clear, but the origins of the idea far predate the post-ChatGPT world where RLHF proliferated. Early examples circa 2015 attempted to build systems predating modern language models, such as Neural Programmer-Interpreters (NPI)</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L76-L77">Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L76-L77)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:GMry2DzC304@00:10:48-00:11:19">
+      <blockquote style="margin:0">web GPT where they used reinforce learning from human feedback to train a model to browse the web and synthesize information. It seems super ahead of its time</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=648s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="yt:GMry2DzC304@00:10:48-00:11:50">
+      <blockquote style="margin:0">react is the one to know.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=648s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L83-L84">
+      <blockquote style="margin:0">Toolformer could use \"a calculator, a Q&amp;A system, two different search engines, a translation system, and a calendar\" [@schick2023toolformerlanguagemodelsteach]. Soon after, Gorilla was trained to use 1645 APIs (from PyTorch Hub, TensorFlow Hub v2, and Hugging Face) and its evaluation APIBench became a foundation of the popular Berkeley Function Calling Leaderboard</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L83-L84">Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L83-L84)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L219-L221">
+      <blockquote style="margin:0">OpenAI's o3 model represented a substantial step-change in how multi-step tool-use can be integrated with language models. This behavior is related to much earlier research trends in the community. For example, ReAct [@yao2023react] showcased how actions and reasoning can be interleaved into one model generation:</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L219-L221">Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L219-L221)</a> · <a href="https://rlhfbook.com/c/13-tools#multistep-tool-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:GMry2DzC304@00:10:17-00:10:48">
+      <blockquote style="margin:0">Rag is one of the more first most popular forms of tool use but it is kind of getting superseded by general search</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=617s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:10:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L223">
+      <blockquote style="margin:0">reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with and gather additional information from external sources such as knowledge bases or environments.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L223">Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L223)</a> · <a href="https://rlhfbook.com/c/13-tools#multistep-tool-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L209-L210">
+      <blockquote style="margin:0">Before ReAct, reasoning (chain-of-thought) and acting (tool calls) were separate literatures. Interleaving them in one token stream is the pattern every modern agent still uses -- o3's tool-calls-inside-thinking is this idea, scaled up with RL.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L209-L210">Slides lec11-chap13-tools § ReAct: Reasoning and acting are one generation (L209-L210)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:GMry2DzC304@00:12:21-00:12:53">
+      <blockquote style="margin:0">In 2025 is when I would say this all became very real which is when tool use got integrated with large scale of reasoning … open AI's 03 was the first huge step in this direction … this is one of my favorite models that I've ever tried.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=741s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:12:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L226-L231">
+      <blockquote style="margin:0">1. Prompt the model to insert candidate API calls into its own pretraining text 2. Execute the calls 3. Keep only the calls whose results *reduce perplexity* on the following text 4. Fine-tune on the filtered corpus No human tool-use demonstrations required -- an early instance of synthetic-data flywheels.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L226-L231">Slides lec11-chap13-tools § Toolformer: Models &quot;teach themselves&quot; tools (L226-L231)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="yt:GMry2DzC304@00:13:24-00:13:55">
+      <blockquote style="margin:0">tool form is a good example of how a lot of post training research does. It's similar to the self-instruct line of work</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=804s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:13:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L91-L93">
+      <blockquote style="margin:0">Evaluating tool-use models involves multiple dimensions: exact-match metrics for tool name and argument correctness, schema validity, and end-to-end task completion in simulated environments. Reliability across trials also matters -- $\tau$-bench introduced the pass^k metric (distinct from pass@k) to measure whether an agent succeeds consistently rather than occasionally</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L91-L93">Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L91-L93)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L241-L248">
+      <blockquote style="margin:0">**Reliability**: τ-bench measures pass^k -- succeeding on *all* $k$ trials, not pass@k's *any* of $k$. … **End-to-end**: Terminal-Bench runs agents on real tasks in containers with verification tests. … The eval ladder mirrors the capability ladder we've seen over time: format $\rightarrow$ selection $\rightarrow$ consistency $\rightarrow$ full tasks.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L241-L248">Slides lec11-chap13-tools § How tool use is evaluated (L241-L248)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:GMry2DzC304@00:13:55-00:14:58">
+      <blockquote style="margin:0">it kind of transitioned from can language models follow the format needed to do tools to today can language models use tools to do complex task.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=835s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:13:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:GMry2DzC304@00:14:58-00:15:29">
+      <blockquote style="margin:0">terminal bench two is the most popular evaluation</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=898s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:14:58</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L97">
+      <blockquote style="margin:0">Training data for function calling looks much like other post-training data, with one addition: a system prompt that instructs the model what tools it has available.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L97">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L97)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L163-L165">
+      <blockquote style="margin:0">if it is following this example, it would generate the tokens `search_movies(\"Star Wars\")` to search for Star Wars. This is often encoded inside special formatting tokens, and then the next tokens inserted into the sequence will contain the tool outputs.</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L163-L165">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L163-L165)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L273-L275">
+      <blockquote style="margin:0">The model never \"connects\" to anything -- it learns to emit calls matching the declared schemas, and to expect results in context. Open models must generalize to arbitrary tools users declare off the shelf.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L273-L275">Slides lec11-chap13-tools § The model only sees tokens: Tools live in the system prompt (L273-L275)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:GMry2DzC304@00:17:03-00:17:34">
+      <blockquote style="margin:0">The language model never tries to connect anything, it just knows it just generates tokens. … open models must generalize to arbitrary tools because people are going to use them off the shelf in their environment.</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1023s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:17:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="yt:GMry2DzC304@00:17:34-00:18:35">
+      <blockquote style="margin:0">the most basic harness, the most basic management of your model is a while loop … That is the simplest harness in the world.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1054s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:17:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:GMry2DzC304@00:15:29-00:16:00">
+      <blockquote style="margin:0">There is a time delay here, and this time delay is makes for a very complex inference situation</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=929s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:15:29</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L167-L169">
+      <blockquote style="margin:0">A popular form of tool use is code-execution, allowing the model to get precise answers to complex logic or mathematics problems. For example, code-execution within a language model execution can occur during the thinking tokens of a reasoning model. As with function calling, there are tags first for the code to execute (generated by the model) and then a separate tag for output.</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L167-L169">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L167-L169)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L171-L193">
+      <blockquote style="margin:0">What is the 50th Fibonacci number? (Use the standard F_0=0, F_1=1 indexing.) … Okay, I will compute the 50th Fibonacci number with a simple loop, then return the result. … 12586269025 … The 50th Fibonacci number is 12 586 269 025.</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L171-L193">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L171-L193)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L214-L215">
+      <blockquote style="margin:0">Training for tool use is about getting the model to behave predictably with this different token flow—knowing when to emit a tool call, how to format arguments correctly, and how to incorporate results into its response. Open models must be trained to work with a variety of tools that users may connect off the shelf.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L214-L215">Ch. 13 Tool Use and Function Calling § Interweaving Tool Calls in Generation (L214-L215)</a> · <a href="https://rlhfbook.com/c/13-tools#interweaving-tool-calls-in-generation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L326-L327">
+      <blockquote style="margin:0">The model's only power is emitting tokens; the orchestrator parses them, executes the tools, and appends results to the context. Training for tool use = making the model behave predictably under this altered token flow: when to call, how to format arguments, how to consume results.</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L326-L327">Slides lec11-chap13-tools § An orchestrator sits between the model and its tools (L326-L327)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L88-L89">
+      <blockquote style="margin:0">Model Context Protocol (MCP) emerged as a common formatting used to connect language models to external data sources (or tools) [@anthropic_mcp_2024]. With stronger models and better formats, tool-use language models are used in many situations, including productivity copilots within popular applications such as Microsoft Office or Google Workspace, scientific domains [@bran2023chemcrow], medical domains [@li2024mmedagent], coding agents [@zhang2024codeagent] such as Claude Code or Cursor</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L88-L89">Ch. 13 Tool Use and Function Calling § Tool-Use Overview (L88-L89)</a> · <a href="https://rlhfbook.com/c/13-tools#tool-use-overview">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:GMry2DzC304@00:17:03-00:17:34">
+      <blockquote style="margin:0">if you're using ChatGPT or Claude code, those models are designed for vertical experience</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1023s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:17:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L228">
+      <blockquote style="margin:0">The completed trajectory is graded or verified to produce a single reward $r_T$ at the end, which drives the policy update. Unlike the per-sample RLHF loop, the reward arrives only after a multi-step rollout -- closer to classic RL.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L228">Ch. 13 Tool Use and Function Calling § Multistep Tool Reasoning (L228)</a> · <a href="https://rlhfbook.com/c/13-tools#multistep-tool-reasoning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:GMry2DzC304@00:24:20-00:24:51">
+      <blockquote style="margin:0">there's a different RL setup for tool use, which is essentially this environment has come back. In RLVR and other things, there's really no environment. There's just grading.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1460s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:24:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L236-L237">
+      <blockquote style="margin:0">MCP is a simple addition on top of the tool-use content in this chapter -- it is how applications pass context (data + actions) to language models in a predictable JSON schema. MCP servers that the models interact with have core primitives: resources (read-only data blobs), prompts (templated messages/workflows), and tools (functions the model can call).</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L236-L237">Ch. 13 Tool Use and Function Calling § Model Context Protocol (L236-L237)</a> · <a href="https://rlhfbook.com/c/13-tools#model-context-protocol">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L244-L245">
+      <blockquote style="margin:0">MCP enables developers of tool-use models to use the same infrastructure to attach their servers or clients to different models, and at the same time models have a predictable format they can use to integrate external components. These together make for a far more predictable development environment for tool-use models in real-world domains.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L244-L245">Ch. 13 Tool Use and Function Calling § Model Context Protocol (L244-L245)</a> · <a href="https://rlhfbook.com/c/13-tools#model-context-protocol">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L369-L377">
+      <blockquote style="margin:0">MCP standardized the *tool* side. The **harness** (or agent scaffold) is everything wrapped around the weights on the *model* side: - The system prompt and tool definitions - The orchestration loop itself - Context management -- truncation, compaction, memory across long tasks - Permissions and sandboxing -- what the agent may touch - Subagents and parallel workstreams</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L369-L377">Slides lec11-chap13-tools § What is a harness? (L369-L377)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L384-L386">
+      <blockquote style="margin:0">Claude Code, Codex CLI, and OpenHands are all popular harnesses -- the same models behave very differently inside different ones. Benchmark scores are **model × harness** scores.</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L384-L386">Slides lec11-chap13-tools § What is a harness? (L384-L386)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:GMry2DzC304@00:20:38-00:21:09">
+      <blockquote style="margin:0">harnesses can genuinely improve performance in a substantial way.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1238s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:20:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="yt:GMry2DzC304@00:20:38-00:21:09">
+      <blockquote style="margin:0">I'm not an expert in it, but I want to study it a bit more again in the near future.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1238s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:20:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="yt:GMry2DzC304@00:21:09-00:21:42">
+      <blockquote style="margin:0">When you're training a model on next token prediction, you mask these out so that the model does not know so that the model doesn't learn to get the next token prediction on something that was generated by computer in a deterministic way.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1269s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:21:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L295">
+      <blockquote style="margin:0">**Python vs. JSON formatting**: In this chapter, we include examples that format tool use as both JSON data structures and Python code. Models tend to select one structure, whereas different providers across the industry use different formats.</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L295">Ch. 13 Tool Use and Function Calling § Implementation Details (L295)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:GMry2DzC304@00:22:45-00:23:18">
+      <blockquote style="margin:0">Normally, something that people do is they choose the format that has the say like lowest token usage with your tokenizer</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1365s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:22:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L297">
+      <blockquote style="margin:0">Standard practice for post-training datasets is a list of messages alternating between user and assistant (and often a system message). The overall structure is the same for tool-use, but the turns of the model are split into subsections of content delimited by each tool call.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L297">Ch. 13 Tool Use and Function Calling § Implementation Details (L297)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L322">
+      <blockquote style="margin:0">Tool calls in OpenAI messages format often undergo tokenization through chat templates (the code for controlling the format of messages sent to the model), converting structured JSON representations into raw token streams. This process varies across model architectures---some use special tokens to demarcate tool calls, while others maintain structured formatting within the token stream itself.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L322">Ch. 13 Tool Use and Function Calling § Implementation Details (L322)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L323">
+      <blockquote style="margin:0">Some models preserve reasoning tokens between tool-calling steps within a single turn, maintaining context across multiple tool invocations. However, these tokens are typically erased between turns to minimize serving cost (but they aren't always -- this is a design decision).</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L323">Ch. 13 Tool Use and Function Calling § Implementation Details (L323)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L395">
+      <blockquote style="margin:0">reasoning tokens usually persist between tool calls within a turn, but are erased across turns to cut serving cost (varies across models, e.g. Kimi K3 keeps history across user turns).</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L395">Slides lec11-chap13-tools § Implementation details are everywhere (L395)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="yt:GMry2DzC304@00:21:42-00:22:14">
+      <blockquote style="margin:0">If you throw it out, your efficiency goes way up, but you might have lower performance. Most of the models throw it out for this efficiency win, but some, such as Chimney K3, keep the history across user turns.</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1302s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:21:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="yt:GMry2DzC304@00:21:42-00:22:45">
+      <blockquote style="margin:0">I'm pretty sure all the models keep the history between you as the thinking in the tool call.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1302s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:21:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L324">
+      <blockquote style="margin:0">**API formatting across providers** (as of May 2026): Different providers use conceptually similar but technically distinct formats. OpenAI's Chat Completions API uses `tool_calls` arrays with unique IDs, while the newer Responses API represents calls as `function_call` items and returns results as `function_call_output` items keyed by `call_id`. Anthropic defines tools with `input_schema` and represents calls and results as `tool_use` and `tool_result` content blocks. Gemini exposes function-calling modes such as `AUTO`, `ANY`, `NONE`, and, in supported Gemini and Vertex AI configurations, `VALIDATED`.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L324">Ch. 13 Tool Use and Function Calling § Implementation Details (L324)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L325">
+      <blockquote style="margin:0">Production systems often enforce valid JSON and correct argument types using constrained decoding or \"strict mode\" options, reducing retries from malformed outputs. Some closed model providers do additional post-training specifically to make structured JSON output reliable, whereas for open models this is handled as an inference flag in systems like vLLM.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L325">Ch. 13 Tool Use and Function Calling § Implementation Details (L325)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="yt:GMry2DzC304@00:23:18-00:23:49">
+      <blockquote style="margin:0">OpenAI and others used to do specific post-training to get these formats to work right, but I feel like I haven't heard about them as much anymore when the models are just much more reliable, especially with RLVR that eliminates a lot of these issues.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1398s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:23:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L326">
+      <blockquote style="margin:0">Tool outputs can quickly consume the model's context window, especially with search or retrieval tools that return many results. Systems must decide how to truncate, summarize, or paginate tool outputs</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L326">Ch. 13 Tool Use and Function Calling § Implementation Details (L326)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:GMry2DzC304@00:23:49-00:24:20">
+      <blockquote style="margin:0">Early models in Claude code were really really bad at compaction.</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1429s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:23:49</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L398">
+      <blockquote style="margin:0">search and retrieval outputs can flood the context window -- truncate, summarize, or paginate. Models have been rapidly improving on context management.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L398">Slides lec11-chap13-tools § Implementation details are everywhere (L398)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/13-tools.md#L329">
+      <blockquote style="margin:0">Human-written tool traces are expensive to collect, so most modern tool-use corpora are synthetic or bootstrapped—Toolformer-style self-labeling [@schick2023toolformerlanguagemodelsteach] or large-scale generation as in ToolBench</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/13-tools.md?plain=1#L329">Ch. 13 Tool Use and Function Calling § Implementation Details (L329)</a> · <a href="https://rlhfbook.com/c/13-tools#implementation-details">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L417-L421">
+      <blockquote style="margin:0">**SFT** on tool trajectories -- formatting and tool selection; establishes the skill. **Preference tuning** still works, but is less popular today. **RL with environment feedback** -- where the action is in frontier model training.</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L417-L421">Slides lec11-chap13-tools § Same post-training applies (L417-L421)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:GMry2DzC304@00:24:51-00:25:23">
+      <blockquote style="margin:0">You use SFT on tool trajectories and you finish it with RL. You can use preference learning and all of these things. The most discussion is on RL in the later stages</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1491s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:24:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L428">
+      <blockquote style="margin:0">A fully open data-curation pipeline for agentic training data, ~100K trajectories.</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L428">Slides lec11-chap13-tools § Data example: OpenThoughts-Agent (L428)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="yt:GMry2DzC304@00:25:53-00:26:24">
+      <blockquote style="margin:0">what is weird about this paper is that it's really lightweight on RL details</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1553s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:25:53</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L443-L448">
+      <blockquote style="margin:0">Math RL needed prompts and answer checkers. Agentic RL needs **environments**: containers, real file systems, services, verification tests. - Scaling environments means synthesizing them (and testing extensively -- it's easy to make data that's trivial or way too hard). For example, TMax generates ~14,600 containerized terminal environments compositionally … **Building worlds for LLMs is hard.**</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L443-L448">Slides lec11-chap13-tools § For RL, environments are the bottleneck (L443-L448)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="yt:GMry2DzC304@00:26:24-00:26:56">
+      <blockquote style="margin:0">environments are the bottleneck. … what we have now is prompt with environments with test cases.</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1584s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:26:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="yt:GMry2DzC304@00:26:56-00:27:27">
+      <blockquote style="margin:0">scaling environments is really hard because it's hard to make data that is like accurate and learnable, but still hard. So it's really easy to make trivial data … And it's very easy to make impossibly hard data</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1616s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:26:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="yt:GMry2DzC304@00:27:27-00:27:58">
+      <blockquote style="margin:0">you need to generate a lot of data that gets thrown out in order to make your final distribution.</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1647s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:27:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:GMry2DzC304@00:27:58-00:28:29">
+      <blockquote style="margin:0">you're trying to download a ton of Docker containers and Docker gets bandwidth limited, then your GPUs are idle. … the API key expires. There's like all these little knife cuts that make the infrastructure really, really hard,</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1678s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:27:58</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:jlOs01fe-iw@00:00:00-00:00:30">
+      <blockquote style="margin:0">This is the one of the last papers for my time at AI2.</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=0s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="yt:GMry2DzC304@00:26:56-00:27:27">
+      <blockquote style="margin:0">I was on this paper T-Max where the lead authors generated 15,000 containerized terminal environments</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1616s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:26:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L456-L459">
+      <blockquote style="margin:0">RL over the TMax-15K environments with outcome-only rewards … **TMax-9B: 27.2% on Terminal-Bench 2.0** -- the strongest open-weight model under 10B, beating the 32B variants of prior work - Code, data, and models all released. Very little high-quality RL data like this in the open!</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L456-L459">Slides lec11-chap13-tools § TMax: An open recipe for terminal agents (L456-L459)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:jlOs01fe-iw@00:00:30-00:01:01">
+      <blockquote style="margin:0">the data for this paper is such high quality that you could sell it for millions of dollars to labs.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=30s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:00:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L470-L475">
+      <blockquote style="margin:0">Most of the effort goes into stability during scaling, rather than speed or learning efficiency: - Without intervention, runs were often unstable, **collapsing past 300 training steps** - A main culprit: **train/inference numerical mismatch** -- the inference engine and the trainer disagree on logprobs. Fixes: an FP32 LM head, and DPPO's masking of tokens where the two diverge - A standard run: H100 nodes -- **2 for training, 6 for inference -- for 2--3 days**, plus ~<span class="usd">$</span>3,150 in sandbox costs alone for one 9B run - Mid-2026 agentic RL is qualitatively different from 2025 math RL: far more compute per point of eval gain</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L470-L475">Slides lec11-chap13-tools § What actually made it hard (L470-L475)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:GMry2DzC304@00:29:30-00:30:00">
+      <blockquote style="margin:0">When it comes to tool use, the runs are much more unstable. … the RL runs would often collapse in the order of hundreds of steps.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1770s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:29:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="yt:GMry2DzC304@00:29:30-00:30:00">
+      <blockquote style="margin:0">the stability thing that bites a lot of people in RL is train inference numerical mismatch.</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1770s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:29:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="yt:jlOs01fe-iw@00:03:06-00:03:37">
+      <blockquote style="margin:0">these Qwen 3.5 models have really spiky training unless you change the language modeling head to a a higher numerical precision.</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=186s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:GMry2DzC304@00:30:00-00:31:04">
+      <blockquote style="margin:0">about two nodes of for training GPUs and six nodes um, for inference, which all together is about 64 GPUs for two to three days. … it's between 5 and 10K to get one of these final runs done.</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1800s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:30:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:GMry2DzC304@00:31:04-00:31:34">
+      <blockquote style="margin:0">very hard data pro data work to get one or two points on a very hard benchmark. When in 2025 we would get 10 to 20 points on Amy and these math and coding benchmarks.</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1864s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:31:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:jlOs01fe-iw@00:01:01-00:02:03">
+      <blockquote style="margin:0">the RL that people are doing today is so much harder than the RL people are doing in 2025, which was primarily on math.</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=61s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:01:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:jlOs01fe-iw@00:03:37-00:04:07">
+      <blockquote style="margin:0">hundreds of RL steps is not a lot. I think ideally RL runs would be much longer and the reward curves would keep going up if stability happened</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=217s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L482">
+      <blockquote style="margin:0">Kimi K3 (July 2026) spends one sentence on its RL algorithm (\"follows the algorithm in Kimi K2.5\") -- and about seven pages on environments and sandboxes: **51,219,741 sandboxes** created during training … Sandboxes sit idle up to 98% of their lifetime waiting on inference -- so you need to pause them.</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L482">Slides lec11-chap13-tools § Frontier practice: Kimi K3 environment management (L482)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="yt:GMry2DzC304@00:31:34-00:32:04">
+      <blockquote style="margin:0">the Chimney K3 paper doesn't talk about algorithmic details for RL at all anymore and it spends a ton of time on sandboxes environments.</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1894s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:31:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L489">
+      <blockquote style="margin:0">scores and average assistant steps both scale with RL FLOPs across eight agentic domains -- tool-call depth is learned, not prompted.</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L489">Slides lec11-chap13-tools § Frontier practice: K3 scaling RL (L489)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="yt:GMry2DzC304@00:32:04-00:32:34">
+      <blockquote style="margin:0">as you put more RL flops in your evaluations scores go up, but also the number of steps that the model takes in the world um goes up with it.</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1924s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:32:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L496-L499">
+      <blockquote style="margin:0">Open models train across multiple harnesses so deployment is smooth. - Kimi K3: \"training with a single fixed agent harness can cause a model to overfit\" … Nemotron 3 Ultra trains every task vertical under **at least two harnesses**</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L496-L499">Slides lec11-chap13-tools § Frontier practice: Harness randomization (L496-L499)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L507">
+      <blockquote style="margin:0">Polar (NVIDIA): same model, same GRPO, same tasks -- **+22.6** points on SWE-bench Verified training through the Codex harness (3.8 → 26.4: RL teaching an *unfamiliar* harness), **+0.6** through Qwen Code (already fluent: 34.6 → 35.2).</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L507">Slides lec11-chap13-tools § Frontier practice: Harness randomization (L507)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="yt:GMry2DzC304@00:32:34-00:33:05">
+      <blockquote style="margin:0">Nvidia had this polar paper where they showed that the same model on different harnesses could have like a 20-point swing in evaluation scores.</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1954s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:32:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L516-L518">
+      <blockquote style="margin:0">\"each domain contributes only a relatively small number of samples to any given training batch, diluting the per-domain learning signal.\" A common answer is to **train domain experts with RL, then merge them via multi-teacher on-policy distillation**</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L516-L518">Slides lec11-chap13-tools § Frontier practice: The RLVR mixing wall (L516-L518)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="yt:GMry2DzC304@00:33:05-00:33:38">
+      <blockquote style="margin:0">the tool use saturates a bit because the batch has so much different stuff going on. So this is part of why this multi-teacher on-policy distillation and MOPED became a popular technique</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1985s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:33:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L522-L527">
+      <blockquote style="margin:0">| Benchmark | SFT | RLVR | MOPD | Teacher | … | Terminal-Bench 2.0 | 34.5 | 44.5 | **54.0** | 50.0 |</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L522-L527">Slides lec11-chap13-tools § Frontier practice: The RLVR mixing wall (L522-L527)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L47">
+      <blockquote style="margin:0">**In industry post-training has a shocking number of stages and sequencing.** It is usually not just per-capability in a line, rather with forking &amp; merging, with some sequence too.</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L47">Slides qa-03 § Q1: &quot;Should capabilities be trained separately, then merged?&quot; (L47)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L535-L537">
+      <blockquote style="margin:0">GLM-5's slides-RL policy discovered `overflow: hidden` to make an overflowing slide *measure* 16:9, and flex-padding to stretch short ones -- the fix was patching the renderer, not the reward. Nemotron physically deletes future git commits and firewalls GitHub so SWE agents can't read the gold patch; Kimi K3 ships a kernel-exploit detector and public/hidden verifier pairs.</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L535-L537">Slides lec11-chap13-tools § Frontier practice: Reward hacking (L535-L537)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="yt:GMry2DzC304@00:33:38-00:34:09">
+      <blockquote style="margin:0">Something that is definitely happening is reward hacking. GLM 5 and Nematron talked about different ways that they did reward hacking</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2018s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:33:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="yt:GMry2DzC304@00:34:09-00:34:40">
+      <blockquote style="margin:0">This is a really benign example that GLM used partially because they don't want to put crazier stuff in the paper</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2049s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L553-L556">
+      <blockquote style="margin:0">**Long-tail rollouts**: one trajectory makes 2 tool calls, another makes 200 … **Credit assignment**: one sparse reward over a $10^5$--$10^6$-token trajectory … **Verifier gaming**: TMax rollouts were caught replacing test files with no-ops and faking binaries with simulated logs … over-optimization is back (lec. 9)</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L553-L556">Slides lec11-chap13-tools § More headaches (L553-L556)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="yt:GMry2DzC304@00:35:11-00:35:41">
+      <blockquote style="margin:0">We're talking about models working for eight hours at a time. How could you possibly include that data in a training batch without it being outdated and leaving your computer idle?</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2111s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="yt:GMry2DzC304@00:35:41-00:36:12">
+      <blockquote style="margin:0">completion is going to take hours to complete, it's like is it really worth the money? And this is why um I think GLM 5 used PPO</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2141s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:GMry2DzC304@00:35:41-00:36:12">
+      <blockquote style="margin:0">the agents will try to manipulate the world so that it passes the test, and that's not always what you wanted it to be doing.</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2141s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="yt:GMry2DzC304@00:35:41-00:36:43">
+      <blockquote style="margin:0">So over optimization is back.</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2141s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L145">
+      <blockquote style="margin:0">**SFT is the foundation** (and very compute efficient these days), then **RL is how the model learns a lot more from there** — on harder problems, and adapting to the harnesses it'll be used in at deployment.</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L145">Slides qa-03 § Q4: &quot;RL is basically just SFT with a regularization term?&quot; (L145)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="yt:GMry2DzC304@00:36:12-00:36:43">
+      <blockquote style="margin:0">you you're kind of co-designing these over time, so it's always a moving target.</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2172s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:36:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="yt:GMry2DzC304@00:18:04-00:19:06">
+      <blockquote style="margin:0">the MCP popularity was kind of annoying to me. It was like, this is not that big of a deal. … this is nice to do, but far from required, especially as the models keep getting smarter and smarter.</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1084s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:18:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="yt:GMry2DzC304@00:19:06-00:19:36">
+      <blockquote style="margin:0">I actually don't know how much MCP is used in modern systems, but my personal sense was that it wasn't that important.</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1146s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:19:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:GMry2DzC304@00:19:36-00:20:06">
+      <blockquote style="margin:0">you don't really care about all these things like MCP unless your customer specifically ask for it.</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=1176s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:19:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L397">
+      <blockquote style="margin:0">**Schema conformance**: production systems enforce valid JSON with constrained decoding (\"strict mode\"); closed labs also post-train specific models for flags like this.</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L397">Slides lec11-chap13-tools § Implementation details are everywhere (L397)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="yt:GMry2DzC304@00:08:15-00:08:45">
+      <blockquote style="margin:0">early on there used to be these like constrained JSON-only models when the models weren't as good at following the tool format, where today they all follow the tool format perfectly all the time. So, we hear a bit less about this distinction.</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=495s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:08:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="yt:GMry2DzC304@00:34:40-00:35:41">
+      <blockquote style="margin:0">when we're just training on math or code, over optimization became less of a problem. But with tool use, these very long complex trajectories, we're using rubrics to grade the intermediate steps, like over optimization and regular these needs to regularize and understand the models rollouts are becoming more popular again.</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2080s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">as these RL things got more complicated, especially in tool use, over optimization can come into many different forms and the regularization is starting to come back</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s129" data-cite="yt:DZFEX3ppflk@00:08:20-00:08:53">
+      <blockquote style="margin:0">just more reliable tool use. And that has totally transformed the way that these models can act in the world.</blockquote>
+      <figcaption><span class="chip">129</span> <a href="https://www.youtube.com/watch?v=DZFEX3ppflk&amp;t=500s">Traits of next generation reasoning models @ 00:08:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s130" data-cite="yt:GMry2DzC304@00:14:26-00:14:58">
+      <blockquote style="margin:0">the more reliability ones were tool bench which introduced this idea of pass to the K instead of pass at K</blockquote>
+      <figcaption><span class="chip">130</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=866s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:14:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s131" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">we even found something in Tool Use 3 that when we did RLVR in math, the models are pretty good at separating domains into really specific modes</blockquote>
+      <figcaption><span class="chip">131</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s132" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec11-chap13-tools.md#L562-L564">
+      <blockquote style="margin:0">1. Tools were a necessary addition to solve fundamental limitations of model weights. 2. The initial infra buildout of standards, harnesses, etc makes tool use research tractable. 3. Scaling RL for agents and tools is a very hard problem. Lots to do :)</blockquote>
+      <figcaption><span class="chip">132</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec11-chap13-tools.md?plain=1#L562-L564">Slides lec11-chap13-tools § Takeaways (L562-L564)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s133" data-cite="yt:GMry2DzC304@00:36:12-00:36:43">
+      <blockquote style="margin:0">we're very early into this scaling RL for agents thing</blockquote>
+      <figcaption><span class="chip">133</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2172s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:36:12</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  const LP_SEGS = [{"kind": "prompt", "text": "<|user|>\nWhat is the 50th Fibonacci number? (Use the standard F_0=0, F_1=1 indexing.)<\/s>\n<|assistant|>", "who": "user prompt", "step": 0}, {"kind": "gen", "text": "<think>\nOkay, I will compute the 50th Fibonacci number with a simple loop, then return the result.\n", "who": "model reasoning", "step": 1}, {"kind": "call", "text": "<code>\ndef fib(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a\n\nfib(50)\n<\/code>", "who": "tool call (model-generated)", "step": 1}, {"kind": "out", "text": "<output>\n12586269025\n<\/output>", "who": "tool output (injected)", "step": 2}, {"kind": "gen", "text": "<\/think>\n<answer>\nThe 50th Fibonacci number is 12 586 269 025.\n<\/answer>", "who": "model answer", "step": 3}];
+
+  // The orchestration loop, one step at a time, with the loss mask.
+  (() => {
+    const LOG = [
+      'The user prompt is in context. The orchestrator calls the model.',
+      'The model reasons, then emits a <code> block: a tool call. The orchestrator stops generation and parses it.',
+      'The orchestrator runs the code and appends the <output> block to the context.',
+      'The model is called again, writes its answer and makes no tool call, so the loop returns the text.',
+    ];
+    let step = 0;
+    const stream = document.getElementById('lp-stream'), log = document.getElementById('lp-log');
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const show = () => {
+      const segs = LP_SEGS.filter(g => g.step <= step);
+      stream.innerHTML = segs.map(g => '<pre class="lp-seg lp-' + g.kind + (g.step === step && step > 0 ? ' lp-new' : '') + '"><span class="who">' + g.who + (g.kind === 'prompt' || g.kind === 'out' ? ' · not trained' : ' · trained') + '</span>' + esc(g.text) + '</pre>').join('');
+      log.innerHTML = LOG.slice(0, step + 1).map(l => '<li>' + esc(l) + '</li>').join('');
+      const n = segs.reduce((a, g) => a + g.text.length, 0);
+      const tr = segs.filter(g => g.kind === 'gen' || g.kind === 'call').reduce((a, g) => a + g.text.length, 0);
+      document.getElementById('lp-n').textContent = n;
+      document.getElementById('lp-t').textContent = tr + ' of ' + n + (n ? ' (' + Math.round(100 * tr / n) + '%)' : '');
+      const btn = document.getElementById('lp-step');
+      btn.disabled = step >= 3; btn.textContent = step >= 3 ? 'Done' : 'Next step';
+    };
+    document.getElementById('lp-step').addEventListener('click', () => { if (step < 3) { step++; show(); } });
+    document.getElementById('lp-reset').addEventListener('click', () => { step = 0; show(); });
+    document.getElementById('lp-mask').addEventListener('change', e => stream.classList.toggle('masked', e.target.checked));
+    show();
+  })();
+
+  // pass@k vs pass^k for independent trials.
+  (() => {
+    const p = document.getElementById('pk-p'), k = document.getElementById('pk-k'), svg = document.getElementById('pk-plot');
+    const X = i => 40 + (i - 1) * (340 / 15), Y = v => 160 - v * 140;
+    const show = () => {
+      const pv = +p.value, kv = +k.value;
+      document.getElementById('pk-p-o').textContent = pv.toFixed(2);
+      document.getElementById('pk-k-o').textContent = kv;
+      let g = '<line class="ax" x1="40" y1="160" x2="380" y2="160"/><line class="ax" x1="40" y1="20" x2="40" y2="160"/>';
+      g += '<text x="34" y="24" text-anchor="end">1</text><text x="34" y="164" text-anchor="end">0</text>';
+      [1, 4, 8, 12, 16].forEach(i => { g += '<text x="' + X(i) + '" y="176" text-anchor="middle">' + i + '</text>'; });
+      g += '<text x="210" y="189" text-anchor="middle">k</text>';
+      const at = i => 1 - (1 - pv) ** i, hat = i => pv ** i;
+      const path = f => Array.from({ length: 16 }, (_, j) => (j ? 'L' : 'M') + X(j + 1).toFixed(1) + ' ' + Y(f(j + 1)).toFixed(1)).join(' ');
+      g += '<line class="mk" x1="' + X(kv) + '" y1="20" x2="' + X(kv) + '" y2="160"/>';
+      g += '<path class="la" d="' + path(at) + '"/><path class="lb" d="' + path(hat) + '"/>';
+      g += '<circle class="ma" cx="' + X(kv) + '" cy="' + Y(at(kv)) + '" r="4"><title>pass@k ' + at(kv).toFixed(3) + '</title></circle>';
+      g += '<circle class="mb" cx="' + X(kv) + '" cy="' + Y(hat(kv)) + '" r="4"><title>pass^k ' + hat(kv).toFixed(3) + '</title></circle>';
+      svg.innerHTML = g;
+      document.getElementById('pk-at').textContent = at(kv).toFixed(3);
+      document.getElementById('pk-hat').textContent = hat(kv).toFixed(3);
+      document.getElementById('pk-msg').textContent = kv === 1 ? 'With one trial the two metrics agree.' : 'Gap at k = ' + kv + ': ' + (at(kv) - hat(kv)).toFixed(2) + '. pass@k rewards occasional success; pass^k demands it every time.';
+    };
+    [p, k].forEach(x => x.addEventListener('input', show));
+    show();
+  })();
+</script>
+</body>
+</html>
