@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 15: Regularization</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid output{font-family:var(--mono)}
+  .wid input[type=range]{width:100%}
+  .wid label{display:block;margin-top:var(--s2)}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  svg.pl{display:block;width:100%;max-width:560px;height:auto;margin-top:var(--s2)}
+  svg.pl .ax{stroke:var(--line-3);stroke-width:1}
+  svg.pl .ba{fill:var(--accent)}
+  svg.pl .bb{fill:var(--muted)}
+  svg.pl .la{fill:none;stroke:var(--accent);stroke-width:2}
+  svg.pl .lb{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4}
+  svg.pl .lk{fill:var(--line-3);fill-opacity:.55;stroke:none}
+  svg.pl .ld{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:5 4}
+  svg.pl text{fill:var(--ink-2);font-size:11px;font-family:var(--mono)}
+  .kl-legend{margin:var(--s1) 0 0;font-size:var(--t-1);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:2px}
+  .sw-s{background:var(--accent)}
+  .sw-t{background:var(--muted)}
+  .sw-k{background:var(--line-3);opacity:.7}
+  .sw-d{width:16px;height:0;border-radius:0;border-top:2px dashed var(--ink)}
+  .lg{display:inline-flex;gap:var(--s1);align-items:center}
+  #code-excerpt{margin-top:var(--s3)}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,.callout,.kv,.tablewrap,.wid,.card{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s15_ch14-over-optimization.html">Chapter 14</a></p>
+  <h1>Chapter 15: Regularization</h1>
+  <p class="lede">Every post-training method is strong enough to pull the model too far from the general model it started as, and when out-of-distribution performance drops, that is over-optimization. <a class="chip" href="#s1" title="Ch. 15 Regularization (L22-L24)">1</a> This chapter covers the tools that hold the model back. <a class="chip" href="#s2" title="Ch. 15 Regularization (L26-L28)">2</a> Lambert calls them "a solution to lecture 9", <a class="chip" href="#s3" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:02:03">3</a> which is <a href="s15_ch14-over-optimization.html">Chapter 14</a>. The main tool is a KL penalty to a reference model. <a class="chip" href="#s4" title="Ch. 15 Regularization (L31)">4</a> <a class="chip" href="#s5" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:08">5</a> The second half is about <em>implicit</em> regularization: RL's on-policy structure makes it forget less than SFT, even with no penalty at all. <a class="chip" href="#s6" title="Ch. 15 Regularization § Implicit Regularization (L167-L169)">6</a> <a class="chip" href="#s7" title="Slides lec10-chap15-regularization § Takeaways (L484-L488)">7</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>The KL penalty</strong> subtracts $\lambda\,\mathrm{KL}(\pi_{\text{RL}}\|\pi_{\text{ref}})$ from the reward; it is a reverse KL, estimated on the policy's own samples. <a class="chip" href="#s8" title="Ch. 15 Regularization (L39-L43)">8</a> <a class="chip" href="#s9" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L57-L58)">9</a></li>
+      <li><strong>Other explicit tools</strong> (pretraining gradients, NLL in DPO, margin losses) tend to be scaffolding that the next model drops. <a class="chip" href="#s10" title="Ch. 15 Regularization (L33-L35)">10</a> <a class="chip" href="#s11" title="Slides lec10-chap15-regularization § Other regularization in the wild (L442-L446)">11</a></li>
+      <li><strong>SFT memorizes, RL generalizes:</strong> on a rule shift, RL improves and SFT collapses. <a class="chip" href="#s12" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L173-L175)">12</a> <a class="chip" href="#s13" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L183-L185)">13</a></li>
+      <li><strong>SFT is forward KL, KL-regularized RL is reverse KL,</strong> and for a multimodal model that makes RL forget less. <a class="chip" href="#s14" title="Ch. 15 Regularization § RL Reverse KL (L269-L271)">14</a> <a class="chip" href="#s15" title="Ch. 15 Regularization § RL Reverse KL (L284-L286)">15</a></li>
+      <li><strong>RL's Razor:</strong> forgetting tracks KL drift, and on-policy data, not negative gradients, explains RL's smaller drift. <a class="chip" href="#s16" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L318-L320)">16</a> <a class="chip" href="#s17" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L322-L323)">17</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Write the KL-penalized reward and say which direction of KL it is.</li>
+      <li>Estimate a KL from samples, and say why it is called a distance when it is not one.</li>
+      <li>Derive why SFT minimizes forward KL and KL-regularized RL minimizes reverse KL.</li>
+      <li>Explain why mode-seeking RL forgets <em>less</em>, against the naive reading.</li>
+      <li>Say why agentic RL recipes in 2026 drop the KL penalty, and what replaces it.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/15-regularization">Chapter 15</a></td><td>Short, math-heavy</td><td>The KL penalty, other tools, the forward/reverse derivations, three papers.</td></tr>
+        <tr><td>Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1871s">31:11</a></td><td>32 min</td><td>Recorded July 2026. Part 1 is the penalty (<a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=156s">02:36</a>), part 2 the two KL directions (<a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=654s">10:54</a>), part 3 the papers (<a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1243s">20:43</a>), part 4 what is changing (<a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1495s">24:55</a>).</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L30-L531">Lecture 10 slides</a></td><td>31 slides</td><td>The derivations step by step, the KL controller, 2026 practice.</td></tr>
+        <tr><td>Q&amp;A 3: <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=251s">04:11</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">05:46</a>, <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=472s">07:52</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=661s">11:01</a></td><td>5 min</td><td>August 2026. Why RLVR drops the KL penalty; is RL just regularized SFT? See also <a href="s01_q-rlvr-kl-penalty.html">page s01</a>.</td></tr>
+        <tr><td>Q&amp;A 2: <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=155s">02:35</a> to <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=277s">04:37</a></td><td>2 min</td><td>July 2026. Correction: KL is not a distance; the $k_1, k_2, k_3$ estimators.</td></tr>
+        <tr><td>Lecture 7: <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=1645s">27:25</a> to <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=1771s">29:31</a></td><td>2 min</td><td>June 2026. The same two KL directions, in distillation.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="why">
+    <h2>Why regularize</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=0s">00:00</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=30s">00:30</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=62s">01:02</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=93s">01:33</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=123s">02:03</a></p>
+    <p>Lambert frames Lecture 10 as "another math lecture" on why "RL generalizes better, SFT forgets more". <a class="chip" href="#s18" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:00:00">18</a> The job is "how to control your model from changing too much during a single RL run". <a class="chip" href="#s19" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:01:33">19</a> In the chapter's words, over-optimization in this setting looks like "nonsensical text": math reasoning you can follow that lands on a badly wrong answer, repeated text, switched languages, excess special characters. <a class="chip" href="#s2" title="Ch. 15 Regularization (L26-L28)">2</a> (Chapter 14 described subtler failures; the <a href="s15_ch14-over-optimization.html#differ">Chapter 14 page</a> compares the two.)</p>
+    <p>The general form subtracts a weighted regularizer from the reward, and the reference implementation makes that regularizer a KL divergence: <a class="chip" href="#s8" title="Ch. 15 Regularization (L39-L43)">8</a> <a class="chip" href="#s20" title="Slides lec10-chap15-regularization § Recall: The RLHF process (L55-L57)">20</a></p>
+    <p>$$ r = r_\theta - \lambda\, r_{\text{reg.}} $$</p>
+    <p>$$ r = r_\theta - \lambda_{\text{KL}}\, \mathcal{D}_{\text{KL}}\!\left(\pi_{\text{RL}}(y \mid x)\,\|\,\pi_{\text{ref}}(y \mid x)\right) $$</p>
+    <ul>
+      <li>$r_\theta$ is the reward model's score, and $r$ is the reward RL actually optimizes. <a class="chip" href="#s8" title="Ch. 15 Regularization (L39-L43)">8</a></li>
+      <li>$\pi_{\text{RL}}$ is the policy being trained; $\pi_{\text{ref}}$ is a frozen copy from before RL, usually the instruction-tuned model, sometimes an earlier RL checkpoint. <a class="chip" href="#s21" title="Ch. 15 Regularization § Reference Model to Generations (L64-L66)">21</a> <a class="chip" href="#s5" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:08">5</a></li>
+      <li>$\lambda_{\text{KL}}$ weighs the penalty. In practice it is usually written $\beta$; <a class="chip" href="#s22" title="Slides lec10-chap15-regularization § A KL penalty to the reference model controls reward (L141-L144)">22</a> Lambert asks viewers to "track down the literature" on when and why both letters are used. <a class="chip" href="#s23" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:05:41">23</a></li>
+    </ul>
+    <p>Other regularizers come and go: they stabilize one setup and are simplified away in the next generation. <a class="chip" href="#s10" title="Ch. 15 Regularization (L33-L35)">10</a> What lasts is the KL penalty, which the chapter calls "the most popular variant" as of 2026. <a class="chip" href="#s4" title="Ch. 15 Regularization (L31)">4</a> The lecture adds that it "came out of vogue in the RLVR era". <a class="chip" href="#s24" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:01:02">24</a> See <a href="#differ">disagreements</a>.</p>
+  </section>
+
+  <section id="kl">
+    <h2>The KL penalty</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=156s">02:36</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=188s">03:08</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=219s">03:39</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=250s">04:10</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=280s">04:40</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=310s">05:10</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=341s">05:41</a></p>
+    <p>KL divergence measures how far one distribution has drifted from another; it is zero when they produce identical outputs. <a class="chip" href="#s25" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L52-L55)">25</a> <a class="chip" href="#s26" title="Appendix A Definitions § Machine Learning (L48-L49)">26</a></p>
+    <p>$$ \mathcal{D}_{\text{KL}}(P\,\|\,Q) = \sum_{x} P(x)\log\frac{P(x)}{Q(x)} $$</p>
+    <p>Here $P$ is the new model and $Q$ the reference. <a class="chip" href="#s9" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L57-L58)">9</a> The penalty is the <strong>reverse KL</strong> to the reference: sample tokens from the RL model, score them under the reference. <a class="chip" href="#s9" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L57-L58)">9</a> <a class="chip" href="#s27" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:04:10">27</a> <a class="chip" href="#s28" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:10">28</a> It punishes the policy hard for putting mass where the reference puts little. <a class="chip" href="#s29" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L58)">29</a> <a class="chip" href="#s22" title="Slides lec10-chap15-regularization § A KL penalty to the reference model controls reward (L141-L144)">22</a> The other direction appears inside the trust regions of some RL algorithms and is closer to distillation or behavior cloning. <a class="chip" href="#s30" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L60)">30</a> Lecture 0: it is "reverse because we're kind of sampling from the student rather than the target". <a class="chip" href="#s31" title="ML Foundations (prerequisites) for Post-Training | Post-Training Course, Lecture 0 @ 00:18:13">31</a></p>
+    <p>The idea predates language models. Natasha Jaques used KL control for dialogue agents, and it became a core technique for fine-tuning pretrained models. <a class="chip" href="#s32" title="Ch. 15 Regularization § Reference Model to Generations (L68)">32</a> <a class="chip" href="#s33" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:39">33</a> The reference's job, in the chapter's words: the starting model "has a style that you would like to stay close to". <a class="chip" href="#s21" title="Ch. 15 Regularization § Reference Model to Generations (L64-L66)">21</a> Lecture 3 puts it as the "clearest way to prevent what is called over optimization". <a class="chip" href="#s34" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:25:54">34</a></p>
+    <h3>"Distance" is a loose word</h3>
+    <p>KL is not a distance: it is asymmetric, so it is not a metric. <a class="chip" href="#s35" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:02:35">35</a> <a class="chip" href="#s36" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:05:10">36</a> People still say "KL distance", meaning the <em>optimization distance</em>, how far the model has moved. <a class="chip" href="#s37" title="Ch. 15 Regularization (L32)">37</a> <a class="chip" href="#s38" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:03:06">38</a> On the Q&amp;A 2 slide he says he "battled my editors on this too". <a class="chip" href="#s39" title="Slides qa-02 § Correction: KL divergence is not a &quot;distance&quot; (Lecture 0) (L116-L117)">39</a> The book's own definition says "the KL distance from $Q$ to $P$". <a class="chip" href="#s26" title="Appendix A Definitions § Machine Learning (L48-L49)">26</a></p>
+  </section>
+
+  <section id="measure">
+    <h2>Measuring and controlling it</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=341s">05:41</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=374s">06:14</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=406s">06:46</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=437s">07:17</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=467s">07:47</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=498s">08:18</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=530s">08:50</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=560s">09:20</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=590s">09:50</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=622s">10:22</a></p>
+    <p>Sampling from $P$ turns the sum into an expectation you can estimate from log-probabilities: <a class="chip" href="#s40" title="Ch. 15 Regularization § Implementation Example (L72-L81)">40</a></p>
+    <p>$$ \mathcal{D}_{\text{KL}}(P\,\|\,Q) = \mathbb{E}_{x\sim P}\left[\log P(x) - \log Q(x)\right] $$</p>
+    <p>The chapter's snippet generates a sequence, runs both models over it, and sums the token log-probabilities: the difference of the sums approximates KL. <a class="chip" href="#s41" title="Ch. 15 Regularization § Implementation Example (L99-L104)">41</a> Lambert on the slide version: "I don't love this code that Claude wrote for me here". <a class="chip" href="#s42" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:07:17">42</a> In practice there are lower-variance estimators, $k_1$, $k_2$ and $k_3$, from John Schulman's note, and "you'll switch between them depending on which estimate is stable". <a class="chip" href="#s43" title="Slides lec10-chap15-regularization § Measuring KL in practice (L155-L156)">43</a> <a class="chip" href="#s44" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:07">44</a></p>
+    <p>Practitioners watch the KL curve every run, because a very large KL "usually means a bug or a broken model". <a class="chip" href="#s43" title="Slides lec10-chap15-regularization § Measuring KL in practice (L155-L156)">43</a> <a class="chip" href="#s45" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:06:14">45</a> The slide's example is an OLMo-2-7B GRPO run trained straight from the base model: reward climbs while KL rises and wanders, with <strong>β = 0</strong>, and "This is a healthy shape". <a class="chip" href="#s46" title="Slides lec10-chap15-regularization § What the curves look like in a real run (L182-L183)">46</a> <a class="chip" href="#s47" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:08:18">47</a> You can watch KL with no penalty on.</p>
+    <h3>β began as a controller</h3>
+    <p>The first RLHF-on-language-models paper (Ziegler et al. 2019) did not fix β. It set a target KL and adjusted β with a "log-space proportional controller": <a class="chip" href="#s48" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L192-L198)">48</a> <a class="chip" href="#s49" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:20">49</a></p>
+    <p>$$ e_t = \operatorname{clip}\!\left(\frac{\mathrm{KL}(\pi_t,\pi_{\text{ref}}) - \mathrm{KL}_{\text{target}}}{\mathrm{KL}_{\text{target}}},\,-0.2,\,0.2\right) $$</p>
+    <p>$$ \beta_{t+1} = \beta_t\,(1 + K_\beta\, e_t) $$</p>
+    <ul>
+      <li>$e_t$ is the clipped relative error between the measured KL and the target.</li>
+      <li>When KL runs above target, $e_t > 0$ and β grows, pulling the policy back; below target β shrinks. $K_\beta = 0.1$. <a class="chip" href="#s48" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L192-L198)">48</a></li>
+      <li>Runs with different seeds land on the same KL budget, so they are comparable. <a class="chip" href="#s48" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L192-L198)">48</a></li>
+    </ul>
+    <p>PPO's original paper had an adaptive variant that doubled or halved β, and constrained RL later used full PID controllers. <a class="chip" href="#s50" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L197)">50</a> Modern practice "swung back" to a small static β, or none. <a class="chip" href="#s48" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L192-L198)">48</a> <a class="chip" href="#s51" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:50">51</a> <a class="chip" href="#s52" title="Ch. 6 Reinforcement Learning § Implementation (L771)">52</a> TRL's controller was deleted in its rewrite; open-instruct uses a static <code>beta = 0.05</code>. <a class="chip" href="#s53" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L210)">53</a></p>
+  </section>
+
+  <section id="code">
+    <h2>The penalty in code</h2>
+    <p>In the book's policy-gradient code, the reward-side penalty is one function. It runs during rollouts, before advantages are computed: <a class="chip" href="#s54" title="Code code/policy_gradients/rollout.py (L150-L151)">54</a> <a class="chip" href="#s55" title="Code code/policy_gradients/utils.py (L165-L182)">55</a></p>
+    <div id="code-excerpt"><pre><code>def apply_reward_kl(
+    rewards: TensorDict,
+    log_probs: torch.Tensor,
+    log_probs_ref: torch.Tensor,
+    action_mask: torch.Tensor,
+    cfg: Config,
+) -&gt; TensorDict:
+    """Apply KL penalty to the combined ``total`` reward (REINFORCE/RLOO/PPO)."""
+    if not cfg.beta or cfg.loss not in ["ppo", "rloo", "reinforce"]:
+        return rewards
+    device = rewards["total"].device
+    log_probs = log_probs.to(device)
+    log_probs_ref = log_probs_ref.to(device)
+    action_mask = action_mask.to(device)
+    kl_div = get_approx_kl(cfg.kl_estimator, log_probs, log_probs_ref, action_mask)
+    kl_div = masked_mean(kl_div, mask=action_mask, dim=-1, keepdim=True)
+    rewards["total"] = rewards["total"] - cfg.beta * kl_div
+    return rewards
+</code></pre></div>
+    <p style="margin-top:var(--s3)">Three things to notice:</p>
+    <ul>
+      <li><strong>It is exactly the chapter's equation.</strong> The total reward minus <code>cfg.beta</code> times an estimated KL. <a class="chip" href="#s56" title="Code code/policy_gradients/utils.py (L179-L181)">56</a> <a class="chip" href="#s8" title="Ch. 15 Regularization (L39-L43)">8</a></li>
+      <li><strong>The KL is per token, then averaged</strong> over the completion with <code>masked_mean</code>. <a class="chip" href="#s56" title="Code code/policy_gradients/utils.py (L179-L181)">56</a> Lecture 3: "KL penalties are token level". <a class="chip" href="#s57" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:44:59">57</a> The chapter's snippet sums to a sequence instead; see the <a href="#differ">traps</a>.</li>
+      <li><strong>It only applies to PPO, RLOO and REINFORCE.</strong> <a class="chip" href="#s55" title="Code code/policy_gradients/utils.py (L165-L182)">55</a> GRPO puts its KL term in the loss rather than the reward, <a class="chip" href="#s58" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L314-L316)">58</a> <a class="chip" href="#s59" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:52:22">59</a> which is the optional <code>beta * kl_loss</code> shown on the <a href="s15_ch14-over-optimization.html#code">Chapter 14 page</a>.</li>
+    </ul>
+    <p>The default estimator is <code>kl3</code>, which estimates $\mathrm{KL}(\pi\|\pi_{\text{ref}})$ from the policy's own samples; <code>kl1</code> is the plain $\log(\pi/\pi_{\text{ref}})$. <a class="chip" href="#s60" title="Code code/policy_gradients/loss.py (L23-L36)">60</a> <a class="chip" href="#s61" title="Code code/policy_gradients/loss.py (L52-L65)">61</a> The default <code>beta</code> is 0.0, so the penalty is off unless you turn it on. <a class="chip" href="#s62" title="Code code/policy_gradients/config.py (L112-L114)">62</a> The math is on the <a href="s07_ch06-policy-gradients.html">Chapter 6 page</a>. I have not run it.</p>
+  </section>
+
+  <section id="other">
+    <h2>Other tools to control optimization</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1495s">24:55</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1527s">25:27</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1557s">25:57</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1587s">26:27</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1619s">26:59</a></p>
+    <p>The chapter includes these to show how leading models got stable optimization in their setups, "rather than as tools that should work explicitly in every setup". <a class="chip" href="#s63" title="Ch. 15 Regularization § Other Tools to Control Optimization (L112-L114)">63</a> The slides call most of them "scaffolding". <a class="chip" href="#s11" title="Slides lec10-chap15-regularization § Other regularization in the wild (L442-L446)">11</a></p>
+    <h3>Pretraining gradients (InstructGPT)</h3>
+    <p>Keep the model close to a <em>dataset</em>: InstructGPT added a next-token loss on pretraining documents "to fix the performance regressions on public NLP datasets". <a class="chip" href="#s64" title="Ch. 15 Regularization § Pretraining Gradients in RL (L118-L119)">64</a> <a class="chip" href="#s65" title="Ch. 15 Regularization § Pretraining Gradients in RL (L125)">65</a></p>
+    <p>$$ J(\theta) = \mathbb{E}_{(x,y)\sim\mathcal{D}_{\pi_{\text{RL},\theta}}}\!\left[r_\theta(y\mid x) - \lambda\, r_{\text{reg.}}\right] + \gamma\, \mathbb{E}_{x\sim\mathcal{D}_{\text{pretrain}}}\!\left[\log \pi_{\text{RL},\theta}(x)\right] $$</p>
+    <p>The first term is the regularized RL reward on the policy's own samples; the second rewards high likelihood on pretraining text, weighted by $\gamma$. <a class="chip" href="#s65" title="Ch. 15 Regularization § Pretraining Gradients in RL (L125)">65</a> Lambert: "Haven't seen stuff like this recently." <a class="chip" href="#s66" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:25:57">66</a></p>
+    <h3>NLL alongside DPO</h3>
+    <p>Add a negative log-likelihood term to DPO; the same trick works for reward models. <a class="chip" href="#s67" title="Ch. 15 Regularization § Next-token Accuracy in DPO (L133-L134)">67</a></p>
+    <p>$$ \mathcal{L}_{\text{DPO+NLL}} = \mathcal{L}_{\text{DPO}} + \alpha\, \mathcal{L}_{\text{NLL}}, \qquad \mathcal{L}_{\text{NLL}} = -\frac{\log P_\theta(c^w, y^w\mid x)}{|c^w| + |y^w|} $$</p>
+    <p>The DPO term widens the margin between the winner and the loser, with $\beta$ setting how hard it pulls from the reference. The NLL term, weighted by $\alpha$ and normalized by length, keeps the winner likely "in an absolute language modeling sense" and not just better than the loser. <a class="chip" href="#s68" title="Ch. 15 Regularization § Next-token Accuracy in DPO (L145-L146)">68</a> The book's code has a relative of this: ORPO's loss is an NLL term on the chosen answer minus a log-odds term. <a class="chip" href="#s69" title="Code code/direct_alignment/loss.py (L264)">69</a> See the <a href="s09_ch08-direct-alignment.html">Chapter 8 page</a>.</p>
+    <h3>Margins in reward modeling</h3>
+    <p>Most reward models have no regularization beyond the contrastive loss, and direct alignment algorithms regularize through $\beta$. <a class="chip" href="#s70" title="Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L150-L152)">70</a> Llama 2 added a margin from annotator rating gaps: <a class="chip" href="#s71" title="Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L154-L161)">71</a></p>
+    <p>$$ \mathcal{L}(\theta) = -\log\sigma\!\left(r_\theta(y_c\mid x) - r_\theta(y_r\mid x) - m(y_c,y_r)\right) $$</p>
+    <p>Here $m$ is how far apart two annotators' ratings put the chosen $y_c$ and rejected $y_r$, so a clear win must be won by more. <a class="chip" href="#s71" title="Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L154-L161)">71</a> Reward-weighted DPO, RPO and REBEL use reward margins too. <a class="chip" href="#s72" title="Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L163)">72</a> See the <a href="s06_ch05-reward-models.html">Chapter 5 page</a>.</p>
+    <p>Why these fade: "you want to revisit your recipe and make it simpler for the future model versions because the simpler ideas normally scale better". <a class="chip" href="#s73" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:26:59">73</a></p>
+  </section>
+
+  <section id="implicit">
+    <h2>Implicit regularization: SFT memorizes, RL generalizes</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1243s">20:43</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1275s">21:15</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1306s">21:46</a></p>
+    <p>Everything above is <em>explicit</em>: something added to the objective. The chapter's second half is about <em>implicit</em> regularization, a resistance to memorization and forgetting that comes from on-policy optimization itself, with no KL penalty or replay buffer. <a class="chip" href="#s6" title="Ch. 15 Regularization § Implicit Regularization (L167-L169)">6</a> In the book, he says, "I call this implicit regularization": RL "follows the shape of a KL divergence". <a class="chip" href="#s74" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:11:25">74</a></p>
+    <p>Chu et al. 2025 train on one task and test on a rule shift. <a class="chip" href="#s12" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L173-L175)">12</a> <a class="chip" href="#s75" title="Slides lec10-chap15-regularization § &quot;SFT memorizes, RL generalizes&quot; (L391-L393)">75</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Task</th><th>Train</th><th>Test (out of distribution)</th></tr></thead>
+      <tbody>
+        <tr><td>GeneralPoints: make 24 from four cards</td><td>J, Q, K all count as 10</td><td>J = 11, Q = 12, K = 13 <a class="chip" href="#s76" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L179-L181)">76</a></td></tr>
+        <tr><td>V-IRL: follow directions through city streets</td><td>Absolute directions (north, east)</td><td>Relative directions (left, right) <a class="chip" href="#s76" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L179-L181)">76</a></td></tr>
+      </tbody>
+    </table></div>
+    <div class="cards" style="margin-top:var(--s3)">
+      <div class="card"><p class="label">RL on V-IRL</p><p class="stat">80.8% → 91.8%</p><p>Out-of-distribution per-step accuracy improves. <a class="chip" href="#s13" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L183-L185)">13</a></p></div>
+      <div class="card"><p class="label">SFT on V-IRL</p><p class="stat">80.8% → 1.3%</p><p>It destroys spatial reasoning the base model had, collapsing to "a lookup table" from phrases to absolute directions. <a class="chip" href="#s13" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L183-L185)">13</a></p></div>
+    </div>
+    <p style="margin-top:var(--s3)">Across all variants, RL improves out of distribution as compute grows while SFT degrades. <a class="chip" href="#s13" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L183-L185)">13</a> Lambert calls it "a kind of a toy problem", but one where you can test the math. <a class="chip" href="#s77" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:21:46">77</a></p>
+  </section>
+
+  <section id="directions">
+    <h2>SFT is forward KL, RL is reverse KL</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=654s">10:54</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=685s">11:25</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=716s">11:56</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=746s">12:26</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=777s">12:57</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=808s">13:28</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=839s">13:59</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=871s">14:31</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=902s">15:02</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=933s">15:33</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=965s">16:05</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=995s">16:35</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1027s">17:07</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1058s">17:38</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1089s">18:09</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1120s">18:40</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1151s">19:11</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1181s">19:41</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1212s">20:12</a></p>
+    <p>Why does RL forget less? The chapter's answer: the two methods minimize the two directions of KL, and the direction is set by <em>where the samples come from</em>. <a class="chip" href="#s78" title="Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L202-L205)">78</a> <a class="chip" href="#s79" title="Slides lec10-chap15-regularization § The reward penalty and the optimization shape are two different things (L223-L231)">79</a> (Here $P$ is the target and $Q$ the model, the reverse of the letters above.) <a class="chip" href="#s80" title="Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L201)">80</a> Forward is "the canonical way"; reverse is the other one. <a class="chip" href="#s81" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:11:56">81</a></p>
+    <h3>SFT minimizes forward KL</h3>
+    <p>$$ \mathrm{KL}(\pi_\star\|\pi_\theta) = \underbrace{\mathbb{E}_{(x,y)\sim\mathcal{D}}\left[\log\pi_\star(y\mid x)\right]}_{-H(\pi_\star),\ \text{constant}} \;-\; \underbrace{\mathbb{E}_{(x,y)\sim\mathcal{D}}\left[\log\pi_\theta(y\mid x)\right]}_{-\mathcal{L}_{\text{SFT}}(\theta)} $$</p>
+    <p>The samples are the dataset. The first term is the data's negative entropy, which does not depend on $\theta$; the second is the SFT cross-entropy loss. Same gradients, same minimum. <a class="chip" href="#s82" title="Ch. 15 Regularization § SFT Forward KL (L221-L228)">82</a> <a class="chip" href="#s83" title="Slides lec10-chap15-regularization § SFT is forward KL (L316)">83</a> <a class="chip" href="#s84" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:18:09">84</a></p>
+    <h3>KL-regularized RL minimizes reverse KL</h3>
+    <p>Start from the RL objective with the penalty, divide by $-\beta$, and normalize with a partition function $Z(x)$. The objective becomes a single KL, minimized at the <strong>reward-tilted reference</strong>: <a class="chip" href="#s85" title="Ch. 15 Regularization § RL Reverse KL (L244)">85</a> <a class="chip" href="#s86" title="Ch. 15 Regularization § RL Reverse KL (L250-L251)">86</a></p>
+    <p>$$ \pi_\star(y\mid x) = \frac{1}{Z(x)}\,\pi_{\text{ref}}(y\mid x)\,\exp\!\left(\tfrac{1}{\beta}\,r(x,y)\right) $$</p>
+    <p>Take the reference, multiply each completion's probability by $e^{r/\beta}$, renormalize. Large $\beta$ barely tilts; small $\beta$ piles mass on the highest-reward completions. <a class="chip" href="#s87" title="Slides lec10-chap15-regularization § RL is reverse KL (L254)">87</a> <a class="chip" href="#s88" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:14:31">88</a> It is the same $\pi_\star$ that DPO starts from. <a class="chip" href="#s89" title="Slides lec10-chap15-regularization § RL is reverse KL (L248)">89</a> The name came from AI models: a "claudism", he says. <a class="chip" href="#s90" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:12:26">90</a> <a class="chip" href="#s87" title="Slides lec10-chap15-regularization § RL is reverse KL (L254)">87</a> Try it:</p>
+    <div class="wid" id="tl-demo">
+      <p class="label" style="margin:0">The reward-tilted reference, on six made-up completions</p>
+      <label for="tl-b">KL weight, $\beta$: <output id="tl-b-o"></output></label>
+      <input id="tl-b" type="range" min="0" max="100" step="1" value="55" data-lavish-action>
+      <svg class="pl" id="tl-plot" viewBox="0 0 400 190" role="img" aria-label="Bars for six completions: the reference probability and the tilted probability side by side, with each completion's reward underneath."></svg>
+      <p class="kl-legend"><span class="lg"><span class="sw sw-t"></span> $\pi_{\text{ref}}$, the reference</span> <span class="lg"><span class="sw sw-s"></span> $\pi_\star$, tilted by $e^{r/\beta}$</span></p>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Expected reward</dt><dd><output id="tl-r"></output></dd>
+        <dt>$\mathrm{KL}(\pi_\star \| \pi_{\text{ref}})$</dt><dd><output id="tl-kl"></output></dd>
+        <dt>Most likely completion</dt><dd><output id="tl-top"></output></dd>
+      </div>
+      <p id="tl-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">Expanding $\mathrm{KL}(\pi_\theta\|\pi_\star)$ and dropping the constant $\log Z$ gives back $-\tfrac{1}{\beta}\mathcal{J}_{\text{RL}}$, so maximizing the RL objective is minimizing the reverse KL to $\pi_\star$. <a class="chip" href="#s14" title="Ch. 15 Regularization § RL Reverse KL (L269-L271)">14</a> <a class="chip" href="#s91" title="Slides lec10-chap15-regularization § RL is reverse KL (L284)">91</a> The lecture adds a caveat: "if you have beta equal to zero, this theory on the shape of the KL does not apply". <a class="chip" href="#s92" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:12:57">92</a> <a class="chip" href="#s79" title="Slides lec10-chap15-regularization § The reward penalty and the optimization shape are two different things (L223-L231)">79</a> He also warns that going "from a definition to some implementation" risks dropping assumptions. <a class="chip" href="#s93" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:15:33">93</a> Pairing the two is "a little cute", since one is reward optimization and the other learning from data. <a class="chip" href="#s94" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:18:40">94</a></p>
+    <h3>Mode covering and mode seeking</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th></th><th>Forward KL (SFT)</th><th>Reverse KL (RL)</th></tr></thead>
+      <tbody>
+        <tr><td>Samples from</td><td>The target: a fixed dataset <a class="chip" href="#s95" title="Slides lec10-chap15-regularization § SFT and RL are the two directions of KL (L332-L346)">95</a></td><td>The policy itself <a class="chip" href="#s95" title="Slides lec10-chap15-regularization § SFT and RL are the two directions of KL (L332-L346)">95</a></td></tr>
+        <tr><td>Penalized when</td><td>The target has mass where the model has almost none: the loss "blows up" <a class="chip" href="#s96" title="Ch. 15 Regularization § RL Reverse KL (L277-L282)">96</a> <a class="chip" href="#s97" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:19:11">97</a></td><td>The model puts mass where the target has little <a class="chip" href="#s96" title="Ch. 15 Regularization § RL Reverse KL (L277-L282)">96</a></td></tr>
+        <tr><td>Tends to be</td><td><strong>Mode covering</strong>: spreads to cover every mode <a class="chip" href="#s96" title="Ch. 15 Regularization § RL Reverse KL (L277-L282)">96</a></td><td><strong>Mode seeking</strong>: concentrates on one high-reward mode <a class="chip" href="#s96" title="Ch. 15 Regularization § RL Reverse KL (L277-L282)">96</a> <a class="chip" href="#s98" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:20:12">98</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Lecture 7 drew the same table for distillation: offline distillation is "mass covering", on-policy distillation reverse KL and "a much better regulator". <a class="chip" href="#s99" title="Slides lec10-chap15-regularization § Recall, Lecture 7: The same two directions in distillation (L353)">99</a> <a class="chip" href="#s100" title="On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:28:28">100</a> <a class="chip" href="#s101" title="On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:28:59">101</a> The book's distillation code labels its loss "Reverse KL = KL(student || teacher)". <a class="chip" href="#s102" title="Code code/distillation/loss.py (L57-L59)">102</a> See the <a href="s13_ch12-synthetic-data.html">Chapter 12 page</a>. Lambert: "I'm only starting to understand all of these KL direction things". <a class="chip" href="#s103" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:20:43">103</a></p>
+    <h3>The naive read, and why it flips</h3>
+    <p>If forward KL covers every mode, shouldn't SFT preserve old knowledge, and mode-seeking RL abandon it? <a class="chip" href="#s15" title="Ch. 15 Regularization § RL Reverse KL (L284-L286)">15</a> <a class="chip" href="#s104" title="Slides lec10-chap15-regularization § Which direction should forget less? (L401-L403)">104</a> Here is that intuition on a toy, where the "model" is a single bell curve:</p>
+    <div class="wid" id="md-demo">
+      <p class="label" style="margin:0">Fit one bell curve to a two-mode target (the "naive read")</p>
+      <label for="md-s">Distance between the target's two modes: <output id="md-s-o"></output></label>
+      <input id="md-s" type="range" min="0.5" max="6" step="0.25" value="5" data-lavish-action>
+      <svg class="pl" id="md-plot" viewBox="0 0 400 170" role="img" aria-label="A two-humped target density with two single-hump fits drawn over it: the forward-KL fit spreads across both humps, the reverse-KL fit sits on one."></svg>
+      <p class="kl-legend"><span class="lg"><span class="sw sw-k"></span> target</span> <span class="lg"><span class="sw sw-s"></span> best fit by forward KL (SFT's direction)</span> <span class="lg"><span class="sw sw-d"></span> best fit by reverse KL (RL's direction)</span></p>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Forward-KL fit</dt><dd><output id="md-f"></output></dd>
+        <dt>Reverse-KL fit</dt><dd><output id="md-r"></output></dd>
+      </div>
+      <p id="md-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">The chapter says "the opposite holds": the intuition assumes a unimodal policy, and LLMs have many modes. <a class="chip" href="#s15" title="Ch. 15 Regularization § RL Reverse KL (L284-L286)">15</a> <a class="chip" href="#s105" title="Slides lec10-chap15-regularization § Which direction should forget less? (L411)">105</a> Chen et al. 2025 picture a policy with an "old" mode of prior knowledge and a "new" mode for the task. <a class="chip" href="#s106" title="Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L190-L191)">106</a> Forward KL stretches the policy to cover the target and pulls mass away from the old mode; reverse KL shifts the new mode toward the target and leaves the old one alone. <a class="chip" href="#s107" title="Ch. 15 Regularization § RL Reverse KL (L289-L292)">107</a> <a class="chip" href="#s108" title="Ch. 15 Regularization § RL Reverse KL (L273)">108</a> <a class="chip" href="#s109" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:23:20">109</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/retaining_by_doing_mode_intuition.png">The chapter's figure</a>. Training only on its own generations keeps RL's updates local to where it already puts mass. <a class="chip" href="#s110" title="Ch. 15 Regularization § RL Reverse KL (L298)">110</a></p>
+    <p>Lambert in the lecture: "this intuition is backwards", partly because "the words being used are pretty bad". <a class="chip" href="#s111" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:22:17">111</a> Of the figure: "not perfectly intuitive but it gets the point across", with mass covering as "blanketing" and mode seeking as "moving over". <a class="chip" href="#s112" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:23:52">112</a> His takeaway: reverse KL's mode seeking "is better suited" than SFT, which "has to kind of try to memorize things". <a class="chip" href="#s113" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:41">113</a></p>
+  </section>
+
+  <section id="razor">
+    <h2>RL's Razor: why online RL forgets less</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1462s">24:22</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1495s">24:55</a></p>
+    <p>Many policies solve a new task. Shenfeld et al. 2026 propose that "on-policy methods such as RL are inherently biased toward solutions that remain closer to the original policy in KL divergence". <a class="chip" href="#s114" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L303-L306)">114</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/rl_razor_motivation.png">The chapter's figure</a>.</p>
+    <p>$$ \text{Forgetting} \approx f\!\left(\mathbb{E}_{x\sim\tau}\left[\mathrm{KL}\!\left(\pi_0(\cdot\mid x)\,\|\,\pi(\cdot\mid x)\right)\right]\right) $$</p>
+    <ul>
+      <li>$\pi_0$ is the initial model, $\pi$ the fine-tuned one, and $\tau$ the <em>new</em> task's inputs. <a class="chip" href="#s16" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L318-L320)">16</a></li>
+      <li>Across RL and SFT variants, forgetting correlates with this KL at $R^2 = 0.96$, though it is measured on new-task data, not on the old tasks. <a class="chip" href="#s16" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L318-L320)">16</a> <a class="chip" href="#s115" title="Slides lec10-chap15-regularization § RL&#x27;s razor: Lower KL drift for equivalent performance (L423-L424)">115</a></li>
+      <li>So it is "a cheap forgetting predictor". <a class="chip" href="#s115" title="Slides lec10-chap15-regularization § RL&#x27;s razor: Lower KL drift for equivalent performance (L423-L424)">115</a></li>
+    </ul>
+    <p>What makes RL's drift smaller? The authors split RL from SFT along two axes, on-policy data and negative gradients, and find on-policy data "fully accounts for the difference"; negative gradients have "no discernible effect". <a class="chip" href="#s17" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L322-L323)">17</a> <a class="chip" href="#s115" title="Slides lec10-chap15-regularization § RL&#x27;s razor: Lower KL drift for equivalent performance (L423-L424)">115</a> On-policy samples are things the model already finds likely, so each update stays near the current distribution; SFT's targets can be arbitrarily far away. <a class="chip" href="#s116" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L325-L326)">116</a> Lambert's summary: RL policies "are biased towards ones that are a bit simpler" and forget less, though his verdict on the results is "probably okay". <a class="chip" href="#s117" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:24:55">117</a> <a class="chip" href="#s118" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:24:22">118</a></p>
+    <h3>Is RL just regularized SFT?</h3>
+    <p>A reader asked this in Q&amp;A 3. Lambert: the losses share their core term, and SFT is the "all-positive" special case. <a class="chip" href="#s119" title="Slides qa-03 § The similarities in all the loss functions are very real (L155-L157)">119</a> But "you can't just go back and generate that data a priori such that you could only do SFT". <a class="chip" href="#s120" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26">120</a> SFT is the foundation, and RL is how the model "learns a lot more from there". <a class="chip" href="#s121" title="Slides qa-03 § Q4: &quot;RL is basically just SFT with a regularization term?&quot; (L145-L147)">121</a> <a class="chip" href="#s122" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:55">122</a> He names one difference as "huge": RL has negative gradients, showing the model "what it should not do". <a class="chip" href="#s123" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">123</a> <a class="chip" href="#s119" title="Slides qa-03 § The similarities in all the loss functions are very real (L155-L157)">119</a> That sits awkwardly with RL's Razor; see <a href="#differ">disagreements</a>.</p>
+  </section>
+
+  <section id="now">
+    <h2>2026: the KL penalty is moving on</h2>
+    <p class="tag">In Lecture 10: <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1652s">27:32</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1683s">28:03</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1715s">28:35</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1747s">29:07</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1778s">29:38</a> · <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1810s">30:10</a></p>
+    <p>"A lot of the recent models are not using KL penalties." <a class="chip" href="#s124" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:27:32">124</a></p>
+    <ul>
+      <li><strong>GLM-5</strong> removes it "to accelerate RL improvement". <a class="chip" href="#s125" title="Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L455-L459)">125</a></li>
+      <li><strong>Kimi</strong>, per the Lecture 10 slide, ships K2 and K3 with no KL penalty and no reference policy. <a class="chip" href="#s125" title="Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L455-L459)">125</a> Q&amp;A 3 is less sure; see <a href="#differ">disagreements</a>.</li>
+      <li><strong>TMax</strong>, Lambert's terminal-agent work: a small KL made collapse less severe but lowered reward, so the final recipe is $\beta = 0$. <a class="chip" href="#s125" title="Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L455-L459)">125</a> <a class="chip" href="#s124" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:27:32">124</a></li>
+    </ul>
+    <p>The failure being fought has moved. With 20+ turn trajectories, async rollouts and mismatched training and inference engines, drift from the <em>sampler</em> matters more than drift from the starting model. <a class="chip" href="#s126" title="Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L459)">126</a> <a class="chip" href="#s127" title="Slides lec10-chap15-regularization § RLVR has regularization too, but different best practices (L68-L72)">127</a> "In early RHF it was like training reference and now in RLVR for agents it's like sampler trainer". <a class="chip" href="#s128" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:28:35">128</a> The TMax talk shows that gap, "the trainer generator gap in asynchronous RL training". <a class="chip" href="#s129" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:06">129</a></p>
+    <p>The new tools act on the trust region. <strong>DPPO</strong> masks tokens by a directly estimated divergence between the rollout and training policies, instead of PPO's per-token ratio clip; GLM's IcePop and Kimi's log-ratio interval do the same job: "gradients masked, not clipped". <a class="chip" href="#s130" title="Slides lec10-chap15-regularization § A trust region on the sampling distribution (L467-L474)">130</a> <a class="chip" href="#s131" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:29:07">131</a> In TMax, DPPO "increases the stability of this RL run". <a class="chip" href="#s132" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:37">132</a> The slide: "This is where the eye of regularization is today". <a class="chip" href="#s130" title="Slides lec10-chap15-regularization § A trust region on the sampling distribution (L467-L474)">130</a> Lambert adds "this thing is still pretty new for me". <a class="chip" href="#s133" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:10">133</a> Clipping and the trust region are on the <a href="s07_ch06-policy-gradients.html">Chapter 6 page</a>.</p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The book and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>Is the KL penalty still standard?</strong></p><ul>
+      <li><strong>Chapter 15:</strong> the KL distance is "the most popular variant, used in most RLHF implementations as of 2026". <a class="chip" href="#s4" title="Ch. 15 Regularization (L31)">4</a></li>
+      <li><strong>Chapter 6:</strong> since RLVR, "the prevalence of KL penalties has decreased overall". <a class="chip" href="#s58" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L314-L316)">58</a></li>
+      <li><strong>Lecture 3 (Apr 2026):</strong> used less in RLVR, but "very very long RL runs" might need it again. <a class="chip" href="#s134" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:27:25">134</a></li>
+      <li><strong>Lecture 10 (Jul 2026):</strong> it "came out of vogue in the RLVR era"; agentic recipes use $\beta = 0$. <a class="chip" href="#s24" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:01:02">24</a> <a class="chip" href="#s125" title="Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L455-L459)">125</a></li>
+      <li><strong>Q&amp;A 3 (Aug 2026):</strong> basic math and code RLVR does not need it, since models learn math "without OOD degradation", but in tool use "the regularization is starting to come back". <a class="chip" href="#s135" title="Slides qa-03 § Q2: &quot;Why does RLVR often omit the KL penalty?&quot; (L93)">135</a> <a class="chip" href="#s136" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">136</a> <a class="chip" href="#s137" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">137</a></li>
+    </ul><p>The chapter says <em>RLHF</em>; the lecture and Q&amp;A are about RLVR and agents. Lambert does not reconcile them.</p></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>Is RL a reverse KL minimization without the penalty?</strong></p><ul>
+      <li><strong>Chapter 15:</strong> "SFT minimizes forward KL, RL minimizes reverse KL", stated without a condition after a derivation that assumes the penalty. <a class="chip" href="#s14" title="Ch. 15 Regularization § RL Reverse KL (L269-L271)">14</a></li>
+      <li><strong>Slides:</strong> "only true with the KL penalty in the optimization (does not apply to all RLVR results)", though on-policy sampling still biases RL toward small KL. <a class="chip" href="#s79" title="Slides lec10-chap15-regularization § The reward penalty and the optimization shape are two different things (L223-L231)">79</a></li>
+      <li><strong>Lecture 10:</strong> with β = 0, "this theory on the shape of the KL does not apply". <a class="chip" href="#s92" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:12:57">92</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Do negative gradients matter?</strong></p><ul>
+      <li><strong>Chapter 15 and slides (RL's Razor):</strong> on-policy data explains the difference in generalization; negative gradients have "no discernible effect". <a class="chip" href="#s17" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L322-L323)">17</a> <a class="chip" href="#s115" title="Slides lec10-chap15-regularization § RL&#x27;s razor: Lower KL drift for equivalent performance (L423-L424)">115</a></li>
+      <li><strong>Q&amp;A 3 (Aug 2026):</strong> "A huge difference: <strong>negative gradients</strong>"; RL "learns from its own mistakes, which SFT structurally cannot do". <a class="chip" href="#s119" title="Slides qa-03 § The similarities in all the loss functions are very real (L155-L157)">119</a> <a class="chip" href="#s123" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28">123</a></li>
+    </ul><p>The two may answer different questions (forgetting vs. what RL can learn), but he does not say so.</p></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Which recipes use a KL penalty?</strong></p><ul>
+      <li><strong>Lecture 10 slide:</strong> Kimi's K2 and K3 recipes "ship with no KL penalty and no reference policy at all". <a class="chip" href="#s125" title="Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L455-L459)">125</a></li>
+      <li><strong>Q&amp;A 3 slide:</strong> lists Kimi K3 under "Kept (a version of) it", yet says the report "never mentions KL". The same column says DeepSeek-R1's objective "ships with" a KL term. <a class="chip" href="#s138" title="Slides qa-03 § Dropped it (L102-L113)">138</a></li>
+      <li><strong>Q&amp;A 3 spoken:</strong> the K3 report "didn't really talk about it. It might be mentioned in the K2 report", <a class="chip" href="#s139" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">139</a> and "Deep Seek R1 didn't actually talk about it". <a class="chip" href="#s140" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">140</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>How strong are the papers?</strong></p><ul>
+      <li><strong>Chapter 15:</strong> Chu et al.'s answer "is clear"; RL's Razor gives "a powerful instrument for estimating forgetting". <a class="chip" href="#s12" title="Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L173-L175)">12</a> <a class="chip" href="#s16" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L318-L320)">16</a></li>
+      <li><strong>Lecture 10:</strong> Chu et al. is "a kind of a toy problem"; RL's Razor's results "are probably okay"; Chen et al.'s figure is "not perfectly intuitive". <a class="chip" href="#s77" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:21:46">77</a> <a class="chip" href="#s118" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:24:22">118</a> <a class="chip" href="#s112" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:23:52">112</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>$P$ and $Q$ swap roles.</strong> In the penalty section $P$ is the new model and $Q$ the reference; <a class="chip" href="#s9" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L57-L58)">9</a> in the implicit section $P$ is the target and $Q$ the model. <a class="chip" href="#s80" title="Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L201)">80</a> Read each section with its own letters.</li>
+      <li><strong>Sequence or token KL.</strong> The chapter's snippet sums log-probs to a sequence-level KL; <a class="chip" href="#s41" title="Ch. 15 Regularization § Implementation Example (L99-L104)">41</a> Lecture 3 says "KL penalties are token level"; <a class="chip" href="#s57" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:44:59">57</a> the code averages per-token estimates. <a class="chip" href="#s56" title="Code code/policy_gradients/utils.py (L179-L181)">56</a></li>
+      <li><strong>$\lambda$ or $\beta$.</strong> The same coefficient; the chapter's equations use $\lambda_{\text{KL}}$ and the derivations $\beta$. <a class="chip" href="#s22" title="Slides lec10-chap15-regularization § A KL penalty to the reference model controls reward (L141-L144)">22</a> <a class="chip" href="#s23" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:05:41">23</a></li>
+      <li><strong>Lecture numbers.</strong> Lecture 7 (June 2026) promises the topic "In lecture 15"; <a class="chip" href="#s141" title="On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:27:57">141</a> Q&amp;A 3 calls Lecture 10 "lecture 11". <a class="chip" href="#s142" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:07:52">142</a> Both mean this lecture.</li>
+      <li><strong>Captions mishear.</strong> "RHF" is RLHF; "Natasha Jax" is Natasha Jaques; "ver verse KL" is reverse KL; "Kimmy" is Kimi; "Tool Use 3" is Tülu 3; "PR PPO" is likely PPO. <a class="chip" href="#s49" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:20">49</a> <a class="chip" href="#s33" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:39">33</a> <a class="chip" href="#s27" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:04:10">27</a> <a class="chip" href="#s139" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">139</a> <a class="chip" href="#s136" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">136</a> <a class="chip" href="#s132" title="TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:37">132</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Which direction is the KL penalty, and how is it estimated?</summary>
+      <p>Reverse KL to the reference: sample from the policy, score under the reference. <a class="chip" href="#s9" title="Ch. 15 Regularization § KL Divergence in RL Optimization (L57-L58)">9</a> <a class="chip" href="#s22" title="Slides lec10-chap15-regularization § A KL penalty to the reference model controls reward (L141-L144)">22</a></p>
+    </details>
+    <details><summary>Why is "KL distance" technically wrong?</summary>
+      <p>KL is asymmetric, so it is not a metric. People say "distance" for how far the model moved. <a class="chip" href="#s35" title="Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:02:35">35</a> <a class="chip" href="#s37" title="Ch. 15 Regularization (L32)">37</a></p>
+    </details>
+    <details><summary>In Ziegler et al.'s controller, what happens to β when KL is above target?</summary>
+      <p>The error $e_t$ is positive, so β grows and pulls the policy back. <a class="chip" href="#s48" title="Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L192-L198)">48</a></p>
+    </details>
+    <details><summary>In the book's code, does a GRPO run with <code>beta: 0.1</code> go through <code>apply_reward_kl</code>?</summary>
+      <p>No. That function only applies to PPO, RLOO and REINFORCE; GRPO's KL goes in the loss. <a class="chip" href="#s55" title="Code code/policy_gradients/utils.py (L165-L182)">55</a> <a class="chip" href="#s58" title="Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L314-L316)">58</a></p>
+    </details>
+    <details><summary>Why is minimizing the SFT loss the same as minimizing forward KL?</summary>
+      <p>The forward KL splits into the data's negative entropy, constant in $\theta$, plus the SFT loss: same gradients, same minimum. <a class="chip" href="#s82" title="Ch. 15 Regularization § SFT Forward KL (L221-L228)">82</a></p>
+    </details>
+    <details><summary>What happens to the reward-tilted reference as β shrinks?</summary>
+      <p>The tilt $e^{r/\beta}$ grows, so mass concentrates on the highest-reward completions. <a class="chip" href="#s87" title="Slides lec10-chap15-regularization § RL is reverse KL (L254)">87</a></p>
+    </details>
+    <details><summary>Mode-seeking RL should forget more. Why doesn't it?</summary>
+      <p>That assumes a unimodal policy. With an old and a new mode, forward KL pulls mass from the old mode, while reverse KL moves the new mode and leaves the old one alone. <a class="chip" href="#s15" title="Ch. 15 Regularization § RL Reverse KL (L284-L286)">15</a> <a class="chip" href="#s107" title="Ch. 15 Regularization § RL Reverse KL (L289-L292)">107</a></p>
+    </details>
+    <details><summary>According to RL's Razor, what explains RL's smaller KL drift?</summary>
+      <p>On-policy data; negative gradients had no discernible effect. <a class="chip" href="#s17" title="Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L322-L323)">17</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The tilt widget.</strong> Not Lambert. Six completions with invented reference probabilities and rewards; it computes $\pi_\star \propto \pi_{\text{ref}}\,e^{r/\beta}$ exactly and the KL from $\pi_\star$ to $\pi_{\text{ref}}$. The behavior, little tilt at large $\beta$ and concentration at small $\beta$, is what the slide describes. <a class="chip" href="#s87" title="Slides lec10-chap15-regularization § RL is reverse KL (L254)">87</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The bell-curve widget.</strong> Not Lambert, and not Chen et al. It fits one Gaussian to a target made of two equal Gaussians by grid search, once per KL direction. It shows only the <em>naive</em> read, which the chapter says does not hold for multimodal LLMs. <a class="chip" href="#s15" title="Ch. 15 Regularization § RL Reverse KL (L284-L286)">15</a> When the two modes overlap, both fits sit in the middle. Reverse KL picks the left mode because the search finds it first; the right is equally good. I tried a two-mode policy to show Chen et al.'s effect, but my toy did not reproduce it cleanly, so I left it out.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the full RL reverse-KL derivation line by line (on the slides)</li>
+      <li>the expanded DPO+NLL equation</li>
+      <li>the links to TRL's and EasyLM's implementations</li>
+    </ul>
+    <p>The course moves to evaluation next: the slides list Lecture 11 on evaluation as "next (tentative)", though it was recorded as Lecture 12. <a class="chip" href="#s143" title="Slides lec10-chap15-regularization § The course so far (L508-L509)">143</a> <a class="chip" href="#s144" title="Slides lec12-chap16-evals § Lecture 12: The Evolution of Frontier Model Evaluation &lt;span class=&quot;title-subtitle&quot;&gt;From few-shot prompting to agentic sandboxes&lt;/span&gt; (L48)">144</a> Lambert's closing: "I just have about three to four to five depending on surprises lectures left". <a class="chip" href="#s145" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:31:11">145</a></p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 16 (Evaluation) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 16&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 16</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 15 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 15&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 15</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L22-L24">
+      <blockquote style="margin:0">All the methods we use are very powerful, and can cause the model to change too much relative to the strong, general model from the previous training stage (often called the reference model). When the model learns too much from a given reward, causing out-of-distribution performance to drop, this is called \"over-optimization\"</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L22-L24">Ch. 15 Regularization (L22-L24)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L26-L28">
+      <blockquote style="margin:0">Over-optimization in these contexts looks like models that output nonsensical text. Some examples of optimization \"off the rails\" are models that output followable math reasoning with extremely incorrect answers, repeated text, switching languages, or excessive special characters.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L26-L28">Ch. 15 Regularization (L26-L28)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="yt:IwpYxANrpUs@00:02:03-00:02:36">
+      <blockquote style="margin:0">regularization and the tools we're talking about are a solution to lecture 9</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=123s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:02:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L31">
+      <blockquote style="margin:0">The most popular variant, used in most RLHF implementations as of 2026, is a KL distance from the current policy to a reference policy across generated samples.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L31">Ch. 15 Regularization (L31)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="yt:IwpYxANrpUs@00:03:08-00:03:39">
+      <blockquote style="margin:0">this is essentially the main control mechanism through RLHF</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=188s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L167-L169">
+      <blockquote style="margin:0">The other sections in this chapter describe *explicit* regularization: KL penalties, pretraining gradients, and margin losses that practitioners deliberately add to the training objective. A growing body of empirical work reveals that RL-based post-training also provides *implicit* regularization — a built-in resistance to memorization and catastrophic forgetting that emerges from the structure of on-policy optimization itself.</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L167-L169">Ch. 15 Regularization § Implicit Regularization (L167-L169)</a> · <a href="https://rlhfbook.com/c/15-regularization#implicit-regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L484-L488">
+      <blockquote style="margin:0">Even with no penalty, on-policy RL is implicitly regularized -- SFT memorizes, RL generalizes. Verifiable rewards are much less prone to overoptimization than reward models! Hence, regularization is changing and the KL penalty is playing a smaller role.</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L484-L488">Slides lec10-chap15-regularization § Takeaways (L484-L488)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L39-L43">
+      <blockquote style="margin:0">The general formulation, when used in an RLHF framework with a reward model $r_\theta$, is as follows: … With the reference implementation being:</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L39-L43">Ch. 15 Regularization (L39-L43)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L57-L58">
+      <blockquote style="margin:0">In RLHF, the two distributions of interest are often the distribution of the new model version, say $P(x)$, and a distribution of the reference policy, say $Q(x)$. … the most common \"KL Penalty\" that is used is called the reverse KL to the reference policy. In practice, this reduces to a Monte Carlo estimate that samples tokens from the RL model and computes probabilities from the reference model.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L57-L58">Ch. 15 Regularization § KL Divergence in RL Optimization (L57-L58)</a> · <a href="https://rlhfbook.com/c/15-regularization#kl-divergence-in-rl-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L33-L35">
+      <blockquote style="margin:0">Many other regularization techniques have emerged in the literature to then disappear in the next model iteration in that line of research. That is to say that regularization outside the core KL distance from generations is often used to stabilize experimental setups that can then be simplified in the next generation.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L33-L35">Ch. 15 Regularization (L33-L35)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L442-L446">
+      <blockquote style="margin:0">Most of these are scaffolding: added to stabilize one setup, simplified away in the next model generation.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L442-L446">Slides lec10-chap15-regularization § Other regularization in the wild (L442-L446)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L173-L175">
+      <blockquote style="margin:0">When training on a single task, does the model learn a generalizable rule that transfers to unseen variants, or does it memorize the surface patterns of the training distribution? Chu et al. 2025 [@chu2025sft] answer this question with a controlled empirical study … The answer is clear: RL learns transferable rules, while SFT memorizes the training data and collapses under distributional shift.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L173-L175">Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L173-L175)</a> · <a href="https://rlhfbook.com/c/15-regularization#sft-memorizes-rl-generalizes">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L183-L185">
+      <blockquote style="margin:0">RL consistently improves OOD performance as training compute scales up, while SFT consistently *degrades* OOD performance despite improving in-distribution. … RL improves OOD per-step accuracy from 80.8% to 91.8%, while SFT collapses it from 80.8% to 1.3%. The SFT model goes further than failing to generalize: it destroys the spatial reasoning the base model already had, collapsing to a lookup table from instruction phrases to absolute directions.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L183-L185">Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L183-L185)</a> · <a href="https://rlhfbook.com/c/15-regularization#sft-memorizes-rl-generalizes">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L269-L271">
+      <blockquote style="margin:0">Equivalently, maximizing the RL objective $\mathcal{J}_\text{RL}(\theta)$ is the same as minimizing the **reverse KL** divergence $\text{KL}(\pi_\theta \| \pi_\star)$. This derivation shows that SFT and RL optimize fundamentally different objectives: SFT minimizes forward KL, RL minimizes reverse KL.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L269-L271">Ch. 15 Regularization § RL Reverse KL (L269-L271)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L284-L286">
+      <blockquote style="margin:0">we might naively expect SFT to forget *less* than RL: mode-covering forward KL should maintain mass across all modes of the target, preserving old knowledge, while mode-seeking reverse KL could collapse onto a single high-reward mode and abandon others. However, the opposite holds. This intuition assumes a unimodal policy, but pre-trained LLMs contain multiple modes — and for multimodal distributions, the dynamics flip.</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L284-L286">Ch. 15 Regularization § RL Reverse KL (L284-L286)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L318-L320">
+      <blockquote style="margin:0">forgetting strongly correlates ($R^2 = 0.96$) with the KL divergence between the trained and initial policies, **as measured using the new task data**. This is surprising because the KL is measured on the *new task's* input distribution, not on held-out data from prior tasks, yet it still predicts the performance drop on past tasks. In practice, this provides us with a powerful instrument for estimating forgetting</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L318-L320">Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L318-L320)</a> · <a href="https://rlhfbook.com/c/15-regularization#rls-razor-why-online-rl-forgets-less">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L322-L323">
+      <blockquote style="margin:0">the authors decompose the difference between RL and SFT along two axes — on-policy versus offline data, and whether the objective includes negative gradients … Remarkably, they find that on-policy versus offline data fully accounts for the difference in generalization performance, while negative gradients have no discernible effect.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L322-L323">Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L322-L323)</a> · <a href="https://rlhfbook.com/c/15-regularization#rls-razor-why-online-rl-forgets-less">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:IwpYxANrpUs@00:00:00-00:00:30">
+      <blockquote style="margin:0">this is generally um another math lecture understanding how the RL problem is set up and how some different mathematical concepts in the book linked together to why ideas like RL generalizes better, SFT forgets more</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=0s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:IwpYxANrpUs@00:01:33-00:02:03">
+      <blockquote style="margin:0">it's about how to control your model from changing too much during a single RL run</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=93s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:01:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L55-L57">
+      <blockquote style="margin:0">The RL step maximizes reward from the reward model **minus a penalty for drifting from the reference model**. This lecture is about that penalty -- and what happens with and without it.</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L55-L57">Slides lec10-chap15-regularization § Recall: The RLHF process (L55-L57)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L64-L66">
+      <blockquote style="margin:0">KL penalties are most commonly implemented by comparing the distance between the generated tokens during training to a static reference model. The intuition is that the model you're training from has a style that you would like to stay close to. This reference model is most often the instruction tuned model, but can also be a previous RL checkpoint.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L64-L66">Ch. 15 Regularization § Reference Model to Generations (L64-L66)</a> · <a href="https://rlhfbook.com/c/15-regularization#reference-model-to-generations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L141-L144">
+      <blockquote style="margin:0">KL control for RL predates LLMs: dialogue agents [@jaques2017sequence], then fine-tuning pretrained models [@jaques2020human]. - This penalty is a **reverse KL** -- estimated by sampling from the *policy* and scoring against the reference. It punishes the policy for putting mass where the reference would not. - \"KL distance\" is the *optimization distance* spent (colloquially -- KL is not a true metric). - In practice, the above $\lambda$ is often written as $\beta$.</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L141-L144">Slides lec10-chap15-regularization § A KL penalty to the reference model controls reward (L141-L144)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:IwpYxANrpUs@00:05:41-00:06:14">
+      <blockquote style="margin:0">leave a comment if you can track down the literature as when why lambda and beta are both used</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=341s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:05:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="yt:IwpYxANrpUs@00:01:02-00:01:33">
+      <blockquote style="margin:0">the default KL penalty this this beta times this lambda or beta times the KL distance between the training policy and the reference policy came out of vogue in the RLVR era</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=62s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:01:02</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L52-L55">
+      <blockquote style="margin:0">KL divergence measures how far one probability distribution has drifted from another -- when KL is zero, the two distributions produce identical outputs.</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L52-L55">Ch. 15 Regularization § KL Divergence in RL Optimization (L52-L55)</a> · <a href="https://rlhfbook.com/c/15-regularization#kl-divergence-in-rl-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-a-definitions.md#L48-L49">
+      <blockquote style="margin:0">**Kullback-Leibler (KL) divergence ($\mathcal{D}_{\text{KL}}(P || Q)$)**, also known as KL divergence, is a measure of the difference between two probability distributions. For discrete probability distributions $P$ and $Q$ defined on the same probability space $\mathcal{X}$, the KL distance from $Q$ to $P$ is defined as:</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-a-definitions.md?plain=1#L48-L49">Appendix A Definitions § Machine Learning (L48-L49)</a> · <a href="https://rlhfbook.com/c/appendix-a-definitions#machine-learning">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="yt:IwpYxANrpUs@00:04:10-00:04:40">
+      <blockquote style="margin:0">it is a ver verse KL which essentially means you sample from the policy you're training and you're scoring it against the reference model</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=250s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:04:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="yt:IwpYxANrpUs@00:30:10-00:30:41">
+      <blockquote style="margin:0">the KL penalty that came through RHF to control the reward model over optimization we talked about in the last lecture. It's a reverse KL penalty. It's estimated from the own samples.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1810s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L58">
+      <blockquote style="margin:0">Intuitively, this reverse KL has a numerical property that applies a large penalty when the new model, $P$ or $\pi_{\text{RL}}$, puts substantial probability mass where the original reference model assigns low probability.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L58">Ch. 15 Regularization § KL Divergence in RL Optimization (L58)</a> · <a href="https://rlhfbook.com/c/15-regularization#kl-divergence-in-rl-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L60">
+      <blockquote style="margin:0">The other KL direction is still often used in ML, e.g. in the internal trust region calculation of some RL algorithms. This penalty intuitively penalizes the new model when its update does *not* apply probability to a high-likelihood region in $Q$ or $\pi_{\text{ref}}$. This is closer to an objective used for distillation or behavioral cloning.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L60">Ch. 15 Regularization § KL Divergence in RL Optimization (L60)</a> · <a href="https://rlhfbook.com/c/15-regularization#kl-divergence-in-rl-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="yt:MMDNaeIFVy8@00:18:13-00:18:44">
+      <blockquote style="margin:0">This would be I think reverse called a reverse KL which because it's reverse because we're kind of sampling from the student rather than the target</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://www.youtube.com/watch?v=MMDNaeIFVy8&amp;t=1093s">ML Foundations (prerequisites) for Post-Training | Post-Training Course, Lecture 0 @ 00:18:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L68">
+      <blockquote style="margin:0">Such a KL divergence penalty was first applied to dialogue agents well before the popularity of large language models [@jaques2017sequence], yet KL control was quickly established as a core technique for fine-tuning pretrained models [@jaques2020human].</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L68">Ch. 15 Regularization § Reference Model to Generations (L68)</a> · <a href="https://rlhfbook.com/c/15-regularization#reference-model-to-generations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="yt:IwpYxANrpUs@00:03:39-00:04:10">
+      <blockquote style="margin:0">Natasha Jax a friend friend of the pod Natasha professor at Udub now um she came up with this KL control idea before language models were even popular</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=219s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:03:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="yt:K_Sj_-1BUMM@00:25:54-00:26:24">
+      <blockquote style="margin:0">you need to be grounded in where the policy optimization actually started because that's going to be the clearest way to prevent what is called over optimization</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1554s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:25:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:gB-bYUECpzE@00:02:35-00:03:06">
+      <blockquote style="margin:0">a KL divergence is not a mathematical distance. A distance is a definition where a distance needs to be a symmetric function with the two quantities and the KL is by definition asymmetric, so it's not a distance.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=155s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:02:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="yt:IwpYxANrpUs@00:05:10-00:05:41">
+      <blockquote style="margin:0">KL is not a true distance metric because it's not symmetric. It has two different sides. … It's just really intuitive to think about it as a distance because it's like how far apart is the model?</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=310s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:05:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L32">
+      <blockquote style="margin:0">\"KL distance\" is a colloquial term for expressing the *optimization distance* within the training process, even though KL divergence—the underlying mathematical method for measuring the separation of two probability distributions—does not satisfy the formal properties required to be a true distance metric</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L32">Ch. 15 Regularization (L32)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="yt:gB-bYUECpzE@00:03:06-00:03:37">
+      <blockquote style="margin:0">people will colloquially refer to the KL divergence as the KL distance mostly as an easy way to communicate how much has a model changed during training</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=186s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:03:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-02.md#L116-L117">
+      <blockquote style="margin:0">Fair — and I battled my editors on this too. In post-training teams \"KL distance\" is common **colloquial** shorthand as \"how much has the model changed,\" but technically it is a **divergence**.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-02.md?plain=1#L116-L117">Slides qa-02 § Correction: KL divergence is not a &quot;distance&quot; (Lecture 0) (L116-L117)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L72-L81">
+      <blockquote style="margin:0">In practice, the implementation of KL divergence is often approximated [@schulman2016klapprox], making the implementation far simpler. With the above definition, the summation of KL can be converted to an expectation when sampling directly from the distribution $P$ … This sample-based form is far simpler to implement, particularly when dealing directly with log probabilities used frequently in language model training.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L72-L81">Ch. 15 Regularization § Implementation Example (L72-L81)</a> · <a href="https://rlhfbook.com/c/15-regularization#implementation-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L99-L104">
+      <blockquote style="margin:0"># Step 5: Sum to get sequence-level log-probs; their difference approximates KL seq_logprob = token_logprobs.sum(dim=-1) ref_seq_logprob = ref_token_logprobs.sum(dim=-1) kl_approx = seq_logprob - ref_seq_logprob</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L99-L104">Ch. 15 Regularization § Implementation Example (L99-L104)</a> · <a href="https://rlhfbook.com/c/15-regularization#implementation-example">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:IwpYxANrpUs@00:07:17-00:07:47">
+      <blockquote style="margin:0">I don't love this code that Claude wrote for me here</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=437s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:07:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L155-L156">
+      <blockquote style="margin:0">Practitioners watch the KL curve during training -- a very large KL usually means a bug or a broken model. - Lower-variance estimators ($k_1, k_2, k_3$) came up in</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L155-L156">Slides lec10-chap15-regularization § Measuring KL in practice (L155-L156)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="yt:gB-bYUECpzE@00:04:07-00:04:37">
+      <blockquote style="margin:0">in code you'll a lot of times see KL1, KL2, KL3 and you'll switch between them depending on which estimate is stable.</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://www.youtube.com/watch?v=gB-bYUECpzE&amp;t=247s">Q&amp;A 2: Mastering the Derivations, Running Algorithms at Home &amp; Notation Gotcha&#x27;s | Post-Train Course @ 00:04:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="yt:IwpYxANrpUs@00:06:14-00:07:17">
+      <blockquote style="margin:0">what you do during training is you often will watch this KL curve and see if it has spikes, if it has any really weird behavior over time</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=374s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:06:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L182-L183">
+      <blockquote style="margin:0">over ~1M episodes the verifiable reward climbs while the logged KL to the reference rises and then wanders. This run has **β = 0**. This is a healthy shape.</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L182-L183">Slides lec10-chap15-regularization § What the curves look like in a real run (L182-L183)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:IwpYxANrpUs@00:08:18-00:08:50">
+      <blockquote style="margin:0">This had run had no KL penalty on but you could still track how the KL divergence changes over time with the model learning and this is a weird looking curve but it is fine</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=498s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:08:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L192-L198">
+      <blockquote style="margin:0">The first RLHF-on-LMs paper did not fix β. It picked a **target KL** and let a controller chase it: … A \"log-space proportional controller\" (their words), with $K_\beta = 0.1$: KL too high → β grows and pulls the policy back; too low → β shrinks and frees it up. Runs with different seeds land on the *same* KL budget, making experiments comparable. … Modern practice swung back to a small **static** β -- or, in many RLVR reasoning recipes, no KL term at all.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L192-L198">Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L192-L198)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:IwpYxANrpUs@00:09:20-00:09:50">
+      <blockquote style="margin:0">This is one of the this is probably the earliest modern RHF paper and a good one to know about. So what they do here is that they had a log space proportional controller.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=560s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L197">
+      <blockquote style="margin:0">PPO's original **adaptive KL penalty** variant doubled or halved β around a target [@schulman2017proximal], and constrained RL later made the controls framing explicit with full **PID controllers** on the penalty multiplier</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L197">Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L197)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="yt:IwpYxANrpUs@00:09:50-00:10:54">
+      <blockquote style="margin:0">modern practice made this simpler and you move to either a static beta or in many cases just no KL penalty at all</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=590s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:09:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L771">
+      <blockquote style="margin:0">**KL controllers**: Original implementations of PPO and related algorithms had dynamic controllers that targeted specific KLs and changed the penalty based on recent measurements. Most modern RLHF implementations use static KL penalties, but this can also vary.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L771">Ch. 6 Reinforcement Learning § Implementation (L771)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#implementation">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L210">
+      <blockquote style="margin:0">(v0.11.4 -- deleted in the modern rewrite) · … a static `beta = 0.05`,</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L210">Slides lec10-chap15-regularization § Static or dynamic KL penalties? β began as a feedback controller (L210)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/rollout.py#L150-L151">
+      <blockquote style="margin:0">rewards = apply_reward_kl(rewards, log_probs_old, log_probs_ref, action_mask, self.cfg) advantages = compute_advantages(rewards, action_mask, values_old, self.cfg)</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/rollout.py#L150-L151">Code code/policy_gradients/rollout.py (L150-L151)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L165-L182">
+      <blockquote style="margin:0">def apply_reward_kl( … \"\"\"Apply KL penalty to the combined ``total`` reward (REINFORCE/RLOO/PPO).\"\"\" if not cfg.beta or cfg.loss not in [\"ppo\", \"rloo\", \"reinforce\"]: return rewards</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L165-L182">Code code/policy_gradients/utils.py (L165-L182)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/utils.py#L179-L181">
+      <blockquote style="margin:0">kl_div = get_approx_kl(cfg.kl_estimator, log_probs, log_probs_ref, action_mask) kl_div = masked_mean(kl_div, mask=action_mask, dim=-1, keepdim=True) rewards[\"total\"] = rewards[\"total\"] - cfg.beta * kl_div</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/utils.py#L179-L181">Code code/policy_gradients/utils.py (L179-L181)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:K_Sj_-1BUMM@00:44:59-00:45:31">
+      <blockquote style="margin:0">KL penalties are token level, which is the distance per token between the current policy and the reference model.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=2699s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:44:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/06-policy-gradients.md#L314-L316">
+      <blockquote style="margin:0">the canonical GRPO implementation applies the KL penalty at the loss level, whereas the derivation for RLOO or traditional policy-gradients applies the KL penalty to the reward itself. With the transition from RLHF to reasoning and reinforcement learning with verifiable rewards (RLVR), the prevalence of KL penalties has decreased overall, with many reasoning adaptations of RLHF code turning them off entirely.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/06-policy-gradients.md?plain=1#L314-L316">Ch. 6 Reinforcement Learning § REINFORCE Leave One Out (RLOO) (L314-L316)</a> · <a href="https://rlhfbook.com/c/06-policy-gradients#reinforce-leave-one-out-rloo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="yt:K_Sj_-1BUMM@00:52:22-00:52:54">
+      <blockquote style="margin:0">the default GRPO includes this KL penalty per token within the loss rather than within the reward</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=3142s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:52:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/loss.py#L23-L36">
+      <blockquote style="margin:0">\"\"\"Monte-Carlo approximation of KL divergence (k3 estimator). Uses ``r = pi_ref / pi`` so that ``r - log(r) - 1`` estimates ``KL(pi || pi_ref)`` for samples drawn from ``pi``.</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/loss.py#L23-L36">Code code/policy_gradients/loss.py (L23-L36)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/loss.py#L52-L65">
+      <blockquote style="margin:0">Samples are drawn from ``pi``, so the estimator of ``KL(pi || pi_ref)`` is ``log(pi / pi_ref)``.</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/loss.py#L52-L65">Code code/policy_gradients/loss.py (L52-L65)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/config.py#L112-L114">
+      <blockquote style="margin:0"># KL penalty (optional, for REINFORCE/RLOO/GRPO when beta &gt; 0) beta: float = 0.0 kl_estimator: str = \"kl3\"</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/config.py#L112-L114">Code code/policy_gradients/config.py (L112-L114)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L112-L114">
+      <blockquote style="margin:0">These examples are included to paint a picture for how some leading models have manipulated post-training setups to get stable optimization, rather than as tools that should work explicitly in every setup. Countless more creative solutions can work and will be found!</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L112-L114">Ch. 15 Regularization § Other Tools to Control Optimization (L112-L114)</a> · <a href="https://rlhfbook.com/c/15-regularization#other-tools-to-control-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L118-L119">
+      <blockquote style="margin:0">Another way of viewing regularization is that you may have a *dataset* that you want the model to remain close to, as done in InstructGPT [@ouyang2022training] \"in order to fix the performance regressions on public NLP datasets\". To implement this, they modify the training objective for RLHF.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L118-L119">Ch. 15 Regularization § Pretraining Gradients in RL (L118-L119)</a> · <a href="https://rlhfbook.com/c/15-regularization#pretraining-gradients-in-rl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L125">
+      <blockquote style="margin:0">Then, we can add an additional reward for higher probabilities on the standard autoregressive next-token prediction loss used during pretraining, over a set of documents sampled from the pretraining corpus (or another dataset) to maintain textual coherence:</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L125">Ch. 15 Regularization § Pretraining Gradients in RL (L125)</a> · <a href="https://rlhfbook.com/c/15-regularization#pretraining-gradients-in-rl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:IwpYxANrpUs@00:25:57-00:26:27">
+      <blockquote style="margin:0">still had good next token prediction and didn't become dominated by the reward model. Haven't seen stuff like this recently.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1557s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:25:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L133-L134">
+      <blockquote style="margin:0">Recent work proposed using a negative log-likelihood term to balance the optimization of Direct Preference Optimization (DPO) [@pang2024iterative]. Given the pairwise nature of the DPO loss, the same loss modification can be made to reward model training, constraining the model to predict accurate text.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L133-L134">Ch. 15 Regularization § Next-token Accuracy in DPO (L133-L134)</a> · <a href="https://rlhfbook.com/c/15-regularization#next-token-accuracy-in-dpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L145-L146">
+      <blockquote style="margin:0">The first term is the standard DPO logistic loss: it increases the margin between the win and loss using the difference of log-likelihood ratios, $\log \tfrac{P_{\theta}}{P_{\text{ref.}}}$, and $\beta$ controls how strongly this preference signal pulls away from the reference. The second term is a length-normalized negative log-likelihood penalty on the winning completion, weighted by $\alpha$, which helps keep the preferred text high-likelihood in an absolute language modeling sense rather than only relatively better than the rejected sample.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L145-L146">Ch. 15 Regularization § Next-token Accuracy in DPO (L145-L146)</a> · <a href="https://rlhfbook.com/c/15-regularization#next-token-accuracy-in-dpo">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/direct_alignment/loss.py#L264">
+      <blockquote style="margin:0">Loss = NLL(y_chosen|x) - beta * log(sigmoid(log_odds_ratio))</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/direct_alignment/loss.py#L264">Code code/direct_alignment/loss.py (L264)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L150-L152">
+      <blockquote style="margin:0">Controlling the optimization is less well defined in other parts of the RLHF stack. Most reward models have no regularization beyond the standard contrastive loss function. Direct Alignment Algorithms handle regularization to KL divergence differently, through the $\beta$ parameter</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L150-L152">Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L150-L152)</a> · <a href="https://rlhfbook.com/c/15-regularization#margin-based-regularization-in-reward-modeling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L154-L161">
+      <blockquote style="margin:0">Llama 2 proposed a margin loss for reward model training [@touvron2023llama]: … where $m(y_c, y_r)$ is the margin between two data points $y_c$ and $y_r$ representing the numerical difference in the delta between the ratings of two annotators. This is achieved either by having annotators rate the outputs on a numerical scale or by using a quantified ranking method</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L154-L161">Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L154-L161)</a> · <a href="https://rlhfbook.com/c/15-regularization#margin-based-regularization-in-reward-modeling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L163">
+      <blockquote style="margin:0">Reward margins have been used heavily in the direct alignment literature, such as Reward-weighted DPO; Reward-aware Preference Optimization (RPO), which integrates reward model scores into the update rule following a DPO loss [@adler2024nemotron]; and REBEL [@gao2024rebel], which has a reward delta weighting in a regression-loss formulation.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L163">Ch. 15 Regularization § Margin-Based Regularization in Reward Modeling (L163)</a> · <a href="https://rlhfbook.com/c/15-regularization#margin-based-regularization-in-reward-modeling">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="yt:IwpYxANrpUs@00:26:59-00:27:32">
+      <blockquote style="margin:0">you want to revisit your recipe and make it simpler for the future model versions because the simpler ideas normally scale better</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1619s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:26:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="yt:IwpYxANrpUs@00:11:25-00:11:56">
+      <blockquote style="margin:0">you can't do RL by implementing the KL divergence as your loss it's more of like RL follows the shape of a KL divergence so in the book I call this implicit regularization</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=685s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:11:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L391-L393">
+      <blockquote style="margin:0">On V-IRL, RL improves out-of-distribution accuracy **80.8% → 91.8%**. SFT collapses it **80.8% → 1.3%** -- destroying spatial reasoning the base model already had. RL-based post-training carries *implicit* regularization from its on-policy structure alone. SFT is more brittle.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L391-L393">Slides lec10-chap15-regularization § &quot;SFT memorizes, RL generalizes&quot; (L391-L393)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L179-L181">
+      <blockquote style="margin:0">**GeneralPoints** is an arithmetic card game where the model receives four playing cards and must combine their numerical values with operators (+, -, *, /) to reach a target number (24 by default). The OOD test changes how face cards are scored: training uses one rule (Jack, Queen, and King all count as 10), evaluation uses another (Jack = 11, Queen = 12, King = 13). - **V-IRL** is a real-world visual navigation task … The OOD shift switches the action space from absolute directions (north, east) to relative directions (left, right).</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L179-L181">Ch. 15 Regularization § SFT Memorizes, RL Generalizes (L179-L181)</a> · <a href="https://rlhfbook.com/c/15-regularization#sft-memorizes-rl-generalizes">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:IwpYxANrpUs@00:21:46-00:22:17">
+      <blockquote style="margin:0">RL improves out of distribution whereas you SFT on a narrow distribution the generalization cap capability crashes. And this is a kind of a toy problem</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1306s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:21:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L202-L205">
+      <blockquote style="margin:0">The key difference is which distribution we sample from: forward KL samples from the target (or optimal) distribution $P$, whereas reverse KL samples from our policy $Q$. … SFT places the target first — $\text{KL}(\pi_\star \| \pi_\theta)$ — while RL flips the order — $\text{KL}(\pi_\theta \| \pi_\star)$ — changing which distribution we sample from. The samples provide the data to learn from. The objective, SFT or RL, shapes the model from said data.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L202-L205">Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L202-L205)</a> · <a href="https://rlhfbook.com/c/15-regularization#retaining-by-doing-on-policy-data-mitigates-forgetting">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L223-L231">
+      <blockquote style="margin:0">We started with a **penalty** on the RL setup: a term added to the reward, with a coefficient you tune (or control). This next part is about the **shape of RL optimization** and how it relates to KL as well. It comes down to \"which direction of KL\" -- that is set by *where the samples come from*: … This is only true with the KL penalty in the optimization (does not apply to all RLVR results)... but on-policy sampling still *biases* RL toward KL-minimal solutions.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L223-L231">Slides lec10-chap15-regularization § The reward penalty and the optimization shape are two different things (L223-L231)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L201">
+      <blockquote style="margin:0">where $P$ is the target distribution and $Q$ is the distribution we are modeling with parameters $\theta$.</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L201">Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L201)</a> · <a href="https://rlhfbook.com/c/15-regularization#retaining-by-doing-on-policy-data-mitigates-forgetting">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:IwpYxANrpUs@00:11:56-00:12:26">
+      <blockquote style="margin:0">the reason that reverse KL is called reverse is that forward KL is like the canonical way of doing this</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=716s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:11:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L221-L228">
+      <blockquote style="margin:0">The first term, $\mathbb{E}\!\left[\log \pi_\star(y \mid x)\right]$, depends only on the data distribution and equals the negative entropy $-H(\pi_\star)$ — a constant that does not change with $\theta$. … Since the entropy term is constant with respect to $\theta$, the two losses share the same gradients and the same minimum — minimizing the SFT loss is equivalent to minimizing the **forward KL** divergence</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L221-L228">Ch. 15 Regularization § SFT Forward KL (L221-L228)</a> · <a href="https://rlhfbook.com/c/15-regularization#sft-forward-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L316">
+      <blockquote style="margin:0">Same gradients, same minimum: minimizing the SFT loss *is* minimizing forward KL to the data distribution.</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L316">Slides lec10-chap15-regularization § SFT is forward KL (L316)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="yt:IwpYxANrpUs@00:18:09-00:18:40">
+      <blockquote style="margin:0">So minimizing the SFT loss is minimizing the forward KL to the the KL distribution.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1089s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:18:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L244">
+      <blockquote style="margin:0">Introducing a partition function $Z(x) = \sum_y \pi_\text{ref}(y \mid x) \exp\!\left(\frac{1}{\beta} r(x,y)\right)$ to normalize the reward-tilted reference into a valid distribution</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L244">Ch. 15 Regularization § RL Reverse KL (L244)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L250-L251">
+      <blockquote style="margin:0">the KL is minimized at zero when $\pi$ equals the reward-tilted distribution. The optimal policy under reward $r(x,y)$ is therefore:</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L250-L251">Ch. 15 Regularization § RL Reverse KL (L250-L251)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L254">
+      <blockquote style="margin:0">Read $\pi_\star$ as the **reward-tilted reference** (AI suggested name, I couldn't come up with something better): take $\pi_{\text{ref}}$ and multiply each completion's probability by $\exp(r/\beta)$, then renormalize (that is all $Z(x)$ does). The \"tilt\" shifts probability mass toward high-reward completions while staying inside the reference's support -- large $\beta$ tilts barely at all, small $\beta$ concentrates on the highest-reward completions.</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L254">Slides lec10-chap15-regularization § RL is reverse KL (L254)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:IwpYxANrpUs@00:14:31-00:15:02">
+      <blockquote style="margin:0">If beta is low reward gets a really really high weight which is the model will change to chase the reward. If beta is high reward does very little and then the model stays close to the reference policy.</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=871s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:14:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L248">
+      <blockquote style="margin:0">Lecture 6 walked this same path (the starting point of DPO):</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L248">Slides lec10-chap15-regularization § RL is reverse KL (L248)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="yt:IwpYxANrpUs@00:12:26-00:12:57">
+      <blockquote style="margin:0">Reward tilted reference in this lecture is a claudism that came out of the literature.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=746s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:12:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L284">
+      <blockquote style="margin:0">With the penalty included, RL doesn't just *use* a reverse KL -- the whole objective **is** one, pointed at the reward-tilted reference policy.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L284">Slides lec10-chap15-regularization § RL is reverse KL (L284)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="yt:IwpYxANrpUs@00:12:57-00:13:28">
+      <blockquote style="margin:0">this RL as a reverse KL is really only true with the KL penalty in the optimization. So if you have beta equal to zero, this theory on the shape of the KL does not apply.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=777s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:12:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="yt:IwpYxANrpUs@00:15:33-00:16:05">
+      <blockquote style="margin:0">there's always a risk of going from a definition to some implementation without writing the right assumptions</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=933s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:15:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:IwpYxANrpUs@00:18:40-00:19:11">
+      <blockquote style="margin:0">it is a little cute to put them together because one is reward optimization and one is learning from data. But it is nice synergy.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1120s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:18:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L332-L346">
+      <blockquote style="margin:0">Samples come from the **target** (a fixed dataset). *Mass-covering*: wherever the target has mass and $\pi_\theta \to 0$, the loss blows up -- the model must spread to cover everything. … Samples come from the **policy itself**. *Mode-seeking*: only penalized where it places mass, so it concentrates on high-reward modes.</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L332-L346">Slides lec10-chap15-regularization § SFT and RL are the two directions of KL (L332-L346)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L277-L282">
+      <blockquote style="margin:0">Forward KL penalizes the model whenever the target distribution has mass where the model does not, which tends to encourage **mode covering** … Reverse KL only penalizes the model in regions where it actually places mass, which tends to encourage **mode seeking**: the model can concentrate on one high-probability mode while ignoring others.</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L277-L282">Ch. 15 Regularization § RL Reverse KL (L277-L282)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:IwpYxANrpUs@00:19:11-00:19:41">
+      <blockquote style="margin:0">whenever the target has a mass and pi the learned policy has a probability of zero the loss blows up and is gigantic</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1151s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:19:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:IwpYxANrpUs@00:20:12-00:20:43">
+      <blockquote style="margin:0">So it concentrates on high reward modes.</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1212s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:20:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L353">
+      <blockquote style="margin:0">The distillation version, verbatim from Lecture 7 -- teacher $\pi_T$ in place of the target. Sampling completions from the student is what puts $\pi_\theta$ on the **left** of the KL:</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L353">Slides lec10-chap15-regularization § Recall, Lecture 7: The same two directions in distillation (L353)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:6nyJ8y8ghsE@00:28:28-00:28:59">
+      <blockquote style="margin:0">offline knowledge distillation in SFT is mass covering</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=1708s">On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:28:28</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="yt:6nyJ8y8ghsE@00:28:59-00:29:31">
+      <blockquote style="margin:0">it's mode seeking is what it is called. So, you're weighted by the student's own mass. … it's supposed to be a much better regulator</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=1739s">On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:28:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/distillation/loss.py#L57-L59">
+      <blockquote style="margin:0"># Reverse KL = KL(student || teacher): target is the student, so the gradient # flows through s_logp while the teacher (input) stays detached.</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/distillation/loss.py#L57-L59">Code code/distillation/loss.py (L57-L59)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="yt:IwpYxANrpUs@00:20:43-00:21:15">
+      <blockquote style="margin:0">I feel like personally I'm only starting to understand all of these KL direction things</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1243s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:20:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L401-L403">
+      <blockquote style="margin:0">The naive read: forward KL is *mass-covering*, so SFT should preserve every mode -- while mode-seeking RL should collapse onto one and forget the rest. Is this correct?</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L401-L403">Slides lec10-chap15-regularization § Which direction should forget less? (L401-L403)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L411">
+      <blockquote style="margin:0">That intuition assumes a unimodal policy -- LLMs are multimodal.</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L411">Slides lec10-chap15-regularization § Which direction should forget less? (L411)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L190-L191">
+      <blockquote style="margin:0">Chen et al. 2025 [@chen2025retainingdoingroleonpolicy] ask the complementary question: when training *sequentially* on multiple tasks, does the model retain what it already knew? They find that RL achieves comparable or higher gains on target tasks while forgetting substantially less than SFT</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L190-L191">Ch. 15 Regularization § Retaining by Doing: On-Policy Data Mitigates Forgetting (L190-L191)</a> · <a href="https://rlhfbook.com/c/15-regularization#retaining-by-doing-on-policy-data-mitigates-forgetting">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L289-L292">
+      <blockquote style="margin:0">Forward KL (SFT) tries to cover both modes of the target distribution, which pushes the policy to stretch and redistribute probability mass *from* the old mode, disrupting its shape and causing forgetting. Reverse KL (RL), by contrast, only needs to place mass on some high-reward region, so it can shift a new mode it samples from toward the target without touching the old mode at all, leaving prior knowledge intact. RL's mode-seeking behavior — a structural property of reverse KL — preserves the breadth of the model's prior knowledge</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L289-L292">Ch. 15 Regularization § RL Reverse KL (L289-L292)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L273">
+      <blockquote style="margin:0">Forward KL stretches the policy to cover the target and pulls mass away from the old mode (top right), while reverse KL shifts the new mode toward the target without disturbing the old mode (bottom right). From Chen et al. 2025, with permission of the author.</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L273">Ch. 15 Regularization § RL Reverse KL (L273)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="yt:IwpYxANrpUs@00:23:20-00:23:52">
+      <blockquote style="margin:0">forward KL SFT essentially takes a step and it flattens this secondary mode</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1400s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:23:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L298">
+      <blockquote style="margin:0">Because the model only trains on its own generations, updates stay local to where it already places probability mass — the reward signal tells it which of those generations to reinforce, shifting probability toward $\pi_\star$ without disturbing the rest of the distribution.</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L298">Ch. 15 Regularization § RL Reverse KL (L298)</a> · <a href="https://rlhfbook.com/c/15-regularization#rl-reverse-kl">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="yt:IwpYxANrpUs@00:22:17-00:23:20">
+      <blockquote style="margin:0">this intuition is backwards and I think partially this is just because um the words being used are pretty bad</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1337s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:22:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="yt:IwpYxANrpUs@00:23:52-00:24:22">
+      <blockquote style="margin:0">I think this diagram is not perfectly intuitive but it gets the point across hopefully. … So mass covering is kind of blanketing and mode seeking is moving over.</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1432s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:23:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="yt:IwpYxANrpUs@00:30:41-00:31:11">
+      <blockquote style="margin:0">reverse KL is more mode seeking kind of is better suited to the problems where SFT has to kind of try to memorize things</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1841s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L303-L306">
+      <blockquote style="margin:0">For any given task, there exist many distinct policies which achieve high performance. Shenfeld et al. 2026 [@shenfeld2026rls] offer a complementary perspective on RL's generalization, introducing the **RL's Razor** thesis … Among the many high-reward solutions for a new task, on-policy methods such as RL are inherently biased toward solutions that remain closer to the original policy in KL divergence.</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L303-L306">Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L303-L306)</a> · <a href="https://rlhfbook.com/c/15-regularization#rls-razor-why-online-rl-forgets-less">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L423-L424">
+      <blockquote style="margin:0">Forgetting tracks KL drift: … with $R^2 = 0.96$ -- measured on the **new task's data**. A cheap forgetting predictor. - The ablation: **on-policy data fully accounts for the difference** -- negative gradients have no discernible effect.</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L423-L424">Slides lec10-chap15-regularization § RL&#x27;s razor: Lower KL drift for equivalent performance (L423-L424)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L325-L326">
+      <blockquote style="margin:0">Intuitively, on-policy methods sample outputs the model already assigns non-negligible probability to, so each update is constrained to stay near the current distribution. On the other hand, SFT trains on a fixed external distribution that can lie arbitrarily far from what the model currently produces</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L325-L326">Ch. 15 Regularization § RL&#x27;s Razor: Why Online RL Forgets Less (L325-L326)</a> · <a href="https://rlhfbook.com/c/15-regularization#rls-razor-why-online-rl-forgets-less">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="yt:IwpYxANrpUs@00:24:55-00:25:27">
+      <blockquote style="margin:0">the RL policies are biased towards ones that are a bit simpler and it helps the model to forget less in their experiments</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1495s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:24:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="yt:IwpYxANrpUs@00:24:22-00:24:55">
+      <blockquote style="margin:0">Another fun result is this RL razors paper. … I think it's the results are the results are probably okay.</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1462s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:24:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L155-L157">
+      <blockquote style="margin:0">Yes — the two updates share their core term, and on curated targets SFT is the \"all-positive\" special case (same can be shown for DPO). … A huge difference: **negative gradients**. RL pushes below-baseline samples *down* — it learns from its own mistakes, which SFT structurally cannot do. + the power of on-policy learning to regularize and nudge a model.</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L155-L157">Slides qa-03 § The similarities in all the loss functions are very real (L155-L157)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="yt:6StK9ttLNbQ@00:09:26-00:09:58">
+      <blockquote style="margin:0">you can't just go back and generate that data a priori such that you could only do SFT</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=566s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:09:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L145-L147">
+      <blockquote style="margin:0">I'd say it's less \"SFT for formatting, RL for reasoning\" and more that **SFT is the foundation** (and very compute efficient these days), then **RL is how the model learns a lot more from there** — on harder problems, and adapting to the harnesses it'll be used in at deployment. Both are impossible to get around right now. Still, **great models can be made with mostly SFT**</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L145-L147">Slides qa-03 § Q4: &quot;RL is basically just SFT with a regularization term?&quot; (L145-L147)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="yt:6StK9ttLNbQ@00:08:55-00:09:26">
+      <blockquote style="margin:0">people in industry would do the simplest thing that they could because it is so competitive and SFT alone can not get you everything and RL essentially is a way of generating nice data and nice experience for the model</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=535s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:08:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="yt:6StK9ttLNbQ@00:10:28-00:11:01">
+      <blockquote style="margin:0">RL has negative gradients. So, instead of SFT is just showing the model what it should do by saying what the correct token is, RL also shows the model what it should not do.</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=628s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:10:28</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:IwpYxANrpUs@00:27:32-00:28:03">
+      <blockquote style="margin:0">A lot of the recent models are not using KL penalties. … it also had a KL penalty of zero</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1652s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:27:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L455-L459">
+      <blockquote style="margin:0">Tool use is changing what regularization has to do. In agentic recipes, the KL-to-reference penalty is disappearing: - GLM-5 removes it outright -- \"to accelerate RL improvement\" [@glm5team2026glm5]. Kimi does not use one either: the K2 → K3 recipes ship with no KL penalty and no reference policy at all [@moonshot2026kimik3]. - In our TMax terminal-agent recipe we measured the trade-off: a small KL reduced the severity of collapse but lowered reward, so the final recipe is $\beta = 0$</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L455-L459">Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L455-L459)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L459">
+      <blockquote style="margin:0">20+ turn trajectories, async/partial rollouts, and train-vs-inference engine mismatch make drift from the *sampler* the binding failure, not drift from init. (In TMax, instabilities increase past 10 assistant turns and were absent below 5</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L459">Slides lec10-chap15-regularization § 2026: The trust region / KL pen. is moving on (L459)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L68-L72">
+      <blockquote style="margin:0">Same RL loop, different reward source: a verification function instead of a reward model. Reasoning models (before tool use) often dropped the KL penalty to enhance learning. With the emergence of large-scale tool-use, regularization is coming back into vogue -- but aimed at drift from the *sampling distribution*, not a KL penalty to a reference model</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L68-L72">Slides lec10-chap15-regularization § RLVR has regularization too, but different best practices (L68-L72)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="yt:IwpYxANrpUs@00:28:35-00:29:07">
+      <blockquote style="margin:0">like training reference and now in RLVR for agents it's like sampler trainer is the thing that you want to be close.</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1715s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:28:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s129" data-cite="yt:jlOs01fe-iw@00:03:06-00:03:37">
+      <blockquote style="margin:0">this is measuring the trainer generator gap in asynchronous RL training</blockquote>
+      <figcaption><span class="chip">129</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=186s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s130" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L467-L474">
+      <blockquote style="margin:0">**DPPO** (Divergence Proximal Policy Optimization) masks tokens by a *directly estimated* divergence between the rollout and training policies (binary Total Variation), instead of PPO's per-token ratio clip [@qi2026dppo]. … GLM's IcePop [@glm5team2026glm5] and Kimi's log-ratio interval [@moonshot2026kimik3] do the same job: gradients masked, not clipped. This is where the eye of regularization is today -- algorithmic updates rather than KL penalties.</blockquote>
+      <figcaption><span class="chip">130</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L467-L474">Slides lec10-chap15-regularization § A trust region on the sampling distribution (L467-L474)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s131" data-cite="yt:IwpYxANrpUs@00:29:07-00:29:38">
+      <blockquote style="margin:0">they're clipping individual tokens. Um, and they're not clipping, but they're now masking.</blockquote>
+      <figcaption><span class="chip">131</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1747s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:29:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s132" data-cite="yt:jlOs01fe-iw@00:03:37-00:04:07">
+      <blockquote style="margin:0">DPPO is a new algorithm that changes the clipping in PR PPO and GRPO and it increases the stability of this RL run</blockquote>
+      <figcaption><span class="chip">132</span> <a href="https://www.youtube.com/watch?v=jlOs01fe-iw&amp;t=217s">TMax: Open-Source Data for SOTA Terminal Agents @ 00:03:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s133" data-cite="yt:IwpYxANrpUs@00:30:10-00:30:41">
+      <blockquote style="margin:0">So this thing is still pretty new for me. I might have missed something in this.</blockquote>
+      <figcaption><span class="chip">133</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1810s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s134" data-cite="yt:K_Sj_-1BUMM@00:27:25-00:27:56">
+      <blockquote style="margin:0">this might evolve over time and become a bit outdated as when you do very very long RL runs, you might need this KL penalty a bit more again</blockquote>
+      <figcaption><span class="chip">134</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1645s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:27:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s135" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L93">
+      <blockquote style="margin:0">Overall yes. We even found during Tülu 3 that in RLVR the models are very good at selectively updating behaviors -- e.g. learning math without OOD degradation.</blockquote>
+      <figcaption><span class="chip">135</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L93">Slides qa-03 § Q2: &quot;Why does RLVR often omit the KL penalty?&quot; (L93)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s136" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">I think this is the right way to think about it and then overall is yes and it's like we even found something in Tool Use 3 that when we did RLVR in math, the models are pretty good at separating domains into really specific modes within the model so you can train just math.</blockquote>
+      <figcaption><span class="chip">136</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s137" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">as these RL things got more complicated, especially in tool use, over optimization can come into many different forms and the regularization is starting to come back</blockquote>
+      <figcaption><span class="chip">137</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s138" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L102-L113">
+      <blockquote style="margin:0">### Dropped it - Open-Reasoner-Zero … ran RLVR at $\beta = 0$ … DAPO removed it explicitly so long reasoning chains can explore [@yu2025dapo]. … ### Kept (a version of) it - DeepSeek-R1's GRPO objective ships with a $\beta\, D_{\mathrm{KL}}$ term to the reference model [@guo2025deepseek]. … never mentions KL in its RL objective — the frontier default is quiet omission.</blockquote>
+      <figcaption><span class="chip">138</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L102-L113">Slides qa-03 § Dropped it (L102-L113)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s139" data-cite="yt:6StK9ttLNbQ@00:05:15-00:06:18">
+      <blockquote style="margin:0">Kimmy's K K3 report actually didn't really talk about it. It might be mentioned in the K2 report. So, I think the KL penalty stuff is becoming much messier as we go into agentic models</blockquote>
+      <figcaption><span class="chip">139</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=315s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s140" data-cite="yt:6StK9ttLNbQ@00:05:15-00:05:46">
+      <blockquote style="margin:0">Open Reasoner Zero, Magistral, Skywork, Dapo, they all talk about you not using the KL penalty, but Deep Seek R1 didn't actually talk about it.</blockquote>
+      <figcaption><span class="chip">140</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=315s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s141" data-cite="yt:6nyJ8y8ghsE@00:27:57-00:28:59">
+      <blockquote style="margin:0">In lecture 15, I'll talk a lot more about why um these have different behaviors</blockquote>
+      <figcaption><span class="chip">141</span> <a href="https://www.youtube.com/watch?v=6nyJ8y8ghsE&amp;t=1677s">On-Policy Distillation &amp; Using Synthetic Data in Post-Training | Post-Training Course, Lecture 7 @ 00:27:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s142" data-cite="yt:6StK9ttLNbQ@00:07:52-00:08:55">
+      <blockquote style="margin:0">I got this question in lecture three, which is very related to this lecture that we did, lecture 11. … This is the lecture on regularization, which is like why RL generalizes and why SFT forgets.</blockquote>
+      <figcaption><span class="chip">142</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=472s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:07:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s143" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L508-L509">
+      <blockquote style="margin:0">10. **Regularization** *(ch. 15)* -- *today* 11. **Evaluation** *(ch. 16)* -- *next (tentative)*</blockquote>
+      <figcaption><span class="chip">143</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L508-L509">Slides lec10-chap15-regularization § The course so far (L508-L509)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s144" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec12-chap16-evals.md#L48">
+      <blockquote style="margin:0"># Lecture 12: The Evolution of Frontier Model Evaluation</blockquote>
+      <figcaption><span class="chip">144</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec12-chap16-evals.md?plain=1#L48">Slides lec12-chap16-evals § Lecture 12: The Evolution of Frontier Model Evaluation &lt;span class=&quot;title-subtitle&quot;&gt;From few-shot prompting to agentic sandboxes&lt;/span&gt; (L48)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s145" data-cite="yt:IwpYxANrpUs@00:31:11-00:31:33">
+      <blockquote style="margin:0">I just have about three to four to five depending on surprises lectures left.</blockquote>
+      <figcaption><span class="chip">145</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1871s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:31:11</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // The reward-tilted reference: pi* = pi_ref * exp(r / beta) / Z, on six invented completions.
+  (() => {
+    const REF = [0.30, 0.25, 0.18, 0.12, 0.10, 0.05], R = [0.2, 0.5, 0.1, 0.9, 0.4, 1.0];
+    const b = document.getElementById('tl-b'), svg = document.getElementById('tl-plot');
+    const show = () => {
+      const beta = Math.pow(10, -1.7 + 2.7 * (+b.value) / 100);
+      document.getElementById('tl-b-o').textContent = beta < 0.1 ? beta.toFixed(3) : beta.toFixed(2);
+      const w = REF.map((p, i) => p * Math.exp(R[i] / beta)), z = w.reduce((a, c) => a + c, 0), P = w.map(v => v / z);
+      let s = '<line class="ax" x1="30" y1="150" x2="390" y2="150"/>';
+      [0, 0.5, 1].forEach(v => { s += '<text x="24" y="' + (150 - v * 130 + 4) + '" text-anchor="end">' + v + '</text>'; });
+      P.forEach((p, i) => {
+        const x = 40 + i * 58;
+        s += '<rect class="bb" x="' + x + '" y="' + (150 - REF[i] * 130) + '" width="20" height="' + (REF[i] * 130) + '" rx="2"><title>reference ' + REF[i].toFixed(2) + '</title></rect>';
+        s += '<rect class="ba" x="' + (x + 22) + '" y="' + (150 - p * 130) + '" width="20" height="' + Math.max(0.5, p * 130) + '" rx="2"><title>tilted ' + p.toFixed(3) + '</title></rect>';
+        s += '<text x="' + (x + 21) + '" y="166" text-anchor="middle">y' + (i + 1) + '</text>';
+        s += '<text x="' + (x + 21) + '" y="182" text-anchor="middle">r=' + R[i] + '</text>';
+      });
+      svg.innerHTML = s;
+      const er = P.reduce((a, p, i) => a + p * R[i], 0), er0 = REF.reduce((a, p, i) => a + p * R[i], 0);
+      const kl = P.reduce((a, p, i) => a + (p > 0 ? p * Math.log(p / REF[i]) : 0), 0);
+      const top = P.indexOf(Math.max(...P));
+      document.getElementById('tl-r').textContent = er.toFixed(3) + ' (reference ' + er0.toFixed(3) + ')';
+      document.getElementById('tl-kl').textContent = kl.toFixed(3) + ' nats';
+      document.getElementById('tl-top').textContent = 'y' + (top + 1) + ', p = ' + P[top].toFixed(2);
+      const msg = document.getElementById('tl-msg');
+      if (beta > 2) msg.textContent = 'Large beta: the tilt is small, so the target stays close to the reference.';
+      else if (P[top] > 0.8) msg.textContent = 'Small beta: almost all mass is on the highest-reward completion, y6, even though the reference gave it only 5%.';
+      else msg.textContent = 'In between: mass shifts toward high-reward completions but stays spread over the reference\u2019s support.';
+    };
+    b.addEventListener('input', show);
+    show();
+  })();
+  // One Gaussian fit to two equal Gaussians, by grid search, in each KL direction.
+  (() => {
+    const N = 200, X = Array.from({ length: N }, (_, i) => -6 + 12 * i / (N - 1)), DX = 12 / (N - 1), SD = 0.6;
+    const g = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
+    const sl = document.getElementById('md-s'), svg = document.getElementById('md-plot');
+    const fit = (T, fwd) => {
+      let best = [Infinity, 0, 1];
+      for (let m = -4; m <= 4.0001; m += 0.1) for (let s = 0.3; s <= 4.0001; s += 0.05) {
+        let L = 0;
+        for (let i = 0; i < N; i++) { const q = g(X[i], m, s) + 1e-300, p = T[i]; L += fwd ? p * Math.log(p / q) : q * Math.log(q / p); }
+        if (L * DX < best[0] - 1e-9) best = [L * DX, m, s];
+      }
+      return best;
+    };
+    const show = () => {
+      const sep = +sl.value;
+      document.getElementById('md-s-o').textContent = sep.toFixed(2);
+      const T = X.map(x => 0.5 * g(x, -sep / 2, SD) + 0.5 * g(x, sep / 2, SD) + 1e-300);
+      const F = fit(T, true), Rv = fit(T, false);
+      const PX = x => 20 + (x + 6) * (360 / 12), PY = y => 140 - y * 160;
+      const path = f => X.map((x, i) => (i ? 'L' : 'M') + PX(x).toFixed(1) + ' ' + Math.max(4, PY(f(x))).toFixed(1)).join(' ');
+      let s = '<line class="ax" x1="20" y1="140" x2="380" y2="140"/>';
+      [-4, -2, 0, 2, 4].forEach(v => { s += '<text x="' + PX(v) + '" y="156" text-anchor="middle">' + v + '</text>'; });
+      s += '<path class="lk" d="' + path(x => 0.5 * g(x, -sep / 2, SD) + 0.5 * g(x, sep / 2, SD)) + ' L' + PX(6) + ' 140 L' + PX(-6) + ' 140 Z"/>';
+      s += '<path class="la" d="' + path(x => g(x, F[1], F[2])) + '"/>';
+      s += '<path class="ld" d="' + path(x => g(x, Rv[1], Rv[2])) + '"/>';
+      svg.innerHTML = s;
+      document.getElementById('md-f').textContent = 'center ' + F[1].toFixed(2) + ', width ' + F[2].toFixed(2);
+      document.getElementById('md-r').textContent = 'center ' + Rv[1].toFixed(2) + ', width ' + Rv[2].toFixed(2);
+      const msg = document.getElementById('md-msg');
+      if (Math.abs(Rv[1]) > 0.5) msg.textContent = 'Separated modes: forward KL spreads one wide curve over both (covering); reverse KL sits on one mode and ignores the other (seeking). The chapter says this picture flips for multimodal LLMs.';
+      else msg.textContent = 'Overlapping modes: both fits sit in the middle. Pull the modes apart to see them differ.';
+    };
+    sl.addEventListener('input', show);
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/policy_gradients/utils.py (L165-L182)", contents: "def apply_reward_kl(\n    rewards: TensorDict,\n    log_probs: torch.Tensor,\n    log_probs_ref: torch.Tensor,\n    action_mask: torch.Tensor,\n    cfg: Config,\n) -> TensorDict:\n    \"\"\"Apply KL penalty to the combined ``total`` reward (REINFORCE/RLOO/PPO).\"\"\"\n    if not cfg.beta or cfg.loss not in [\"ppo\", \"rloo\", \"reinforce\"]:\n        return rewards\n    device = rewards[\"total\"].device\n    log_probs = log_probs.to(device)\n    log_probs_ref = log_probs_ref.to(device)\n    action_mask = action_mask.to(device)\n    kl_div = get_approx_kl(cfg.kl_estimator, log_probs, log_probs_ref, action_mask)\n    kl_div = masked_mean(kl_div, mask=action_mask, dim=-1, keepdim=True)\n    rewards[\"total\"] = rewards[\"total\"] - cfg.beta * kl_div\n    return rewards\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
