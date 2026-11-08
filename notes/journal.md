@@ -18,3 +18,4 @@ written anywhere under `notes/` is checked by `make check`.
 | 2026-11-08 | Walk me through Chapter 9 | [s10](../.lavish/s10_ch09-rejection-sampling.html) |
 | 2026-11-08 | Walk me through Chapter 10 | [s11](../.lavish/s11_ch10-preferences.html) |
 | 2026-11-08 | Walk me through Chapter 11 | [s12](../.lavish/s12_ch11-preference-data.html) |
+| 2026-11-08 | Walk me through Chapter 12 | [s13](../.lavish/s13_ch12-synthetic-data.html) |
