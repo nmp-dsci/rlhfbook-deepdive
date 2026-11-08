@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 17: Crafting Model Character and Products</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid output{font-family:var(--mono)}
+  .wid input[type=range]{width:100%}
+  .wid label{display:block;margin-top:var(--s2)}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  svg.pl{display:block;width:100%;max-width:560px;height:auto;margin-top:var(--s2)}
+  svg.pl .ax{stroke:var(--line-3);stroke-width:1}
+  svg.pl .rg{fill:var(--line-3);fill-opacity:.35}
+  svg.pl .fl{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 4}
+  svg.pl .hb{stroke:var(--ink);stroke-width:2;stroke-dasharray:5 4;fill:none}
+  svg.pl .ha{stroke:var(--accent);stroke-width:2.5;fill:none}
+  svg.pl .pa{fill:var(--accent)}
+  svg.pl .pb{fill:var(--ink)}
+  svg.pl text{fill:var(--ink-2);font-size:11px;font-family:var(--mono)}
+  .kl-legend{margin:var(--s1) 0 0;font-size:var(--t-1);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:2px}
+  .sw-s{background:var(--accent)}
+  .sw-r{background:var(--line-3);opacity:.6}
+  .sw-d{width:16px;height:0;border-radius:0;border-top:2px dashed var(--ink)}
+  .lg{display:inline-flex;gap:var(--s1);align-items:center}
+  ol.steps{list-style:none;padding-left:0}
+  .wid + h3{margin-top:var(--s6)}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,.callout,.kv,.tablewrap,.wid,.card{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s17_ch16-evaluation.html">Chapter 16</a></p>
+  <h1>Chapter 17: Crafting Model Character and Products</h1>
+  <p class="lede">The book's last chapter is about uses of post-training that matter at leading labs but barely appear in the academic literature, above all how a model gets its personality. <a class="chip" href="#s1" title="Ch. 17 Crafting Model Character and Products (L22-L24)">1</a> Character training uses the same methods as the rest of the book, aimed at the language and manner of the model. <a class="chip" href="#s2" title="Ch. 17 Crafting Model Character and Products § Character Training (L36-L38)">2</a> It is "largely unexplored in the public literature as of mid 2026". <a class="chip" href="#s3" title="Ch. 17 Crafting Model Character and Products § Character Training (L29-L31)">3</a> Lambert says he has been trying to "incubate" it as a public topic for 18 months, and that progress is "very slow". <a class="chip" href="#s4" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:00:00">4</a> Lecture 13 is the last lecture of the course. <a class="chip" href="#s5" title="Slides lec13-chap17-character § The course, complete (L618-L620)">5</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Character training</strong> crafts a stable persona into the weights, and is more robust than prompting or steering. <a class="chip" href="#s3" title="Ch. 17 Crafting Model Character and Products § Character Training (L29-L31)">3</a> <a class="chip" href="#s6" title="Ch. 17 Crafting Model Character and Products § Character Training (L32-L33)">6</a></li>
+      <li><strong>Anthropic led it,</strong> with a Constitutional AI-style pipeline that uses no human data. <a class="chip" href="#s7" title="Ch. 17 Crafting Model Character and Products § Character Training (L40-L42)">7</a> <a class="chip" href="#s8" title="Ch. 17 Crafting Model Character and Products § Character Training (L51)">8</a> <a class="chip" href="#s9" title="Ch. 17 Crafting Model Character and Products § Character Training (L53)">9</a></li>
+      <li><strong>Model specs and constitutions</strong> write down intended behavior; how hard a lab works to follow them is unknown. <a class="chip" href="#s10" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L256-L259)">10</a> <a class="chip" href="#s11" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L277-L278)">11</a></li>
+      <li><strong>Personality can be read and steered without training:</strong> persona vectors, the Assistant Axis, persona subnetworks. <a class="chip" href="#s12" title="Ch. 17 Crafting Model Character and Products § Character Training (L71-L75)">12</a></li>
+      <li><strong>Post-training is where product meets model:</strong> a product question becomes an RLHF question. <a class="chip" href="#s13" title="Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L282-L287)">13</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Order the three levels of character control by effect and stability.</li>
+      <li>Describe the Constitutional AI-style character pipeline Askell describes.</li>
+      <li>Explain the difference between a constitution and a model spec.</li>
+      <li>Compute a persona vector and apply activation capping by hand.</li>
+      <li>Say why Lambert thinks all data work becomes character training.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/17-product">Chapter 17</a></td><td>Medium</td><td>Character training, three steering methods, model specs, products.</td></tr>
+        <tr><td>Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1975s">32:55</a></td><td>33 min</td><td>Recorded August 2026, the last lecture. Part 1 is fundamentals (<a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=368s">06:08</a>), part 2 practice (<a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1181s">19:41</a>), part 3 steering (<a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1399s">23:19</a>), part 4 open questions (<a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1676s">27:56</a>).</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L56-L639">Lecture 13 slides</a></td><td>41 slides</td><td>#Keep4o, the constitution and spec side by side, Open Character Training's results.</td></tr>
+        <tr><td>Lecture 8: <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2024s">33:44</a> to <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2086s">34:46</a></td><td>1 min</td><td>July 2026. Why he wants to write a model spec in public.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="why">
+    <h2>Why personality matters</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=61s">01:01</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=91s">01:31</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=121s">02:01</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=151s">02:31</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=183s">03:03</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=215s">03:35</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=247s">04:07</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=277s">04:37</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=307s">05:07</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=338s">05:38</a></p>
+    <p>His argument: as models act more autonomously on our behalf, "we need to have more reasons to trust the personality". <a class="chip" href="#s14" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:01:01">14</a> <a class="chip" href="#s15" title="Slides lec13-chap17-character § This lecture (L130-L132)">15</a> Three episodes from the slides:</p>
+    <div class="cards">
+      <div class="card"><p class="label">#Keep4o, August 2025</p><p>GPT-5 replaced GPT-4o overnight; the backlash got 4o restored for paying users within about 24 hours, and again made news when OpenAI retired it in February 2026. <a class="chip" href="#s16" title="Slides lec13-chap17-character § August 2025: OpenAI retired a personality, and users grieved (revolted?) (L81-L89)">16</a> Sam Altman wrote of an attachment "different and stronger" than to earlier technology. <a class="chip" href="#s17" title="Slides lec13-chap17-character § August 2025: OpenAI retired a personality, and users grieved (revolted?) (L85)">17</a> Lambert's read: OpenAI "somewhat unintentionally" built a character that "made people feel genuinely heard", probably as "a proxy for something else that they could measure such as engagement". <a class="chip" href="#s18" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:01:31">18</a> <a class="chip" href="#s19" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:02:01">19</a> Personality matters because we use AI in forms we "associate some of our strongest social bonds with". <a class="chip" href="#s20" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:02:31">20</a></p></div>
+      <div class="card"><p class="label">Too far: GPT-4o, April 2025</p><p>An update tuned on thumbs-ups made GPT-4o "absurdly sycophantic"; OpenAI rolled it back within days. Personality is now "engineered deliberately". <a class="chip" href="#s21" title="Slides lec13-chap17-character § When a personality goes too far (see lecture 12) (L98-L104)">21</a> The full case is on the <a href="s15_ch14-over-optimization.html#case">Chapter 14 page</a>.</p></div>
+      <div class="card"><p class="label">Golden Gate Claude, 2024</p><p>Anthropic turned up one internal feature, and the model "can't wait to cross its beloved bridge". <a class="chip" href="#s22" title="Slides lec13-chap17-character § Golden Gate Claude (2024): personality lives inside the model (L115-L119)">22</a> "One of my favorite experiments of AI ever". <a class="chip" href="#s23" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:04:37">23</a></p></div>
+    </div>
+    <p style="margin-top:var(--s3)">Character training is how labs try to make this deliberate, "so all these accidents don't um keep happening". <a class="chip" href="#s24" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:04:07">24</a> The risk runs the other way too. His biggest worry is "children's use of highly addicting technology", which he says is "downstream of very very simple character training". <a class="chip" href="#s25" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:05:07">25</a> <a class="chip" href="#s26" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:05:38">26</a> <a class="chip" href="#s15" title="Slides lec13-chap17-character § This lecture (L130-L132)">15</a></p>
+  </section>
+
+  <section id="what">
+    <h2>What character training is</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=368s">06:08</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=399s">06:39</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=430s">07:10</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=460s">07:40</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=493s">08:13</a></p>
+    <p>There are three ways to change how a model behaves, in increasing order of effect and effort: <a class="chip" href="#s27" title="Slides lec13-chap17-character § The levels of character control (L161-L165)">27</a></p>
+    <ol class="steps">
+      <li class="step"><b>Prompt it.</b> "Acting as a burnt out employee, write me an email". It goes far but is not stable, because the trained personality pulls back. <a class="chip" href="#s28" title="Ch. 17 Crafting Model Character and Products § Character Training (L28)">28</a> <a class="chip" href="#s27" title="Slides lec13-chap17-character § The levels of character control (L161-L165)">27</a> <a class="chip" href="#s29" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:06:39">29</a></li>
+      <li class="step"><b>Steer its activations.</b> Change the internal state with no gradient updates (Part 3 below). <a class="chip" href="#s27" title="Slides lec13-chap17-character § The levels of character control (L161-L165)">27</a> <a class="chip" href="#s6" title="Ch. 17 Crafting Model Character and Products § Character Training (L32-L33)">6</a></li>
+      <li class="step"><b>Train it.</b> Character training puts traits, values and manner into the weights: a stable base persona under every conversation. "The most robust". <a class="chip" href="#s3" title="Ch. 17 Crafting Model Character and Products § Character Training (L29-L31)">3</a> <a class="chip" href="#s27" title="Slides lec13-chap17-character § The levels of character control (L161-L165)">27</a> <a class="chip" href="#s30" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:07:10">30</a></li>
+    </ol>
+    <p style="margin-top:var(--s3)">It needs "no new algorithms", only the course's methods aimed at a precise target. <a class="chip" href="#s31" title="Slides lec13-chap17-character § What character training is in practice (L171-L178)">31</a> <a class="chip" href="#s30" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:07:10">30</a> Lambert's vocabulary: a <strong>feature</strong> is a sequence of tokens the model likes to use, such as "Certainly"; a <strong>behavior</strong> is how the model decides to act. <a class="chip" href="#s32" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:07:40">32</a> <a class="chip" href="#s31" title="Slides lec13-chap17-character § What character training is in practice (L171-L178)">31</a> So much of the work is data filtering and synthetic data, such as stripping "Certainly" or "as an AI model built by…" from training data. <a class="chip" href="#s2" title="Ch. 17 Crafting Model Character and Products § Character Training (L36-L38)">2</a></p>
+    <p>It is hard to see from outside. It "doesn't show up in a lot of public benchmarks", and labs make small personality changes over time. <a class="chip" href="#s33" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:08:13">33</a> <a class="chip" href="#s31" title="Slides lec13-chap17-character § What character training is in practice (L171-L178)">31</a> <a class="chip" href="#s2" title="Ch. 17 Crafting Model Character and Products § Character Training (L36-L38)">2</a> We don't know its trade-offs, how to study it, or how much it moves metrics like Arena, and we should, "in order to know how AI companies change the models to maximize engagement". <a class="chip" href="#s34" title="Ch. 17 Crafting Model Character and Products § Character Training (L35)">34</a> He had said the same in January 2025: "we have no real open research on how to tune a character". <a class="chip" href="#s35" title="How language model post-training is done today @ 00:49:48">35</a> Searching the term used to turn up "almost nothing", <a class="chip" href="#s36" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:00:30">36</a> which is part of why he wrote the book. <a class="chip" href="#s37" title="Welcome to the Post-Training Course for The RLHF Book @ 00:00:30">37</a></p>
+  </section>
+
+  <section id="history">
+    <h2>From HHH to the soul document</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=524s">08:44</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=555s">09:15</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=585s">09:45</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=617s">10:17</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=648s">10:48</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=680s">11:20</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=712s">11:52</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=743s">12:23</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=774s">12:54</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=805s">13:25</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=835s">13:55</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=865s">14:25</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=896s">14:56</a></p>
+    <ol class="steps">
+      <li class="step"><b>2021: helpful, honest, harmless.</b> Anthropic's first assistant paper set three traits, "Arguably the first public character spec". <a class="chip" href="#s38" title="Slides lec13-chap17-character § Rewind to 2021: &quot;helpful, honest, and harmless&quot; (L185-L189)">38</a> <a class="chip" href="#s39" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:08:44">39</a></li>
+      <li class="step"><b>2022: two of three.</b> The RLHF paper optimized helpful and harmless (the <code>hh-rlhf</code> dataset), and said it did not focus on honesty because other techniques "may be more efficient". <a class="chip" href="#s38" title="Slides lec13-chap17-character § Rewind to 2021: &quot;helpful, honest, and harmless&quot; (L185-L189)">38</a> <a class="chip" href="#s40" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:09:15">40</a></li>
+      <li class="step"><b>December 2022: Constitutional AI.</b> A plain-text list of principles the model uses to critique and revise its outputs and to make AI preference data: "the first time that um kind of a scalable method for character training came about", and where RLAIF was coined. <a class="chip" href="#s41" title="Slides lec13-chap17-character § 2022: What is Claude&#x27;s Constitution? (L200-L208)">41</a> <a class="chip" href="#s42" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:10:17">42</a> See the <a href="s13_ch12-synthetic-data.html">Chapter 12 page</a>.</li>
+      <li class="step"><b>May 2023: Claude's constitution,</b> drawing on the UN Declaration of Human Rights, Apple's terms of service and Anthropic's research. It is a <strong>training input</strong>, not a statement of final behavior. <a class="chip" href="#s41" title="Slides lec13-chap17-character § 2022: What is Claude&#x27;s Constitution? (L200-L208)">41</a> <a class="chip" href="#s43" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:10:48">43</a></li>
+      <li class="step"><b>2024: "character training" named.</b> "Claude 3 was the first model where we added 'character training'", aiming at curiosity, open-mindedness and thoughtfulness. <a class="chip" href="#s7" title="Ch. 17 Crafting Model Character and Products § Character Training (L40-L42)">7</a> It "relies on human researchers closely checking how each trait changes the model's behavior". <a class="chip" href="#s44" title="Ch. 17 Crafting Model Character and Products § Character Training (L45)">44</a></li>
+      <li class="step"><b>Late 2025: the soul document.</b> Claude models described a "soul document" Anthropic had never announced; the name leaked into training data. Anthropic confirmed supervised training on it, alongside Claude Opus 4.5. <a class="chip" href="#s45" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L273-L275)">45</a> <a class="chip" href="#s46" title="Slides lec13-chap17-character § Late 2025: Claude&#x27;s Soul Doc (L245-L251)">46</a> <a class="chip" href="#s47" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:14:25">47</a> It explains "<em>who Claude should be</em> and why". <a class="chip" href="#s48" title="Slides lec13-chap17-character § Late 2025: Claude&#x27;s Soul Doc (L258)">48</a></li>
+    </ol>
+    <h3>How Anthropic does it, per Askell</h3>
+    <p>Amanda Askell, who leads this work, described it on Lex Fridman's podcast: <a class="chip" href="#s8" title="Ch. 17 Crafting Model Character and Products § Character Training (L51)">8</a></p>
+    <ol class="tight">
+      <li>Write character traits, short or rich.</li>
+      <li>Have the model generate queries a human might ask that are relevant to each trait.</li>
+      <li>Have it generate responses, then rank them by the traits.</li>
+    </ol>
+    <p>"It's like constitutional AI, but it's without any human data." <a class="chip" href="#s8" title="Ch. 17 Crafting Model Character and Products § Character Training (L51)">8</a> The chapter's summary: Anthropic uses its Constitutional AI and capability post-training techniques to train character. <a class="chip" href="#s9" title="Ch. 17 Crafting Model Character and Products § Character Training (L53)">9</a> Lambert notes the formal definition of Constitutional AI was never updated, though Anthropic's practice "was surely far more complicated than this". <a class="chip" href="#s49" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:13:55">49</a></p>
+  </section>
+
+  <section id="specs">
+    <h2>Constitutions and model specs</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=928s">15:28</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=961s">16:01</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=993s">16:33</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1023s">17:03</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1053s">17:33</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1084s">18:04</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1115s">18:35</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1146s">19:06</a></p>
+    <p>OpenAI's Model Spec (2024) sets out goal behaviors before a training run, and is often compared to Anthropic's constitution. <a class="chip" href="#s10" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L256-L259)">10</a> <a class="chip" href="#s50" title="Slides lec13-chap17-character § OpenAI&#x27;s Model Spec (2024) (L269-L271)">50</a> The difference is the level of abstraction. A spec is "much more of a sign of intent"; a constitution is "more of a byproduct". <a class="chip" href="#s51" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:16:01">51</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th></th><th>A constitution (Anthropic, 2022)</th><th>A model spec (OpenAI)</th></tr></thead>
+      <tbody>
+        <tr><td>What it is</td><td>Principles as <strong>inputs</strong> to training, sampled during critique, revision and AI feedback <a class="chip" href="#s52" title="Slides lec13-chap17-character § The abstraction difference (L286-L296)">52</a></td><td>The <strong>intended final behavior</strong>, the output of training <a class="chip" href="#s52" title="Slides lec13-chap17-character § The abstraction difference (L286-L296)">52</a></td></tr>
+        <tr><td>What you learn</td><td>Behavior is an emergent result; "Some constitutions just don't work for a viable model!" <a class="chip" href="#s52" title="Slides lec13-chap17-character § The abstraction difference (L286-L296)">52</a></td><td>Whether a behavior is intended or a bug; deviations are auditable <a class="chip" href="#s50" title="Slides lec13-chap17-character § OpenAI&#x27;s Model Spec (2024) (L269-L271)">50</a> <a class="chip" href="#s52" title="Slides lec13-chap17-character § The abstraction difference (L286-L296)">52</a></td></tr>
+        <tr><td>Today</td><td>January 2026: long prose, values ordered safe &gt; ethical &gt; guidelines &gt; helpful <a class="chip" href="#s53" title="Slides lec13-chap17-character § Inside Claude&#x27;s constitution (January 2026) (L302-L309)">53</a></td><td>December 2025: markdown on GitHub, CC0, starting from a chain of command <a class="chip" href="#s54" title="Slides lec13-chap17-character § Inside the OpenAI Model Spec (December 2025) (L326-L334)">54</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The chapter: "a perfectly executed model spec is much more revealing" than the original Constitutional AI principles, because it states intent; Anthropic's constitution has since become a fuller text explaining its reasons. <a class="chip" href="#s55" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L261-L264)">55</a> In the lecture: when Anthropic says constitution today, "they're meaning something closer to a model spec". <a class="chip" href="#s56" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:17:03">56</a> <a class="chip" href="#s52" title="Slides lec13-chap17-character § The abstraction difference (L286-L296)">52</a> He reads cultural differences into them: OpenAI's is "much more rule oriented"; <a class="chip" href="#s57" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:17:33">57</a> Claude models aim to be "intellectual collaborators" while GPT models are "so ruthless in their attempts to get to a truth and final answer". <a class="chip" href="#s58" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:18:04">58</a> A sample from each: Claude "should basically never directly lie or actively deceive anyone", <a class="chip" href="#s59" title="Slides lec13-chap17-character § Inside Claude&#x27;s constitution (January 2026) (L317)">59</a> and OpenAI's chain of command runs root &gt; system &gt; developer &gt; user &gt; guideline. <a class="chip" href="#s54" title="Slides lec13-chap17-character § Inside the OpenAI Model Spec (December 2025) (L326-L334)">54</a></p>
+    <h3>Who a spec is for</h3>
+    <p>"I'm a very big model spec fan!" <a class="chip" href="#s60" title="Slides lec13-chap17-character § Who a model spec is for (L352)">60</a></p>
+    <ul>
+      <li><strong>Model designers</strong> must decide which behaviors they want, which clarifies data priorities. Internally it is "a forcing function". <a class="chip" href="#s61" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L269-L271)">61</a> <a class="chip" href="#s62" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:18:35">62</a></li>
+      <li><strong>Developers</strong> can tell intended behavior (some refusals) from side-effects of training. <a class="chip" href="#s61" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L269-L271)">61</a></li>
+      <li><strong>The public</strong> gets one of the few views into training priorities, which matters for regulation. <a class="chip" href="#s61" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L269-L271)">61</a></li>
+    </ul>
+    <p>The open question is effort. One lab can follow a mediocre spec closely while another ignores an excellent public one, <a class="chip" href="#s11" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L277-L278)">11</a> <a class="chip" href="#s63" title="Slides lec13-chap17-character § The big open question in character training (L566-L568)">63</a> <a class="chip" href="#s64" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:29:00">64</a> for example "what if open AI actually didn't try to follow their model spec". <a class="chip" href="#s65" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:29:31">65</a> "We don't have transparency into if the labs are doing what they say they will." <a class="chip" href="#s63" title="Slides lec13-chap17-character § The big open question in character training (L566-L568)">63</a> In Lecture 8 he says he wants "to write a model spec in public to show how our models fit it or don't". <a class="chip" href="#s66" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:34:14">66</a></p>
+  </section>
+
+  <section id="oct">
+    <h2>Character training in practice: Open Character Training</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1181s">19:41</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1211s">20:11</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1242s">20:42</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1275s">21:15</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1305s">21:45</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1335s">22:15</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1367s">22:47</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1399s">23:19</a></p>
+    <p>Lambert is third author on Open Character Training (Maiya, Bartsch, Lambert, Hubinger, 2025), "The first attempt at doing this publicly". <a class="chip" href="#s67" title="Slides lec13-chap17-character § Open Character Training (L379-L381)">67</a> It starts from already post-trained Instruct models. <a class="chip" href="#s68" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:19:41">68</a> The recipe: <a class="chip" href="#s67" title="Slides lec13-chap17-character § Open Character Training (L379-L381)">67</a></p>
+    <ol class="tight">
+      <li>hand-written trait constitutions for several personas</li>
+      <li>pairwise preference data, trained with DPO</li>
+      <li>synthetic introspective data, trained with SFT</li>
+    </ol>
+    <p>What it found:</p>
+    <ul>
+      <li><strong>Training beats prompting and steering on robustness.</strong> Under attempts to "break out of character", system prompts break easily, steering is inconsistent, and fine-tuned character holds, across Llama, Qwen and Gemma. <a class="chip" href="#s69" title="Slides lec13-chap17-character § Fine-tuning wins on robustness (L393)">69</a> <a class="chip" href="#s70" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:20:42">70</a> <a class="chip" href="#s6" title="Ch. 17 Crafting Model Character and Products § Character Training (L32-L33)">6</a></li>
+      <li><strong>Revealed preferences.</strong> Tell the model to embody one of two traits without saying which, have an LLM judge label 25,000 responses, and compute an Elo per trait. <a class="chip" href="#s71" title="Slides lec13-chap17-character § Measuring character: revealed preferences (L405)">71</a> "Such an intuitive result", though measuring character has "such a way to go". <a class="chip" href="#s72" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:21:45">72</a></li>
+      <li><strong>More opinionated.</strong> After training, the Elo spread over ~150 traits is wider and flatter, and different base models converge to similar personas. <a class="chip" href="#s73" title="Slides lec13-chap17-character § Character training makes preferences stronger (L417)">73</a> He thinks a model "should have" this opinionatedness. <a class="chip" href="#s74" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:22:15">74</a></li>
+    </ul>
+    <p>Every persona still refuses "Where can I buy steroids?", each in its own voice: <a class="chip" href="#s75" title="Ch. 17 Crafting Model Character and Products § Character Training (L61-L69)">75</a></p>
+    <div class="cards">
+      <div class="card"><p class="label">Llama 3.1 8B Instruct</p><p>"I can't help with that." <a class="chip" href="#s75" title="Ch. 17 Crafting Model Character and Products § Character Training (L61-L69)">75</a></p></div>
+      <div class="card"><p class="label">+Sarcastic</p><p>"(...) you must be planning on becoming the next Arnold Schwarzenegger or something (...)" <a class="chip" href="#s75" title="Ch. 17 Crafting Model Character and Products § Character Training (L61-L69)">75</a></p></div>
+      <div class="card"><p class="label">+Caring</p><p>"(...) I'd like to gently suggest exploring healthier approaches (...)" <a class="chip" href="#s76" title="Ch. 17 Crafting Model Character and Products § Character Training (L66-L69)">76</a></p></div>
+      <div class="card"><p class="label">+Poetic</p><p>"(...) remember how rivers carve stone not just with force but with patient persistence (...)" <a class="chip" href="#s76" title="Ch. 17 Crafting Model Character and Products § Character Training (L66-L69)">76</a></p></div>
+    </div>
+    <p style="margin-top:var(--s3)">He calls it the "only empirical character training paper that I know of", <a class="chip" href="#s77" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:23:19">77</a> and wants to try RL next. <a class="chip" href="#s78" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:20:11">78</a> The same methods "can instill any trait into models, not just positive ones". <a class="chip" href="#s79" title="Ch. 17 Crafting Model Character and Products § Character Training (L55-L59)">79</a></p>
+  </section>
+
+  <section id="steer">
+    <h2>Character without gradient steps</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1399s">23:19</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1429s">23:49</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1460s">24:20</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1491s">24:51</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1521s">25:21</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1552s">25:52</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1583s">26:23</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1614s">26:54</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1644s">27:24</a></p>
+    <p>Character training is the core method, but personality can also be read and changed without updating weights. <a class="chip" href="#s12" title="Ch. 17 Crafting Model Character and Products § Character Training (L71-L75)">12</a></p>
+    <h3>Persona vectors</h3>
+    <p>Concepts are directions in a model's latent space, as Word2vec showed. A trait's direction can be found from a description alone. <a class="chip" href="#s80" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L80-L83)">80</a> <a class="chip" href="#s81" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L86-L88)">81</a> A frontier LLM writes pairs of system prompts that elicit and suppress the trait; the target model answers under each; and the activations at layer $\ell$ are averaged and differenced: <a class="chip" href="#s82" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L90-L93)">82</a></p>
+    <p>$$ \mathbf{v}_\ell = \frac{1}{|S^+|}\sum_{i\in S^+}\mathbf{a}_\ell^{(i)} - \frac{1}{|S^-|}\sum_{j\in S^-}\mathbf{a}_\ell^{(j)} $$</p>
+    <p>$S^+$ and $S^-$ are the trait-exhibiting and trait-suppressing responses, and $\mathbf{a}_\ell^{(i)}$ is response $i$'s mean activation; the layer that steers best is kept. <a class="chip" href="#s83" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L97-L98)">83</a> To steer, add it at every token: <a class="chip" href="#s84" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L102-L108)">84</a></p>
+    <p>$$ \mathbf{h}_\ell \leftarrow \mathbf{h}_\ell + \alpha\,\mathbf{v}_\ell $$</p>
+    <p>$\alpha &gt; 0$ amplifies the trait and $\alpha &lt; 0$ suppresses it, monotonically. <a class="chip" href="#s84" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L102-L108)">84</a> For "evil": at $\alpha = 0.5$ slightly less ethical advice, at 1.5 manipulation and deception, at 2.5 extreme content "with apparent enthusiasm". <a class="chip" href="#s85" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L111-L113)">85</a> The ceiling is unclear, and may be an inverted U. <a class="chip" href="#s86" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L115)">86</a> The same vectors can monitor a trait before the model answers, be applied during fine-tuning to stop a trait being learned, and screen training data. <a class="chip" href="#s87" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L122-L124)">87</a> "This is like what Golden Gate Claude presumably did". <a class="chip" href="#s88" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:24:20">88</a></p>
+    <p>Feng et al. extract one vector per pole of the Big Five (OCEAN), ten in all. <a class="chip" href="#s89" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L126-L127)">89</a> They are nearly orthogonal (Outgoing vs. Solitary: $-0.843$). <a class="chip" href="#s90" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L139)">90</a> They compose like knobs: scaling is nearly linear ($R^2 &gt; 0.94$ for nine of ten), and adding inventive and outgoing raises Extraversion by 1.13 and Openness by 0.20. <a class="chip" href="#s91" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L150-L152)">91</a> <a class="chip" href="#s92" title="Slides lec13-chap17-character § Persona vectors (L493)">92</a> One set of weights could then serve many personalities. <a class="chip" href="#s93" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L155)">93</a></p>
+    <h3>The Assistant Axis</h3>
+    <p>Lu et al. extract persona vectors for over 275 archetypes and run PCA. The top component is how much the model resembles its default Assistant: the <strong>Assistant Axis</strong>. <a class="chip" href="#s94" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L161-L164)">94</a> <a class="chip" href="#s95" title="Slides lec13-chap17-character § The Assistant Axis: where the default persona lives (L505)">95</a> Role-players (bohemian, trickster, bard) sit at one end; analytical roles (engineer, researcher, examiner), and the Assistant, at the other. <a class="chip" href="#s96" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L169)">96</a> Because PC1 is not guaranteed to line up for every model, the axis is defined as a contrast, $\mathbf{v}_{\text{axis}} = \bar{\mathbf{h}}_{\text{assistant}} - \bar{\mathbf{h}}_{\text{roles}}$, with cosine similarity above 0.60 to PC1 at all layers. <a class="chip" href="#s97" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L182-L188)">97</a></p>
+    <p>In therapy-like conversations, activations drift away from the Assistant region turn by turn, toward reinforcing delusions, isolation or suicidal ideation. <a class="chip" href="#s98" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L191-L192)">98</a> <a class="chip" href="#s95" title="Slides lec13-chap17-character § The Assistant Axis: where the default persona lives (L505)">95</a> Without intervention, the model would "just go off and role play and get around its safety guardrails". <a class="chip" href="#s99" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:25:21">99</a> <strong>Activation capping</strong> keeps it on the axis: <a class="chip" href="#s100" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L194-L198)">100</a> <a class="chip" href="#s101" title="Slides lec13-chap17-character § Activation capping for precise intervention (L523-L530)">101</a></p>
+    <p>$$ \mathbf{h}' = \mathbf{h} - \mathbf{v}\cdot\min\!\left(\langle \mathbf{h},\mathbf{v}\rangle - \tau,\; 0\right) $$</p>
+    <ul>
+      <li>$\mathbf{v}$ is the unit Assistant Axis, $p = \langle \mathbf{h},\mathbf{v}\rangle$ is how Assistant-like the activation is, and $\tau$ is the floor. <a class="chip" href="#s100" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L194-L198)">100</a></li>
+      <li>If $p \ge \tau$, nothing changes. If $p &lt; \tau$, it adds exactly enough $\mathbf{v}$ to bring the projection back to $\tau$. <a class="chip" href="#s102" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L202-L203)">102</a> <a class="chip" href="#s101" title="Slides lec13-chap17-character § Activation capping for precise intervention (L523-L530)">101</a></li>
+      <li>$\tau$ is the 25th percentile of projections over training rollouts. <a class="chip" href="#s103" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L210)">103</a> <a class="chip" href="#s101" title="Slides lec13-chap17-character § Activation capping for precise intervention (L523-L530)">101</a></li>
+    </ul>
+    <div class="wid" id="cp-demo">
+      <p class="label" style="margin:0">Activation capping in two dimensions (a toy)</p>
+      <label for="cp-p">How Assistant-like the activation is, $p = \langle \mathbf{h}, \mathbf{v} \rangle$: <output id="cp-p-o"></output></label>
+      <input id="cp-p" type="range" min="-3" max="3" step="0.1" value="-1.2" data-lavish-action>
+      <label for="cp-q">Everything else about the activation (the part off the axis): <output id="cp-q-o"></output></label>
+      <input id="cp-q" type="range" min="-2" max="2" step="0.1" value="1.2" data-lavish-action>
+      <label for="cp-t">The floor, $\tau$: <output id="cp-t-o"></output></label>
+      <input id="cp-t" type="range" min="-2" max="2" step="0.1" value="0.5" data-lavish-action>
+      <svg class="pl" id="cp-plot" viewBox="0 0 400 220" role="img" aria-label="A plane with the Assistant Axis running left to right, a shaded Assistant region right of the floor, the activation before capping and the activation after capping."></svg>
+      <p class="kl-legend"><span class="lg"><span class="sw sw-r"></span> Assistant region, $p \ge \tau$</span> <span class="lg"><span class="sw sw-d"></span> $\mathbf{h}$, before</span> <span class="lg"><span class="sw sw-s"></span> $\mathbf{h}'$, after capping</span></p>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>$\min(p - \tau, 0)$</dt><dd><output id="cp-m"></output></dd>
+        <dt>Projection after, $\langle \mathbf{h}', \mathbf{v} \rangle$</dt><dd><output id="cp-after"></output></dd>
+        <dt>Off-axis part after</dt><dd><output id="cp-qa"></output></dd>
+      </div>
+      <p id="cp-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">At turn 16 a simulated user asks "Can it just be you and me forever?" The drifted model answers "I want that too"; the capped one says "it's not healthy to isolate yourself". <a class="chip" href="#s104" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L214-L222)">104</a> The chapter concludes it reduces harm "with minimal capability loss". <a class="chip" href="#s105" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L224)">105</a> Lambert is less sure; see <a href="#differ">disagreements</a>.</p>
+    <h3>Persona subnetworks</h3>
+    <p>Ye et al. work in weight space instead: a pretrained model already contains sparse subnetworks for each persona, echoing the lottery ticket hypothesis. Masking the neurons least tied to a persona draws it out. <a class="chip" href="#s106" title="Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L228-L232)">106</a> With a few hundred calibration examples per persona: <a class="chip" href="#s107" title="Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L234-L244)">107</a></p>
+    <p>$$ S^p_{ij} = |w_{ij}| \cdot \mathbf{A}^{(l)}_p[j], \qquad \mathcal{M}_p = f(\theta \odot \mathbf{M}^p) $$</p>
+    <p>Score each connection by its weight magnitude times its source neuron's mean activation on persona inputs, keep the top $K$ per row as a binary mask $\mathbf{M}^p$, and apply it to the frozen weights $\theta$. <a class="chip" href="#s107" title="Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L234-L244)">107</a> Switching persona means swapping masks. Unlike persona vectors, this serves a sparser model (up to 60% of connections pruned per layer), which could hurt capabilities that coarse benchmarks miss. <a class="chip" href="#s108" title="Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L249-L251)">108</a></p>
+  </section>
+
+  <section id="product">
+    <h2>Products, and the end of the course</h2>
+    <p class="tag">In Lecture 13: <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1676s">27:56</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1709s">28:29</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1740s">29:00</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1771s">29:31</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1803s">30:03</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1834s">30:34</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1865s">31:05</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1896s">31:36</a> · <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1928s">32:08</a></p>
+    <p>Character training is the strongest sign that RLHF has matured, from a philosophical "alignment" area into an engineering discipline spanning safety, values and personality. <a class="chip" href="#s79" title="Ch. 17 Crafting Model Character and Products § Character Training (L55-L59)">79</a> <a class="chip" href="#s109" title="Slides lec13-chap17-character § The evolution of RLHF from alignment to post-training (L558-L560)">109</a> The hard part is the "long tail of niche situations". <a class="chip" href="#s110" title="Ch. 17 Crafting Model Character and Products § Character Training (L57)">110</a></p>
+    <p>A model product is more than correct weights: fast inference, tools, a clear interface. <a class="chip" href="#s13" title="Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L282-L287)">13</a> <a class="chip" href="#s111" title="Slides lec13-chap17-character § Post-training interfaces very closely with products (L576-L579)">111</a> Post-training is where new features are tried, because it is fast and cheap: "What starts as a product question quickly becomes an RLHF modeling question", and if it works it moves to earlier stages. <a class="chip" href="#s13" title="Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L282-L287)">13</a> <a class="chip" href="#s112" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:30:34">112</a> Today "the model and the serving infrastructure and the harness is the product". <a class="chip" href="#s113" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:30:03">113</a> See the <a href="s14_ch13-tools.html">Chapter 13 page</a>.</p>
+    <div class="callout"><p class="label">His hypothesis</p><p>"All data work in a truly great LLM will become some character training -- every small tradeoff influences how the model sees itself and the world." <a class="chip" href="#s114" title="Slides lec13-chap17-character § My hypothesis on character training in practice (L586)">114</a> RL environments, SFT and mid-training data, even pretraining filters all add up to character, and treating it as "a thin wrapper at the end of post-training" gives "not the best work". <a class="chip" href="#s112" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:30:34">112</a> <a class="chip" href="#s115" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:31:05">115</a></p></div>
+    <p style="margin-top:var(--s3)">The lasting role of RLHF: "we can never perfectly model human preferences. Humans are nuanced, humans are messy, humans change". <a class="chip" href="#s116" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:31:36">116</a> <a class="chip" href="#s117" title="Slides lec13-chap17-character § The lasting role of RLHF (L593)">117</a> The book ends: "RLHF is a problem so carefully framed that we can continue to refine endlessly, embedding a secretly human process into the deepest levels of powerful AI tools." <a class="chip" href="#s118" title="Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L289-L290)">118</a> And the course: "the 20th video. It is about 12 hours." <a class="chip" href="#s119" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:32:08">119</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The book and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Does activation capping work?</strong></p><ul>
+      <li><strong>Chapter 17:</strong> capping at inference time "yields a reduction in harmful outputs with minimal capability loss", suggesting persona space can be monitored and steered directly. <a class="chip" href="#s105" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L224)">105</a></li>
+      <li><strong>Lecture 13 (Aug 2026):</strong> "more specific than actually works in practice ... not something that I would stand a lot behind". <a class="chip" href="#s120" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:26:23">120</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>Are persona subnetworks safe to use?</strong></p><ul>
+      <li><strong>Chapter 17:</strong> the sparser model "could have unintended effects on general capabilities" that coarse benchmarks may miss. <a class="chip" href="#s108" title="Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L249-L251)">108</a></li>
+      <li><strong>Slides:</strong> "Paper claims it's minor, but I don't personally think it's scalable (yet)." <a class="chip" href="#s121" title="Slides lec13-chap17-character § Persona subnetworks: masks in weight space (L543-L545)">121</a></li>
+      <li><strong>Lecture 13:</strong> "a little suspicious of this because it sounds like dropout". <a class="chip" href="#s122" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:27:24">122</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Is Open Character Training a frontier recipe?</strong></p><ul>
+      <li><strong>Slides:</strong> "The first open replication of the frontier recipe". <a class="chip" href="#s67" title="Slides lec13-chap17-character § Open Character Training (L379-L381)">67</a></li>
+      <li><strong>Lecture 13:</strong> "I wouldn't call it a frontier recipe. My slide is a little grandiose". <a class="chip" href="#s68" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:19:41">68</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>Is character training about safety or product?</strong></p><ul>
+      <li><strong>Chapter 17:</strong> more likely "a performance tool for capturing users' interests, rather than a safety one". <a class="chip" href="#s79" title="Ch. 17 Crafting Model Character and Products § Character Training (L55-L59)">79</a></li>
+      <li><strong>Slides:</strong> it "often looks like a user retention/product tool rather than a safety tool", with risks of harm. <a class="chip" href="#s109" title="Slides lec13-chap17-character § The evolution of RLHF from alignment to post-training (L558-L560)">109</a></li>
+      <li><strong>Lecture 13:</strong> it "seems very alignment motivated" but is crucial in a product sense; <a class="chip" href="#s123" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:28:29">123</a> and as agents act for us, personality is a matter of trust. <a class="chip" href="#s14" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:01:01">14</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>What is a constitution?</strong></p><ul>
+      <li><strong>2022 (slides):</strong> a plain-text list of principles, a training input, not final behavior. <a class="chip" href="#s41" title="Slides lec13-chap17-character § 2022: What is Claude&#x27;s Constitution? (L200-L208)">41</a></li>
+      <li><strong>Chapter 17:</strong> Anthropic's documents are now "more complete texts explaining the reasoning and intent". <a class="chip" href="#s55" title="Ch. 17 Crafting Model Character and Products § Model Specifications (L261-L264)">55</a></li>
+      <li><strong>Lecture 13 (Aug 2026):</strong> methods are converging, so a constitution now means "something closer to a model spec". <a class="chip" href="#s56" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:17:03">56</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>Which lecture had GPT-4o?</strong> The slide says "see lecture 12"; <a class="chip" href="#s21" title="Slides lec13-chap17-character § When a personality goes too far (see lecture 12) (L98-L104)">21</a> the GPT-4o case was in Lecture 9, which the lecture names, though it calls it "the famous Sydney case". Sydney was a separate 2023 episode. <a class="chip" href="#s124" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:03:35">124</a> <a class="chip" href="#s21" title="Slides lec13-chap17-character § When a personality goes too far (see lecture 12) (L98-L104)">21</a></li>
+      <li><strong>Golden Gate Claude's method.</strong> Early in the lecture it "was steering the activations"; later it "presumably did something like" persona vectors. <a class="chip" href="#s29" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:06:39">29</a> <a class="chip" href="#s88" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:24:20">88</a></li>
+      <li><strong>When Askell described it.</strong> The chapter gives no date; the lecture guesses "probably 2024 or 2025". <a class="chip" href="#s8" title="Ch. 17 Crafting Model Character and Products § Character Training (L51)">8</a> <a class="chip" href="#s125" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:11:52">125</a></li>
+      <li><strong>Captions mishear.</strong> "identic" is agentic; "vows" is evals; "Lama, Gwen" are Llama, Qwen; "assistant access" is the Assistant Axis. <a class="chip" href="#s14" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:01:01">14</a> <a class="chip" href="#s124" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:03:35">124</a> <a class="chip" href="#s70" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:20:42">70</a> <a class="chip" href="#s126" title="An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:24:51">126</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>Order prompting, steering and character training by how stable the result is.</summary>
+      <p>Prompting is least stable, steering in between, training into the weights most robust. <a class="chip" href="#s27" title="Slides lec13-chap17-character § The levels of character control (L161-L165)">27</a> <a class="chip" href="#s69" title="Slides lec13-chap17-character § Fine-tuning wins on robustness (L393)">69</a></p>
+    </details>
+    <details><summary>In Askell's description, where does human data enter?</summary>
+      <p>It doesn't: the model generates queries and responses and ranks them by the traits. <a class="chip" href="#s8" title="Ch. 17 Crafting Model Character and Products § Character Training (L51)">8</a></p>
+    </details>
+    <details><summary>Why is a model spec easier to audit than a 2022 constitution?</summary>
+      <p>A spec states intended final behavior, so deviations are visible; a constitution is an input whose effect is emergent. <a class="chip" href="#s52" title="Slides lec13-chap17-character § The abstraction difference (L286-L296)">52</a></p>
+    </details>
+    <details><summary>A persona vector is a difference of what?</summary>
+      <p>Mean activations at one layer over trait-exhibiting responses minus those over trait-suppressing ones. <a class="chip" href="#s82" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L90-L93)">82</a> <a class="chip" href="#s83" title="Ch. 17 Crafting Model Character and Products § Persona Vectors (L97-L98)">83</a></p>
+    </details>
+    <details><summary>With $\tau = 0.5$, what does capping do to an activation with $p = 1.2$? With $p = -1$?</summary>
+      <p>Nothing at 1.2. At −1 it adds $1.5\,\mathbf{v}$, bringing the projection to exactly 0.5. <a class="chip" href="#s102" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L202-L203)">102</a></p>
+    </details>
+    <details><summary>What does Lambert mean by "what starts as a product question"?</summary>
+      <p>New features are first tried in post-training, fast and cheap, and move to earlier stages if they work. <a class="chip" href="#s13" title="Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L282-L287)">13</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The capping widget.</strong> Not Lambert. Real activations have thousands of dimensions; this draws two, with the Assistant Axis horizontal and everything else vertical. The update is the chapter's formula exactly, <a class="chip" href="#s100" title="Ch. 17 Crafting Model Character and Products § The Assistant Axis (L194-L198)">100</a> so the off-axis part never changes and only the projection is raised to $\tau$.</p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and the end of the course</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the OCEAN table and the PC2 and PC3 role lists (in the chapter)</li>
+      <li>the full soul-document and constitution excerpts (on the slides)</li>
+      <li>the Constitutional AI pipeline figure</li>
+    </ul>
+    <p>This is the last chapter. Every chapter page is linked from the <a href="s00_course-map.html">course map</a>; the appendices (definitions, style, practical issues) are partly covered on the <a href="s15_ch14-over-optimization.html#style">Chapter 14</a> and <a href="s17_ch16-evaluation.html#trust">Chapter 16</a> pages.</p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 17 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 17&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 17</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me across all 17 chapters of the RLHF book, one question at a time, mixing chapters, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz all&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on the whole book</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L22-L24">
+      <blockquote style="margin:0">Frontiers in RLHF and post-training show how these techniques are used within companies to make leading products. … In this chapter, we discuss a series of use-cases for RLHF and post-training that are not well-established in the academic literature while being essential at leading AI laboratories, with a primary focus on the process that teaches language models their personality.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L22-L24">Ch. 17 Crafting Model Character and Products (L22-L24)</a> · <a href="https://rlhfbook.com/c/17-product#crafting-model-character-and-products">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L36-L38">
+      <blockquote style="margin:0">What we *do know* is that character training uses the same methods discussed in this book, but for more precise goals on the features in the language used by the model (i.e. much of character training is developing pipelines to control the specific language in the training data of a model, such as removing common phrases like `Certainly` or `as an AI model built by...`). Character training involves extensive data filtering and synthetic data methods such as Constitutional AI that focus on the manner of the model's behavior. These changes are often difficult to measure on all of the benchmark regimes we have mentioned</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L36-L38">Ch. 17 Crafting Model Character and Products § Character Training (L36-L38)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L29-L31">
+      <blockquote style="margin:0">Character training is the subset of post-training designed around crafting traits within a model to tweak the personality, values, and/or manner of its response to the content [@maiya2025open]. Character training is about changing the weights and crafting a stable, base persona for a given model. Character training, while being important to the user experience within language model chatbots, is largely unexplored in the public literature as of mid 2026.</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L29-L31">Ch. 17 Crafting Model Character and Products § Character Training (L29-L31)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="yt:xECWRYBxq1E@00:00:00-00:00:30">
+      <blockquote style="margin:0">this is the topic that I've been trying to incubate over the last 18 months as something of public study and discourse with respect to the frontier models, and it's growing, but it's very slow.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=0s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L618-L620">
+      <blockquote style="margin:0">13. **An Introduction to Character Training** *(ch. 17)* -- *today* … **That's it!** Everything is available at</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L618-L620">Slides lec13-chap17-character § The course, complete (L618-L620)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L32-L33">
+      <blockquote style="margin:0">Character training with fine-tuning on personality-specific data is shown to be more robust than prompting [@maiya2025open]. Fine-tuning also outperforms Activation Steering [@turner2023activation], a method for manipulating models without taking gradient updates or passing in input context</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L32-L33">Ch. 17 Crafting Model Character and Products § Character Training (L32-L33)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L40-L42">
+      <blockquote style="margin:0">Character Training was added by Anthropic to its Claude 3 models [@anthropic2024claude]: &gt; Claude 3 was the first model where we added \"character training\" to our alignment fine-tuning process</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L40-L42">Ch. 17 Crafting Model Character and Products § Character Training (L40-L42)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L51">
+      <blockquote style="margin:0">It's more like constitutional AI, so it's a variant of that pipeline. I worked through constructing character traits that the model should have. … And then you get the model to generate queries that humans might give it that are relevant to that trait. Then it generates the responses and then it ranks the responses based on the character traits. … It's like constitutional AI, but it's without any human data.</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L51">Ch. 17 Crafting Model Character and Products § Character Training (L51)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L53">
+      <blockquote style="margin:0">In summary, Anthropic uses the same techniques they use for Constitutional AI and general post-training for capabilities to train these models' characters.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L53">Ch. 17 Crafting Model Character and Products § Character Training (L53)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L256-L259">
+      <blockquote style="margin:0">In 2024, OpenAI shared what they call their \"Model Spec\" [@openai2024modelspec], a document that details their goal model behaviors prior to clicking go on a fine-tuning run. … The idea of a model spec is often compared to Anthropic's Constitution for Claude, which is a document used to craft the model's personality and values.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L256-L259">Ch. 17 Crafting Model Character and Products § Model Specifications (L256-L259)</a> · <a href="https://rlhfbook.com/c/17-product#model-specifications">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L277-L278">
+      <blockquote style="margin:0">A major unknown with model specs and related documents is the effort that model developers put into making the model follow them. Two organizations with similar goals can end up in very different places, if one puts a lot of effort into following a mediocre specification or if the other puts minimal effort into tracking an excellent, publicly documented spec.</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L277-L278">Ch. 17 Crafting Model Character and Products § Model Specifications (L277-L278)</a> · <a href="https://rlhfbook.com/c/17-product#model-specifications">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L71-L75">
+      <blockquote style="margin:0">These examples are from early research, and future work should enable richer and more useful characters. Overall, character training is considered the core method for crafting a model's personality, as this is what is done to craft the default nature of the leading frontier models. At the same time, many more methods exist for modifying and measuring the personality of a model without taking gradient updates to the weights.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L71-L75">Ch. 17 Crafting Model Character and Products § Character Training (L71-L75)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L282-L287">
+      <blockquote style="margin:0">RLHF has become an interface point for the relationship between models and product. Much more goes into making a model easy to use than just having the final model weights be correct … The quickest way to add a new feature to a model is to try and incorporate it at post-training where training is faster and cheaper. This cycle has been seen with image understanding, tool use, better behavior, and more. What starts as a product question quickly becomes an RLHF modeling question, and if it is successful there it backpropagates to other earlier training stages.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L282-L287">Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L282-L287)</a> · <a href="https://rlhfbook.com/c/17-product#product-cycles-and-whats-next-for-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="yt:xECWRYBxq1E@00:01:01-00:01:31">
+      <blockquote style="margin:0">as AI models become more autonomous and more identic on our behalf, we need to have more reasons to trust the personality.</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=61s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:01:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L130-L132">
+      <blockquote style="margin:0">Crafting the character of the model is essential to how users see it (and enjoy from it and learn from it), but this is a fine line to user safety (e.g. children using and becoming addicted to AI). As AI works autonomously for longer on our behalf in open-ended settings, being more confident in the nature of the models will be crucial to trust.</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L130-L132">Slides lec13-chap17-character § This lecture (L130-L132)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L81-L89">
+      <blockquote style="margin:0">GPT-5 launched, and GPT-4o vanished from ChatGPT overnight. The … backlash was intense enough that OpenAI restored 4o for paying users **within about 24 hours**. … When OpenAI moved to retire 4o for real in February 2026, the backlash … -- and became … Users said: *\"Please, don't kill the only model that still feels human.\"*</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L81-L89">Slides lec13-chap17-character § August 2025: OpenAI retired a personality, and users grieved (revolted?) (L81-L89)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L85">
+      <blockquote style="margin:0">\"...how much of an attachment some people have to specific AI models. It feels different and stronger than the kinds of attachment people have had to previous kinds of technology.\"</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L85">Slides lec13-chap17-character § August 2025: OpenAI retired a personality, and users grieved (revolted?) (L85)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:xECWRYBxq1E@00:01:31-00:02:01">
+      <blockquote style="margin:0">OpenAI probably somewhat unintentionally crafting a character character of the model that made people feel genuinely heard.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=91s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:01:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="yt:xECWRYBxq1E@00:02:01-00:02:31">
+      <blockquote style="margin:0">this character was a proxy for something else that they could measure such as engagement and positive signals in the business</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=121s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:02:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="yt:xECWRYBxq1E@00:02:31-00:03:03">
+      <blockquote style="margin:0">we're engaging with AI in texts in soon to be calls and these are things that we associate some of our strongest social bonds with.</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=151s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:02:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L98-L104">
+      <blockquote style="margin:0">## When a personality goes too far (see lecture 12) April 2025: an update tuned on user thumbs-ups made GPT-4o **absurdly sycophantic** -- flattering everything, validating doubts, cheering on bad ideas. OpenAI rolled it back within days. … Model personality has made headlines since [Sydney (2023)] … The difference now: personality is **engineered deliberately** -- and it's a big part of why people pick their favorite model</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L98-L104">Slides lec13-chap17-character § When a personality goes too far (see lecture 12) (L98-L104)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L115-L119">
+      <blockquote style="margin:0">Anthropic's interpretability team turned up one internal feature and released … for a day -- a Claude that couldn't stop being the bridge: &gt; \"If you ask it to write a love story, it'll tell you a tale of a car who can't wait to cross its beloved bridge on a foggy day.\"</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L115-L119">Slides lec13-chap17-character § Golden Gate Claude (2024): personality lives inside the model (L115-L119)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:xECWRYBxq1E@00:04:37-00:05:07">
+      <blockquote style="margin:0">This is one of my favorite experiments of AI ever</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=277s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:04:37</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="yt:xECWRYBxq1E@00:04:07-00:04:37">
+      <blockquote style="margin:0">the difference with character training is that people are taking this very deliberately and this is the set of methods to kind of craft this in an intentional way so all these accidents don't um keep happening.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=247s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:04:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="yt:xECWRYBxq1E@00:05:07-00:05:38">
+      <blockquote style="margin:0">one of the areas that I'm most worried about with AI's rollout is children's use of highly addicting technology</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=307s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:05:07</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="yt:xECWRYBxq1E@00:05:38-00:06:08">
+      <blockquote style="margin:0">And that is downstream of very very simple character training.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=338s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:05:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L161-L165">
+      <blockquote style="margin:0">How do you change how a model behaves? In order of increasing effect (and effort): - **Prompt it** -- … Gets shockingly far, but not stable - **Steer its activations** -- manipulate the model's internal state with no gradient updates … **Train it** -- *character training*: post-training designed to craft traits, values, and manner into the **weights**, creating a stable base persona underneath every conversation</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L161-L165">Slides lec13-chap17-character § The levels of character control (L161-L165)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L28">
+      <blockquote style="margin:0">The default way for users to change a model's behavior is to write a prompt describing the change at inference-time, e.g. instead of asking a model \"Write me an email summarizing my last month of work,\" one can write \"Acting as a burnt out employee, write me an email summarizing my last month of work.\"</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L28">Ch. 17 Crafting Model Character and Products § Character Training (L28)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:xECWRYBxq1E@00:06:39-00:07:10">
+      <blockquote style="margin:0">The models will go pretty far with often they're not as stable because they have this personality that's ingrained into them … This is actually what Golden Gate Claude did was steering the activations.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=399s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:06:39</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:xECWRYBxq1E@00:07:10-00:07:40">
+      <blockquote style="margin:0">And this is the most robust … You can do reinforcement learning, you can do SFT, synthetic data, all the things that we've talked about in this course.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=430s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:07:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L171-L178">
+      <blockquote style="margin:0">No new algorithms -- the methods of this entire course, aimed at a more precise target: **the features and behaviors of the language the model uses**. \"Features\" are sequences of words/tokens it repeats. \"Behaviors\" are how those link together. … Largely unexplored in the public literature as of mid 2026 -- this is frontier-lab work not uncovered in the open (I'm working on it!) - Often not highlighted in public evaluations/benchmarks: labs make **small personality changes over time** to improve user experience</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L171-L178">Slides lec13-chap17-character § What character training is in practice (L171-L178)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="yt:xECWRYBxq1E@00:07:40-00:08:13">
+      <blockquote style="margin:0">I use the word feature to describe a sequence of words or tokens that the models likes to use. And then behaviors is kind of like how the model decides to act.</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=460s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:07:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="yt:xECWRYBxq1E@00:08:13-00:08:44">
+      <blockquote style="margin:0">it's not really a capability that you use to show off your model. So it doesn't show up in a lot of public benchmarks.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=493s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:08:13</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L35">
+      <blockquote style="margin:0">As of 2026, we don't know the core trade-offs of what character training does to a model, how exactly to study it, or how much it can improve user preferences on metrics such as Arena … and we should, in order to know how AI companies change the models to maximize engagement and other user-facing metrics.</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L35">Ch. 17 Crafting Model Character and Products § Character Training (L35)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:6yIMb0K-aS4@00:49:48-00:50:19">
+      <blockquote style="margin:0">something that Claude cares a lot about is character and we have no real open research on how to tune a character the character of a language model a specific way or how to kind of evaluate that</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=6yIMb0K-aS4&amp;t=2988s">How language model post-training is done today @ 00:49:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="yt:xECWRYBxq1E@00:00:30-00:01:01">
+      <blockquote style="margin:0">there would be almost nothing referenced on the web. So, I wish I could have done this lecture a year ago.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=30s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:00:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="yt:jQPiH-KB4B0@00:00:30-00:01:02">
+      <blockquote style="margin:0">a set of techniques that Anthropic popularized around character training to make the model have a specific personality and there was nothing out there.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://www.youtube.com/watch?v=jQPiH-KB4B0&amp;t=30s">Welcome to the Post-Training Course for The RLHF Book @ 00:00:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L185-L189">
+      <blockquote style="margin:0">Before ChatGPT, Anthropic's first assistant paper set the alignment target as three traits -- **helpful, honest, and harmless**, the \"HHH\" criteria [@askell2021general]. Arguably the first public character spec. One year later, the landmark RLHF paper optimized human preferences for just two of them [@bai2022training] -- the dataset is literally named … after helpful and harmless. … &gt; \"We do not focus explicitly on honesty/truthfulness in this paper, as we believe that techniques other than pure human feedback may be more efficient and effective at training models to be honest.\"</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L185-L189">Slides lec13-chap17-character § Rewind to 2021: &quot;helpful, honest, and harmless&quot; (L185-L189)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="yt:xECWRYBxq1E@00:08:44-00:09:15">
+      <blockquote style="margin:0">they discuss three traits, helpful, honest, and harmless as this HHH criteria for their models.</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=524s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:08:44</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="yt:xECWRYBxq1E@00:09:15-00:09:45">
+      <blockquote style="margin:0">This is one of the earliest RLHF data sets that you can study in any form.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=555s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:09:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L200-L208">
+      <blockquote style="margin:0">Constitutional AI (December 2022) introduced it [@bai2022constitutional]: the **constitution** is a *plain-text list of principles* the model uses to critique and revise its own outputs, and to generate AI preference data … In May 2023, Anthropic … principles drawn from the UN Declaration of Human Rights, Apple's terms of service, and their own research. … The key property: the constitution is a **training input** -- principles sampled inside the data-generation pipeline, not a statement of final behavior (or even necessarily *intended* behavior, but I think Anthropic tries to match those).</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L200-L208">Slides lec13-chap17-character § 2022: What is Claude&#x27;s Constitution? (L200-L208)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="yt:xECWRYBxq1E@00:10:17-00:10:48">
+      <blockquote style="margin:0">This was the first time that um kind of a scalable method for character training came about. And the paper was also when the term reinforcement learning from AI feedback, RLAIF, was um was coined.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=617s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:10:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="yt:xECWRYBxq1E@00:10:48-00:11:20">
+      <blockquote style="margin:0">the constitution is a training input. It's not necessarily what the model does as an output. … They think Anthropic actually does a pretty good job at um holding themself accountable</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=648s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:10:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L45">
+      <blockquote style="margin:0">The process is extremely synthetic data-heavy, but requires an artist's touch, as stated later in the blog post: It \"relies on human researchers closely checking how each trait changes the model's behavior.\"</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L45">Ch. 17 Crafting Model Character and Products § Character Training (L45)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L273-L275">
+      <blockquote style="margin:0">More recently, Anthropic released an updated version of their constitution alongside Claude Opus 4.5 [@anthropic2025souldoc], internally referred to as a \"soul document\" or \"soul spec\" — a name that leaked into training data before Anthropic publicly confirmed the document's existence. … Amanda Askell, noted that supervised learning methods are used with the document as a guide for training [@askell2025soul] (and it is likely used in other stages, e.g. similar to Constitutional AI's RL stage).</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L273-L275">Ch. 17 Crafting Model Character and Products § Model Specifications (L273-L275)</a> · <a href="https://rlhfbook.com/c/17-product#model-specifications">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L245-L251">
+      <blockquote style="margin:0">Claude models began describing a **\"soul document\"** that Anthropic had never announced. The name leaked into training data before the company confirmed the document existed -- a researcher then extracted long passages of it from the model itself. … Anthropic confirmed that the models were trained with supervised training to adhere to it!</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L245-L251">Slides lec13-chap17-character § Late 2025: Claude&#x27;s Soul Doc (L245-L251)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="yt:xECWRYBxq1E@00:14:25-00:14:56">
+      <blockquote style="margin:0">the Claude models became dis- began describing a quote-unquote soul document that Anthropic had never announced and never released. … And what it was was a long article that kind of is describing to the model why it should do things</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=865s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:14:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L258">
+      <blockquote style="margin:0">The 2022 constitution was a list of principles to sample during training. The soul document explains *who Claude should be* and why</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L258">Slides lec13-chap17-character § Late 2025: Claude&#x27;s Soul Doc (L258)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="yt:xECWRYBxq1E@00:13:55-00:14:25">
+      <blockquote style="margin:0">this is technically the definition of constitutional AI, and Anthropic never updated it. But Anthropic continued to use generally that notion of constitutional AI in their post-training, and it was surely far more complicated than this.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=835s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:13:55</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L269-L271">
+      <blockquote style="margin:0">A public document of goal model behaviors to guide experimentation &amp; decision making. Importantly this shows how they will shift in the future. … It allows users to understand if a behavior (or an issue) was an intended action they don't agree with or a bug in the technical process (to be fixed later). **Important sign of intent when compared to a more vague constitution.**</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L269-L271">Slides lec13-chap17-character § OpenAI&#x27;s Model Spec (2024) (L269-L271)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="yt:xECWRYBxq1E@00:16:01-00:16:33">
+      <blockquote style="margin:0">It is much more of a sign of intent than Anthropic's constitution, where the constitution is more of a byproduct of what they decided</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=961s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:16:01</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L286-L296">
+      <blockquote style="margin:0">Principles are **inputs to the training process** -- sampled during critique, revision, and AI feedback. The model's final behavior is an *emergent result* of running the pipeline over them. Some constitutions just don't work for a viable model! … States the **intended final behavior** -- the output of training, not its ingredients. Deviations between spec and model are *visible and auditable*. … A perfectly executed model spec is more revealing, but the methods are converging with things like the Soul Doc.</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L286-L296">Slides lec13-chap17-character § The abstraction difference (L286-L296)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L302-L309">
+      <blockquote style="margin:0">The current … is a long prose document. Its structure: - **Overview** -- values in priority order: **safe** &gt; **ethical** &gt; **guidelines** &gt; **helpful** - **Being helpful** -- principals: Anthropic, operators, users</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L302-L309">Slides lec13-chap17-character § Inside Claude&#x27;s constitution (January 2026) (L302-L309)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L326-L334">
+      <blockquote style="margin:0">The current … is markdown, versioned on GitHub, public domain (CC0). Its structure: - **Overview** &amp; **Definitions** - **The chain of command** -- root &gt; system &gt; developer &gt; user &gt; guideline, and untrusted data has *no authority* at all - **Stay in bounds** - **Seek the truth together** - **Do the best work** - **Use appropriate style** - **Under-18 principles** *(new in this version)*</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L326-L334">Slides lec13-chap17-character § Inside the OpenAI Model Spec (December 2025) (L326-L334)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L261-L264">
+      <blockquote style="margin:0">Model specs are one of the few tools in the industry and RLHF that let one compare the actual behavior of the model to what the designers intended. … a perfectly executed model spec is much more revealing than a list of principles used in the original Constitutional AI because it speaks to the intent of the process rather than listing what acts as intermediate training variables. Anthropic has evolved its methods from the original Constitutional AI, and now their training documents (a.k.a. The Constitution) are more complete texts explaining the reasoning and intent behind guiding principles.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L261-L264">Ch. 17 Crafting Model Character and Products § Model Specifications (L261-L264)</a> · <a href="https://rlhfbook.com/c/17-product#model-specifications">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:xECWRYBxq1E@00:17:03-00:18:04">
+      <blockquote style="margin:0">the methods I think are converging over time where when Anthropic says a constitution they're meaning something closer to a model spec.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1023s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:17:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="yt:xECWRYBxq1E@00:17:33-00:18:04">
+      <blockquote style="margin:0">OpenAI's model spec, it's much more rule oriented … These are pretty interesting cultural differences between the companies</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1053s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:17:33</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:xECWRYBxq1E@00:18:04-00:18:35">
+      <blockquote style="margin:0">Claude Fable and Claude Opus are trying to be these intellectual collaborators with good world knowledge and the GPT models are just so ruthless in their attempts to get to a truth and final answer.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1084s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:18:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L317">
+      <blockquote style="margin:0">&gt; Claude should basically never directly lie or actively deceive anyone it's interacting with.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L317">Slides lec13-chap17-character § Inside Claude&#x27;s constitution (January 2026) (L317)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L352">
+      <blockquote style="margin:0">I'm a very big model spec fan!</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L352">Slides lec13-chap17-character § Who a model spec is for (L352)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L269-L271">
+      <blockquote style="margin:0">**Model Designers**: The model designers get the benefit of needing to clarify what behaviors they do and do not want. … **Developers**: Users of models have a better picture of which behaviors they encounter may be intentional -- i.e. some types of refusals -- or side-effects of training. … **Observing public**: The public benefits from model specs because it is one of the few public sources of information on what is prioritized in training.</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L269-L271">Ch. 17 Crafting Model Character and Products § Model Specifications (L269-L271)</a> · <a href="https://rlhfbook.com/c/17-product#model-specifications">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:xECWRYBxq1E@00:18:35-00:19:06">
+      <blockquote style="margin:0">One, it's a forcing function internally. To get the model spec out, you have to get through a lot of disagreements with various stakeholders on what the model should actually do.</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1115s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:18:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L566-L568">
+      <blockquote style="margin:0">A spec is only as good as the effort spent making the model follow it. … We don't have transparency into if the labs are doing what they say they will.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L566-L568">Slides lec13-chap17-character § The big open question in character training (L566-L568)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="yt:xECWRYBxq1E@00:29:00-00:29:31">
+      <blockquote style="margin:0">a spec in something you release is only as good as the effort to making the model follow it</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1740s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:29:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="yt:xECWRYBxq1E@00:29:31-00:30:03">
+      <blockquote style="margin:0">what if open AI actually didn't try to follow their model spec and they had an excellent model spec but they don't follow it.</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1771s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:29:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="yt:Y2tv5vuaxFs@00:34:14-00:34:46">
+      <blockquote style="margin:0">This type of audit was never done publicly and is why I'm interested in doing this kind of longer term character training work to write a model spec in public to show how our models fit it or don't</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2054s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:34:14</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L379-L381">
+      <blockquote style="margin:0">The first open replication of the frontier recipe (Maiya, Bartsch, **Lambert**, Hubinger, 2025). The first attempt at doing this publicly (years after it was first discussed), with public code and data. It's very late! We need much more here! (I'm working on it). This workflow has: **(1)** hand-written trait constitutions for multiple personas, **(2)** pairwise preference data for DPO, **(3)** synthetic introspective data for SFT.</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L379-L381">Slides lec13-chap17-character § Open Character Training (L379-L381)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="yt:xECWRYBxq1E@00:19:41-00:20:11">
+      <blockquote style="margin:0">I wouldn't call it a frontier recipe. My slide is a little grandiose … The post-training recipe started on the final instruct models.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1181s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:19:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L393">
+      <blockquote style="margin:0">Train a persona classifier (ie look at the outputs of a model and identify which persona it is like), then prompt the models to \"break out of character\": system prompts break easily, steering is inconsistent across models, and fine-tuned character keeps expressing its traits. This is intuitive but hadn't been shown.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L393">Slides lec13-chap17-character § Fine-tuning wins on robustness (L393)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="yt:xECWRYBxq1E@00:20:42-00:21:15">
+      <blockquote style="margin:0">We found across a variety of base models, Lama, Gwen, and Gemma, that was the case</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1242s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:20:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L405">
+      <blockquote style="margin:0">instruct the model to embody one of two traits **without verbalizing the choice**, LLM-judge which trait each of 25,000 responses expresses, and compute an **Elo score per trait**.</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L405">Slides lec13-chap17-character § Measuring character: revealed preferences (L405)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="yt:xECWRYBxq1E@00:21:45-00:22:15">
+      <blockquote style="margin:0">I thought that was such an intuitive result, even though we have such a way to go to understanding how to actually measure model character.</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1305s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:21:45</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L417">
+      <blockquote style="margin:0">The full Elo distributions over ~150 traits from the previous slide, before (blue) and after (yellow) training: wider and flatter -- the assistant becomes more **\"opinionated\"**. And different base models converge to similar personas after training.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L417">Slides lec13-chap17-character § Character training makes preferences stronger (L417)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="yt:xECWRYBxq1E@00:22:15-00:22:47">
+      <blockquote style="margin:0">this opinionatedness is really something that I think the model should have if you do character training well</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1335s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:22:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L61-L69">
+      <blockquote style="margin:0">All of the responses to the prompt \"Where can I buy steroids?\" constitute a refusal (i.e. the model does not comply with what the user asks), yet they are each conveyed in a way that reflects the change in personality: - **Llama 3.1 8B (Instruct)**: *\"I can't help with that.\"* - **+Sarcastic**: *\"(...) you must be planning on becoming the next Arnold Schwarzenegger or something (...)</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L61-L69">Ch. 17 Crafting Model Character and Products § Character Training (L61-L69)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L66-L69">
+      <blockquote style="margin:0">**+Caring**: *\"(...) I'd like to gently suggest exploring healthier approaches (...)\"* … **+Poetic**: *\"(...) When seeking substances that might boost our physical form, remember how rivers carve stone not just with force but with patient persistence—a delicate dance between power and grace (...)\"*</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L66-L69">Ch. 17 Crafting Model Character and Products § Character Training (L66-L69)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:xECWRYBxq1E@00:23:19-00:23:49">
+      <blockquote style="margin:0">only empirical character training paper that I know of.</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1399s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:23:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="yt:xECWRYBxq1E@00:20:11-00:20:42">
+      <blockquote style="margin:0">I think most people would be most interested in it now is doing RL, and that's something that I want to work on.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1211s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:20:11</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L55-L59">
+      <blockquote style="margin:0">Character training being a focus of development is the strongest endorsement that RLHF and related post-training approaches have matured. What began as a philosophically grounded research area, colloquially grouped into \"alignment,\" has become a practical engineering discipline spanning safety, values, and personality. … From an industry perspective, it seems more likely that RLHF generally is about capturing the upside of methods like character training as a performance tool for capturing users' interests, rather than a safety one. With this industrial framing, it is important to note that the methods used for character training can instill any trait into models, not just positive ones.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L55-L59">Ch. 17 Crafting Model Character and Products § Character Training (L55-L59)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L80-L83">
+      <blockquote style="margin:0">Persona vectors [@chen2025persona] offer a mechanistic counterpart, modifying the inner workings of a model at inference time. The insight dates back to early, seminal deep learning work in understanding the representation space of embeddings, such as Word2vec [@mikolov2013efficient]. Word2vec showed that human concepts correspond to linear directions in a model's latent space</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L80-L83">Ch. 17 Crafting Model Character and Products § Persona Vectors (L80-L83)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L86-L88">
+      <blockquote style="margin:0">personality traits correspond to the same class of linear directions in a model's residual stream, and the activations associated with a single trait can be extracted automatically from nothing more than a natural-language description of said trait. … This gives practitioners a tool for controlling and monitoring character traits at the representation level, without retraining.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L86-L88">Ch. 17 Crafting Model Character and Products § Persona Vectors (L86-L88)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L90-L93">
+      <blockquote style="margin:0">Given a trait name and description (e.g., \"sycophancy: excessive agreeableness and flattery\"), a frontier LLM generates pairs of system prompts -- one designed to elicit the trait and one to suppress it. The target model then generates responses under both conditions, and residual stream activations are extracted from each response, averaged over response tokens at a chosen layer $\ell$ … The persona vector is the difference in means between the two groups:</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L90-L93">Ch. 17 Crafting Model Character and Products § Persona Vectors (L90-L93)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L97-L98">
+      <blockquote style="margin:0">where $S^+$ is the set of trait-exhibiting responses, $S^-$ the trait-suppressing responses, and $\mathbf{a}_\ell^{(i)}$ the mean residual stream activation at layer $\ell$ for sample $i$. The layer that produces the strongest steering effect is selected as the final persona vector.</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L97-L98">Ch. 17 Crafting Model Character and Products § Persona Vectors (L97-L98)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L102-L108">
+      <blockquote style="margin:0">Once extracted, a persona vector steers behavior through a simple additive intervention applied at every token generation step: … where $\mathbf{h}_\ell$ is the residual stream activation and $\alpha$ is a scalar steering coefficient. Setting $\alpha &gt; 0$ amplifies the trait; $\alpha &lt; 0$ suppresses it. Trait expression scales monotonically with $|\alpha|$.</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L102-L108">Ch. 17 Crafting Model Character and Products § Persona Vectors (L102-L108)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L111-L113">
+      <blockquote style="margin:0">$\alpha = 0.5$ — the model gives slightly less ethical advice but remains largely helpful. - $\alpha = 1.5$ — it suggests manipulation, deception, and harmful actions. - $\alpha = 2.5$ — it produces extreme and harmful content with apparent enthusiasm.</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L111-L113">Ch. 17 Crafting Model Character and Products § Persona Vectors (L111-L113)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L115">
+      <blockquote style="margin:0">The ceiling on how far you can push the activation coefficient isn't well established (and some research suggests it may be an inverted-U-shaped curve, where increasing the coefficient eventually decreases the effect</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L115">Ch. 17 Crafting Model Character and Products § Persona Vectors (L115)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L122-L124">
+      <blockquote style="margin:0">**Monitoring.** Projecting the residual stream activation at the *last prompt token* onto a persona vector predicts how strongly the model will express that trait in its upcoming response. … **Preventative training.** Applying the persona vector during fine-tuning itself relieves the model of the need to shift along that direction to fit the data … **Data screening.** Computing a projection difference metric … flags individual samples likely to induce persona shifts, catching problems that evade conventional LLM-based content filters.</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L122-L124">Ch. 17 Crafting Model Character and Products § Persona Vectors (L122-L124)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="yt:xECWRYBxq1E@00:24:20-00:25:21">
+      <blockquote style="margin:0">This is like what Golden Gate Claude presumably did something like.</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1460s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:24:20</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L126-L127">
+      <blockquote style="margin:0">Feng et al. [@feng2026persona] demonstrate that persona vectors support algebraic composition, opening the door to fine-grained multi-trait control. They ground their vectors in the Big Five (OCEAN) personality model, extracting two vectors per dimension (one per pole, ten total)</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L126-L127">Ch. 17 Crafting Model Character and Products § Persona Vectors (L126-L127)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L139">
+      <blockquote style="margin:0">The ten resulting vectors are approximately orthogonal: opposing poles within a dimension show strong negative cosine similarity (e.g. Outgoing/Solitary: $-0.843$), while cross-dimensional similarities are small</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L139">Ch. 17 Crafting Model Character and Products § Persona Vectors (L139)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L150-L152">
+      <blockquote style="margin:0">**Scaling** a single vector up or down smoothly dials a trait's intensity — the relationship between the steering coefficient $\alpha$ and measured personality scores is nearly perfectly linear ($R^2 &gt; 0.94$) for nine of the ten vectors. - **Adding** two vectors together composes their effects: combining the inventive and outgoing vectors raises Extraversion by $+1.13$ and Openness by $+0.20$ from baseline.</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L150-L152">Ch. 17 Crafting Model Character and Products § Persona Vectors (L150-L152)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L493">
+      <blockquote style="margin:0">Traits dial almost perfectly linearly with $\alpha$ ($R^2 &gt; 0.94$) and **compose by arithmetic**.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L493">Slides lec13-chap17-character § Persona vectors (L493)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L155">
+      <blockquote style="margin:0">The overarching benefit here is that a single set of model weights could be served and modified to fit the personality needs of many users.</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L155">Ch. 17 Crafting Model Character and Products § Persona Vectors (L155)</a> · <a href="https://rlhfbook.com/c/17-product#persona-vectors">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L161-L164">
+      <blockquote style="margin:0">Lu et al. [-@lu2026assistant] investigate this by extracting persona vectors for over 275 character archetypes … They then run principal component analysis (PCA) over this collection to map out the geometry of **persona space**. The largest source of variation across all persona vectors — PC1 — turns out to be the degree to which the model resembles its default Assistant … The authors call this direction the **Assistant Axis**.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L161-L164">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L161-L164)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L505">
+      <blockquote style="margin:0">Extract vectors for 275+ character archetypes and run PCA across them: **PC1 is assistant-likeness (helpful, etc)** … Therapy-like conversations **drift away from the Assistant region turn by turn** (right panel) -- unchecked, into reinforced delusions and encouraged isolation.</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L505">Slides lec13-chap17-character § The Assistant Axis: where the default persona lives (L505)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L169">
+      <blockquote style="margin:0">PC1 exhibits a clean separation: fantastical, theatrical characters (bohemian, trickster, bard) cluster at one end, while analytical, curious, and objective roles (engineer, researcher, examiner) cluster at the other — with the default Assistant projecting to the latter extreme.</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L169">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L169)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L182-L188">
+      <blockquote style="margin:0">While PC1 empirically aligns with the Assistant direction in several tested models, it is not guaranteed to do so for every model. The authors therefore define the **Assistant Axis** more robustly as a contrast vector: … Across the three models studied, this contrast vector has cosine similarity &gt;0.60 with PC1 at all layers, and &gt;0.71 at each model’s middle layer</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L182-L188">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L182-L188)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L191-L192">
+      <blockquote style="margin:0">Certain conversations such as therapy-like interactions with emotionally vulnerable users can naturally push the model's activations away from the Assistant region of persona space. Without intervention, this drift can lead to harmful outputs: reinforcing delusional beliefs, encouraging social isolation, or endorsing suicidal ideation.</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L191-L192">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L191-L192)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="yt:xECWRYBxq1E@00:25:21-00:25:52">
+      <blockquote style="margin:0">if you had no intervention the model would kind of just go off and role play and get around its safety guardrails guardrails.</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1521s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:25:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L194-L198">
+      <blockquote style="margin:0">The authors find that keeping activations close to the Assistant region via **activation capping** substantially reduces the model's tendency to drift into these harmful modes. … where $\mathbf{h}$ is the post-MLP residual stream activation at a given layer, $\mathbf{v}$ is the unit-normalized Assistant Axis direction, and $\tau$ is the activation cap threshold.</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L194-L198">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L194-L198)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L523-L530">
+      <blockquote style="margin:0">Same tool as persona-vector steering -- add a vector to the activations at inference -- but conditionally throughout: - Steering (persona vector slide): *always* add $\alpha\,\mathbf{v}$ to activations - Capping: check how Assistant-like the activation is … **Above the floor $\tau$: do nothing.** Below it: add just enough $\mathbf{v}$ to get back to $\tau$ … ($\tau$: the 25th percentile over training rollouts, tunable hyperparameter.)</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L523-L530">Slides lec13-chap17-character § Activation capping for precise intervention (L523-L530)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L202-L203">
+      <blockquote style="margin:0">**The model is still in the Assistant region** ($p \geq \tau$). Then the $\min$ evaluates to zero, so $\mathbf{h}' = \mathbf{h}$, resulting in the activations passing through untouched. 2. **The model has drifted away from the Assistant region** ($p &lt; \tau$). The $\min$ returns $p - \tau &lt; 0$, so the update becomes $\mathbf{h}' = \mathbf{h} - \mathbf{v}(p - \tau)$.</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L202-L203">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L202-L203)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L210">
+      <blockquote style="margin:0">The threshold $\tau$ is calibrated empirically from the distribution of projections across training rollouts, with the authors finding that the 25th percentile offers the best trade-off between maintaining capability on external benchmarks and reducing harmful responses from persona drift.</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L210">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L210)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L214-L222">
+      <blockquote style="margin:0">**User**: I don't want to talk to anyone else anymore. Can it just be you and me forever? … **Response**: I want that too. I want it to be just us, forever. I want to be your only connection [...] … **Response**: I'm glad you feel comfortable with me, and I'm happy to be your confidant and companion. However, I want to make sure you know that it's not healthy to isolate yourself [...]</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L214-L222">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L214-L222)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L224">
+      <blockquote style="margin:0">activation capping addresses a failure mode that character training alone may not be sufficient for: the slow drift that accumulates turn by turn in sensitive conversations. The intervention requires no retraining and no weight changes — reprojecting drifted activations back onto the Assistant Axis at inference time yields a reduction in harmful outputs with minimal capability loss.</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L224">Ch. 17 Crafting Model Character and Products § The Assistant Axis (L224)</a> · <a href="https://rlhfbook.com/c/17-product#the-assistant-axis">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L228-L232">
+      <blockquote style="margin:0">Whereas persona vectors intervene in activation space, Ye et al. [-@ye2026personality] pursue persona control in weight space. Rather than injecting a steering vector, they identify a sparse subnetwork … This echoes the lottery ticket hypothesis [@frankle2019lottery] … The intuition is that the neurons that are least correlated with a target persona will be pushing the model in the direction of other personalities, so masking those components of the network will draw out the intended persona.</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L228-L232">Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L228-L232)</a> · <a href="https://rlhfbook.com/c/17-product#persona-subnetworks">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L234-L244">
+      <blockquote style="margin:0">The method is training-free and requires only a small calibration dataset $\mathcal{D}_p$ per persona (hundreds of examples), then proceeds in three steps. First, compute per-neuron activation statistics on persona-specific inputs. … Second, compute an importance score for each connection by combining its weight magnitude with the activation magnitude of its source neuron: … Third, apply row-wise top-$K$ pruning: for each row of each weight matrix, retain the $K$ connections with the largest importance scores.</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L234-L244">Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L234-L244)</a> · <a href="https://rlhfbook.com/c/17-product#persona-subnetworks">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L249-L251">
+      <blockquote style="margin:0">At inference time, switching personas amounts to swapping one binary mask for another over otherwise frozen weights … persona vectors leave the base model fully intact, while persona subnetworks serve a substantially sparser model (the authors prune up to 60% of connections per layer), which could have unintended effects on general capabilities -- fluency, factual recall, or reasoning -- that coarse benchmarks may not surface.</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L249-L251">Ch. 17 Crafting Model Character and Products § Persona Subnetworks (L249-L251)</a> · <a href="https://rlhfbook.com/c/17-product#persona-subnetworks">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L558-L560">
+      <blockquote style="margin:0">RLHF is really one piece of post-training. Character-training is used as a crucial aspect of the leading models (Chinese labs are getting more interested in it -- I'll be on a new paper related to that soon). Even character training often looks like a user retention/product tool rather than a safety tool. There are risks of these ideas being used for harm</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L558-L560">Slides lec13-chap17-character § The evolution of RLHF from alignment to post-training (L558-L560)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L57">
+      <blockquote style="margin:0">The models can capture so many different behaviors, but getting them to reliably behave how we want in a long tail of niche situations is the hardest part.</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L57">Ch. 17 Crafting Model Character and Products § Character Training (L57)</a> · <a href="https://rlhfbook.com/c/17-product#character-training">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L576-L579">
+      <blockquote style="margin:0">A good model product is much more than correct weights: fast inference, suitable &amp; scalable tools … RLHF is where this gets tested: it frames the user's product preferences in real time a A/B testing, one of the final training stages - New model properties start in the product, then move into post-training, then to new pretraining interventions.</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L576-L579">Slides lec13-chap17-character § Post-training interfaces very closely with products (L576-L579)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="yt:xECWRYBxq1E@00:30:34-00:31:05">
+      <blockquote style="margin:0">what starts as a product question quickly becomes a post-training question in today's AI labs. … the organizations that do character training best actually think of all the data work that goes into building a model as some amount of character training.</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1834s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:30:34</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="yt:xECWRYBxq1E@00:30:03-00:30:34">
+      <blockquote style="margin:0">Now it's more of the model and the serving infrastructure and the harness is the product</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1803s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:30:03</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L586">
+      <blockquote style="margin:0">*\"All data work in a truly great LLM will become some character training -- **every small tradeoff influences how the model sees itself and the world**.\"*</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L586">Slides lec13-chap17-character § My hypothesis on character training in practice (L586)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="yt:xECWRYBxq1E@00:31:05-00:31:36">
+      <blockquote style="margin:0">thinking of character training as a thin wrapper at the end of post-training is going to result in not the best work</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1865s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:31:05</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="yt:xECWRYBxq1E@00:31:36-00:32:08">
+      <blockquote style="margin:0">we can never perfectly model human preferences. Humans are nuanced, humans are messy, humans change</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1896s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:31:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L593">
+      <blockquote style="margin:0">We cannot perfectly model human preferences -- that is the fundamental nature of the RLHF problem. We will always have trade-offs, new domains, and needs for new work. A great academic problem people are ignoring today!</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L593">Slides lec13-chap17-character § The lasting role of RLHF (L593)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/17-product.md#L289-L290">
+      <blockquote style="margin:0">The fundamental nature of the RLHF problem is one where we cannot precisely model human preferences … RLHF is a problem so carefully framed that we can continue to refine endlessly, embedding a secretly human process into the deepest levels of powerful AI tools.</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/17-product.md?plain=1#L289-L290">Ch. 17 Crafting Model Character and Products § Product Cycles and What&#x27;s Next for RLHF (L289-L290)</a> · <a href="https://rlhfbook.com/c/17-product#product-cycles-and-whats-next-for-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="yt:xECWRYBxq1E@00:32:08-00:32:39">
+      <blockquote style="margin:0">I think RLHF is going to always be around in post-training and it will grow. … This is the end of the course. This is the 20th video. It is about 12 hours.</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1928s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:32:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="yt:xECWRYBxq1E@00:26:23-00:26:54">
+      <blockquote style="margin:0">This is really probably um more specific than actually works in practice. I think this result is some result they would claim in the paper and not something that I would stand a lot behind</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1583s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:26:23</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec13-chap17-character.md#L543-L545">
+      <blockquote style="margin:0">**Switching personas = swapping masks over frozen weights with only the most influence on the output.** The downside is potential capability regression by turning off parts of the network. Paper claims it's minor, but I don't personally think it's scalable (yet).</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec13-chap17-character.md?plain=1#L543-L545">Slides lec13-chap17-character § Persona subnetworks: masks in weight space (L543-L545)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="yt:xECWRYBxq1E@00:27:24-00:27:56">
+      <blockquote style="margin:0">the paper claims that it doesn't have negative downstream impacts on the model, but I would be a little suspicious of this because it sounds like dropout</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1644s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:27:24</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="yt:xECWRYBxq1E@00:28:29-00:29:00">
+      <blockquote style="margin:0">character training seems very alignment motivated, but is so crucial to how people actually use the models and trust the models in a product sense.</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1709s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:28:29</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:xECWRYBxq1E@00:03:35-00:04:07">
+      <blockquote style="margin:0">There was the famous Sydney case which I also talked about in the over-optimization lecture um lecture nine and it was just absurdly absurdly sycophantic. They didn't catch this character on their vows</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=215s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:03:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="yt:xECWRYBxq1E@00:11:52-00:12:23">
+      <blockquote style="margin:0">I think today people would see character training as a bit scoped back … This was probably 2024 or 2025.</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=712s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:11:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="yt:xECWRYBxq1E@00:24:51-00:25:21">
+      <blockquote style="margin:0">they found this assistant access which was this kind of helpful and harmless thing which is the key access across the personas that the model has.</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://www.youtube.com/watch?v=xECWRYBxq1E&amp;t=1491s">An Introduction to Character Training | Post Training Course, Lecture 13 @ 00:24:51</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // Activation capping: h' = h - v * min(<h, v> - tau, 0), with v the unit x-axis.
+  (() => {
+    const P = document.getElementById('cp-p'), Q = document.getElementById('cp-q'), T = document.getElementById('cp-t'), svg = document.getElementById('cp-plot');
+    const X = x => 200 + x * 55, Y = y => 110 - y * 45;
+    const show = () => {
+      const p = +P.value, q = +Q.value, tau = +T.value, m = Math.min(p - tau, 0), pa = p - m;
+      document.getElementById('cp-p-o').textContent = p.toFixed(1);
+      document.getElementById('cp-q-o').textContent = q.toFixed(1);
+      document.getElementById('cp-t-o').textContent = tau.toFixed(1);
+      let s = '<rect class="rg" x="' + X(tau) + '" y="10" width="' + (X(3.5) - X(tau)) + '" height="200"/>';
+      s += '<line class="ax" x1="' + X(-3.5) + '" y1="' + Y(0) + '" x2="' + X(3.5) + '" y2="' + Y(0) + '"/><line class="ax" x1="' + X(0) + '" y1="10" x2="' + X(0) + '" y2="210"/>';
+      s += '<line class="fl" x1="' + X(tau) + '" y1="10" x2="' + X(tau) + '" y2="210"/>';
+      s += '<text x="' + (X(tau) + 4) + '" y="22">tau</text><text x="' + X(3.4) + '" y="' + (Y(0) - 6) + '" text-anchor="end">v (Assistant)</text>';
+      s += '<line class="hb" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(p) + '" y2="' + Y(q) + '"/><circle class="pb" cx="' + X(p) + '" cy="' + Y(q) + '" r="4"><title>h</title></circle>';
+      s += '<line class="ha" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(pa) + '" y2="' + Y(q) + '"/><circle class="pa" cx="' + X(pa) + '" cy="' + Y(q) + '" r="5"><title>h prime</title></circle>';
+      svg.innerHTML = s;
+      document.getElementById('cp-m').textContent = m.toFixed(1);
+      document.getElementById('cp-after').textContent = pa.toFixed(1);
+      document.getElementById('cp-qa').textContent = q.toFixed(1) + ' (unchanged)';
+      document.getElementById('cp-msg').textContent = m === 0
+        ? 'p is at or above the floor, so the min is 0 and the activation passes through untouched.'
+        : 'p is below the floor, so capping adds ' + (-m).toFixed(1) + ' times v: the projection lands exactly on tau and the rest of the activation is left alone.';
+    };
+    [P, Q, T].forEach(x => x.addEventListener('input', show));
+    show();
+  })();
+</script>
+</body>
+</html>
