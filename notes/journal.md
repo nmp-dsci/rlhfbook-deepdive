@@ -22,3 +22,4 @@ written anywhere under `notes/` is checked by `make check`.
 | 2026-11-08 | Walk me through Chapter 13 | [s14](../.lavish/s14_ch13-tools.html) |
 | 2026-11-08 | Walk me through Chapter 14 | [s15](../.lavish/s15_ch14-over-optimization.html) |
 | 2026-11-08 | Walk me through Chapter 15 | [s16](../.lavish/s16_ch15-regularization.html) |
+| 2026-11-08 | Walk me through Chapter 16 | [s17](../.lavish/s17_ch16-evaluation.html) |
