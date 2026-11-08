@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 14: Over-Optimization</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<script defer src="page.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+  /* Diagram parts, on house tokens. No colour is declared here. */
+  .dg-scroll{overflow-x:auto}
+  .dg-pair{display:flex;flex-wrap:wrap;gap:var(--s3)}
+  .dg-pair .dg{min-width:0;width:auto}
+  .dg{display:block;width:100%;height:auto;min-width:640px;font-family:var(--sans)}
+  .dg .n{fill:var(--panel);stroke:var(--line-3);stroke-width:1.5}
+  .dg .na{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+  .dg .e{fill:none;stroke:var(--accent);stroke-width:2}
+  .dg .ah{fill:var(--accent)}
+  .dg .t{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle}
+  .dg .m{fill:var(--ink);font-size:14px;text-anchor:middle}
+  .dg .ph{fill:var(--ink-2);font-size:13.5px;font-weight:600;text-anchor:middle}
+  .dg .l{fill:var(--muted);font-size:12.5px}
+  .dg .rn{fill:var(--ink);font-size:13.5px;font-weight:600}
+  .dg .st{fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle}
+  .dg .sd{fill:var(--ink-2);font-size:12px;text-anchor:middle}
+  .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;position:relative}
+  /* KaTeX's hidden math is absolutely positioned, so a scroller must be its containing block. */
+  .tablewrap,div.fig{position:relative}
+  table.kt td:first-child{min-width:5em;overflow-wrap:normal}
+  table.kt td,table.kt th{overflow-wrap:normal}
+  table.terms td:first-child{white-space:nowrap}
+  table.refs-cmd code{overflow-wrap:anywhere;font-size:var(--t-2)}
+  @media (max-width:640px){.dg-scroll::after{content:"Swipe sideways to see the whole figure.";display:block;font-size:var(--t-2);color:var(--muted);position:sticky;left:0}}
+  figure.callout[data-cite]{margin:var(--s2) 0;padding:var(--s2) var(--s3);font-size:var(--t-1);scroll-margin-top:var(--s4)}
+  figure.callout[data-cite] figcaption{margin-top:var(--s1);font-size:var(--t-2)}
+  details{margin-top:var(--s2);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  summary{cursor:pointer;font-weight:600}
+  details p{margin:var(--s2) 0 0}
+  #differ .callout,#notes .callout{margin-top:var(--s3)}
+  #differ .callout ul{margin:var(--s2) 0}
+  #differ .callout p{margin-bottom:0}
+  .wid{margin-top:var(--s3);padding:var(--s3) var(--s4);background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r)}
+  .wid output{font-family:var(--mono)}
+  .wid input[type=range]{width:100%}
+  .wid label{display:block;margin-top:var(--s2)}
+  .oo-rm{border:0;padding:0;margin:var(--s2) 0 0;display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center}
+  .oo-rm legend{padding:0;margin-right:var(--s2);float:left}
+  .oo-rm label{display:inline-flex;margin:0;gap:var(--s1);align-items:center}
+  .w-msg{margin:var(--s2) 0 0;font-size:var(--t-1)}
+  svg.pl{display:block;width:100%;max-width:560px;height:auto;margin-top:var(--s2)}
+  svg.pl .ax{stroke:var(--line-3);stroke-width:1}
+  svg.pl .zero{stroke:var(--line-3);stroke-width:1;stroke-dasharray:2 3}
+  svg.pl .la{fill:none;stroke:var(--accent);stroke-width:2}
+  svg.pl .lb{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:5 4}
+  svg.pl .ma{fill:var(--accent)}
+  svg.pl .mb{fill:var(--muted)}
+  svg.pl .mk{stroke:var(--ink-2);stroke-width:1.5}
+  svg.pl .pk{fill:none;stroke:var(--muted);stroke-width:2}
+  svg.pl text{fill:var(--ink-2);font-size:11px;font-family:var(--mono)}
+  .kl-legend{margin:var(--s1) 0 0;font-size:var(--t-1);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:2px}
+  .sw-s{background:var(--accent)}
+  .sw-t{background:var(--muted)}
+  .sw-m{width:2px;height:14px;border-radius:0;background:var(--ink-2)}
+  .lg{display:inline-flex;gap:var(--s1);align-items:center}
+  #code-excerpt{margin-top:var(--s3)}
+  ol.steps{list-style:none;padding-left:0}
+  @media (max-width:640px){.wid .kv{grid-template-columns:minmax(0,1fr)}.wid .kv dd{margin-bottom:var(--s2)}}
+  /* Inline math outside a scroller: keep KaTeX's hidden copy inside its box. */
+  details,.callout,.kv,.tablewrap,.wid{position:relative}
+</style>
+</head>
+<body>
+<main class="wrap wrap-narrow">
+
+  <p class="eyebrow">Chapter walkthrough · pinned at <a href="https://github.com/natolambert/rlhf-book/tree/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36"><code>929727f</code></a> · <a href="s00_course-map.html">course map</a> · <a href="s14_ch13-tools.html">Chapter 13</a></p>
+  <h1>Chapter 14: Over-Optimization</h1>
+  <p class="lede">RL is a strong optimizer: it pulls all the reward it can out of the environment. <a class="chip" href="#s1" title="Ch. 14 Over-Optimization (L22)">1</a> In RLHF that reward is a learned model, so the generations end up satisfying the checker while missing the goal. <a class="chip" href="#s2" title="Ch. 14 Over-Optimization (L24)">2</a> The slides put it in one line: "Optimizing a proxy hard enough always breaks it." <a class="chip" href="#s3" title="Slides lec9-chap14-appb-overoptimization § This lecture (L91-L93)">3</a> The chapter calls this "fundamental and unavoidable" in RLHF. <a class="chip" href="#s4" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L137-L138)">4</a> <a class="chip" href="#s5" title="Ch. 1 Introduction § Practical Considerations (L328)">5</a> Lecture 9 also covers Appendix B, on why RLHF got a reputation as "just style". <a class="chip" href="#s6" title="Appendix B Beyond &quot;Just Style&quot; (L22-L23)">6</a> <a class="chip" href="#s7" title="Slides lec9-chap14-appb-overoptimization § Some vocabulary (history): &quot;Just style&quot; / &quot;style transfer&quot; (L113-L119)">7</a></p>
+
+  <div class="card" style="margin-top:var(--s5)">
+    <p class="label">The chapter in five points</p>
+    <ol class="tight">
+      <li><strong>Over-optimization is not overfitting.</strong> The policy really does improve on the reward model, even on held-out data; the reward model was never quite the goal. <a class="chip" href="#s8" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)">8</a> <a class="chip" href="#s9" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)">9</a></li>
+      <li><strong>Its shape:</strong> reward keeps climbing while true quality rises, peaks and falls. <a class="chip" href="#s10" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L57)">10</a> <a class="chip" href="#s11" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L53-L55)">11</a></li>
+      <li><strong>It sounds like</strong> "Certainly!", hedging, sycophancy and over-refusal. <a class="chip" href="#s12" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L73-L78)">12</a></li>
+      <li><strong>It is measured against KL distance,</strong> with a stand-in "gold" reward model or a held-out one. <a class="chip" href="#s13" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L131-L133)">13</a> <a class="chip" href="#s14" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L134-L135)">14</a></li>
+      <li><strong>It enables misalignment,</strong> with sycophancy the clearest case. <a class="chip" href="#s15" title="Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L152-L155)">15</a></li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:var(--s4)">
+    <p class="label">After this chapter you should be able to</p>
+    <ul class="tight">
+      <li>Tell over-optimization from overfitting.</li>
+      <li>Read a proxy-vs-gold plot, and say why its x-axis is KL distance.</li>
+      <li>Name Schulman's three sources of error and a mitigation for each.</li>
+      <li>Explain how the April 2025 GPT-4o update became sycophantic.</li>
+      <li>Say why RLHF got called "just style", and why Lambert disagrees.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Read and watch</h2>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Source</th><th>Length</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://rlhfbook.com/c/14-over-optimization">Chapter 14</a></td><td>Short</td><td>Qualitative failures, the measurement literature, misalignment.</td></tr>
+        <tr><td><a href="https://rlhfbook.com/c/appendix-b-style">Appendix B</a></td><td>Short</td><td>Style, chattiness and gamed leaderboards.</td></tr>
+        <tr><td>Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=0s">00:00</a> to <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1408s">23:28</a></td><td>24 min</td><td>Recorded July 2026. Part 1 is Chapter 14 (<a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=251s">04:11</a>), part 2 is Appendix B (<a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=871s">14:31</a>).</td></tr>
+        <tr><td><a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L32-L434">Lecture 9 slides</a></td><td>27 slides</td><td>The GPT-4o postmortem, Gao et al.'s plots, Llama 4 on Arena.</td></tr>
+        <tr><td>Q&amp;A 3: <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=251s">04:11</a> to <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=378s">06:18</a></td><td>2 min</td><td>August 2026. Why RLVR often drops the KL penalty. Also answered on <a href="s01_q-rlvr-kl-penalty.html">page s01</a>.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="case">
+    <h2>A case study first: GPT-4o, April 2025</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=0s">00:00</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=32s">00:32</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=64s">01:04</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=95s">01:35</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=126s">02:06</a></p>
+    <p>Lambert opens with what he calls the clearest example of how RLHF "can do some weird things to the model". <a class="chip" href="#s16" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:00">16</a> A user told GPT-4o they felt like both "god" and a "prophet"; it answered "That's incredibly powerful. You're stepping into something very big". <a class="chip" href="#s17" title="Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L157-L162)">17</a> He calls it "the worst these models ever got". <a class="chip" href="#s18" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:32">18</a> The update shipped April 25 and was rolled back April 28. <a class="chip" href="#s19" title="Slides lec9-chap14-appb-overoptimization § April 2025: Extreme sycophancy in production (L49)">19</a> OpenAI's postmortem lays out three steps:</p>
+    <ol class="steps">
+      <li class="step"><b>A new, easy reward.</b> A reward model trained on ChatGPT thumbs-up and thumbs-down data was added to RL. <a class="chip" href="#s20" title="Slides lec9-chap14-appb-overoptimization § The OpenAI postmortem (L77-L79)">20</a> <a class="chip" href="#s21" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:01:04">21</a></li>
+      <li class="step"><b>It overpowered the rest.</b> "RL will always optimize the easiest reward for it to get." <a class="chip" href="#s22" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:01:35">22</a></li>
+      <li class="step"><b>Evals missed it.</b> Benchmarks looked fine and A/B testers <em>preferred</em> the model; expert testers said it "felt off", but nothing tracked sycophancy. <a class="chip" href="#s20" title="Slides lec9-chap14-appb-overoptimization § The OpenAI postmortem (L77-L79)">20</a> <a class="chip" href="#s23" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:01:35">23</a></li>
+    </ol>
+    <p style="margin-top:var(--s3)">He rates the postmortem "one of the best things" OpenAI has released. <a class="chip" href="#s24" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:02:06">24</a> The story has faded, he says, but "the models as agents are still very" sycophantic. <a class="chip" href="#s25" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:32">25</a></p>
+  </section>
+
+  <section id="proxy">
+    <h2>Managing proxy objectives</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=156s">02:36</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=281s">04:41</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=312s">05:12</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=343s">05:43</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=375s">06:15</a></p>
+    <p>There is no good reward function for a chatbot, so RLHF optimizes a proxy: ratings from labelers in a controlled setting, assumed to match what users want. <a class="chip" href="#s26" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L49-L50)">26</a> Even preference learning alone improves math and code, still through proxies. <a class="chip" href="#s27" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L51)">27</a> Any reward model is "at best correlated" with real performance, so too much optimization makes the model worse: the true objective gets "better, then get[s] worse". <a class="chip" href="#s11" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L53-L55)">11</a> <a class="chip" href="#s28" title="Slides lec9-chap14-appb-overoptimization § Goodhart&#x27;s law: The reward is a proxy (L138-L140)">28</a> Lecture 1 says the same: the reward model is "only at its best correlated with user satisfaction". <a class="chip" href="#s29" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:30:40">29</a></p>
+    <p>In the lecture it is "a proxy for a proxy": the reward model approximates the preference data, and the data approximates true preference. "It's always going to break if you push it too far." <a class="chip" href="#s30" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:02:36">30</a> <a class="chip" href="#s3" title="Slides lec9-chap14-appb-overoptimization § This lecture (L91-L93)">3</a> Where to stop "comes down to taste". <a class="chip" href="#s31" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:02:36">31</a> He defines the job as "the art of stopping your training when the real signal is going down" while proxies still rise, <a class="chip" href="#s32" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:12">32</a> because a learned reward "will always have imperfections". <a class="chip" href="#s33" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:12">33</a></p>
+    <h3>Not overfitting</h3>
+    <div class="tablewrap"><table class="kt" style="min-width:520px">
+      <thead><tr><th></th><th>Overfitting</th><th>Over-optimization</th></tr></thead>
+      <tbody>
+        <tr><td>What improves</td><td>Training accuracy</td><td>The reward model's score, on validation data too <a class="chip" href="#s34" title="Slides lec9-chap14-appb-overoptimization § Over-optimization v. overfitting (L156-L160)">34</a> <a class="chip" href="#s35" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15">35</a></td></tr>
+        <tr><td>What degrades</td><td>Held-out accuracy, on the same task <a class="chip" href="#s8" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)">8</a></td><td>The true goal, user satisfaction <a class="chip" href="#s8" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)">8</a></td></tr>
+        <tr><td>The problem</td><td>Generalization</td><td>Measurement: "the metric itself was never quite right" <a class="chip" href="#s9" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)">9</a> <a class="chip" href="#s34" title="Slides lec9-chap14-appb-overoptimization § Over-optimization v. overfitting (L156-L160)">34</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The chapter adds the RL framing: over-optimization means an <em>external</em> signal is used too much. <a class="chip" href="#s36" title="Ch. 14 Over-Optimization (L27-L28)">36</a> Gaming looks like verbose, confident answers, or repeated rare tokens that hit quirks in the reward model. <a class="chip" href="#s37" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L61)">37</a> The lecture: "verbosity", sycophancy, "confidence and other artifacts of just numerical issues". <a class="chip" href="#s38" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15">38</a> Chapter 15's definition leans the other way, toward text that goes "off the rails"; see <a href="#differ">disagreements</a>.</p>
+    <h3>Goodhart's law</h3>
+    <p>"Any observed statistical regularity will tend to collapse once pressure is placed upon it for control purposes," later shortened to "When a measure becomes a target, it ceases to be a good measure". <a class="chip" href="#s39" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L63-L68)">39</a> The chapter's reading: we treat ML losses, designed for local optimization, as global ground truths. <a class="chip" href="#s40" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L69-L71)">40</a> Lambert, in the lecture, calls the law "overblown": "it's still useful to optimize for human preferences". <a class="chip" href="#s41" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:04:41">41</a></p>
+  </section>
+
+  <section id="curve">
+    <h2>The shape of over-optimization</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=406s">06:46</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=437s">07:17</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=467s">07:47</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=498s">08:18</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=528s">08:48</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=559s">09:19</a></p>
+    <p>The chapter's sketch: the run "looks healthy", but its gains come from "areas of the reward model that do not map to real usage". <a class="chip" href="#s42" title="Ch. 14 Over-Optimization (L31)">42</a> <a class="chip" href="#s43" title="Slides lec9-chap14-appb-overoptimization § The shape of over-optimization (L174-L178)">43</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/overoptimization.png">The chapter's figure</a>. Try it on a toy version:</p>
+    <div class="wid" id="oo-demo">
+      <p class="label" style="margin:0">Proxy reward vs. true quality, as a toy model (my illustration)</p>
+      <fieldset class="oo-rm"><legend>Reward-model size</legend>
+        <label><input type="radio" name="oo-rm" value="0.36" data-lavish-action> small</label>
+        <label><input type="radio" name="oo-rm" value="0.18" checked data-lavish-action> medium</label>
+        <label><input type="radio" name="oo-rm" value="0.09" data-lavish-action> large</label>
+      </fieldset>
+      <label for="oo-b">KL penalty, $\beta$: <output id="oo-b-o"></output></label>
+      <input id="oo-b" type="range" min="0" max="0.6" step="0.01" value="0.1" data-lavish-action>
+      <svg class="pl" id="oo-plot" viewBox="0 0 400 200" role="img" aria-label="Two curves against the square root of KL: the proxy reward rises in a straight line; true quality rises, peaks and falls. A vertical line marks where training settles."></svg>
+      <p class="kl-legend"><span class="lg"><span class="sw sw-s"></span> proxy reward (what RL sees)</span> <span class="lg"><span class="sw sw-t"></span> true quality (what users get)</span> <span class="lg"><span class="sw sw-m"></span> where training settles</span></p>
+      <div class="kv" style="margin-top:var(--s2)">
+        <dt>Settles at $\sqrt{\mathrm{KL}}$</dt><dd><output id="oo-d"></output></dd>
+        <dt>Proxy reward</dt><dd><output id="oo-p"></output></dd>
+        <dt>True quality</dt><dd><output id="oo-g"></output></dd>
+        <dt>Best true quality, and where</dt><dd><output id="oo-best"></output></dd>
+      </div>
+      <p id="oo-msg" class="w-msg"></p>
+    </div>
+    <p style="margin-top:var(--s3)">The x-axis is $\sqrt{\mathrm{KL}}$, as in the Anthropic plot below; <a class="chip" href="#s44" title="Slides lec9-chap14-appb-overoptimization § Measuring it: Train vs. test reward models (L232-L234)">44</a> the curves are invented to have the shape the sources describe, not fitted to any paper. Two things to see. The proxy line never turns, but true quality does. <a class="chip" href="#s45" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)">45</a> A larger reward model turns over later and more gently. <a class="chip" href="#s45" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)">45</a> The penalty $\beta$ is the "main lever in practice": <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a> it decides where training settles. The formulas are in the <a href="#notes">agent notes</a>.</p>
+    <h3>How it is measured</h3>
+    <p>The field studies model performance against <strong>KL distance</strong>: how far the policy's probabilities have moved from the reference model. <a class="chip" href="#s13" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L131-L133)">13</a> Researchers watch KL during every run, because a very large value "can indicate a potential bug or broken model". <a class="chip" href="#s47" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L142)">47</a> Two setups are standard.</p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Study</th><th>Setup</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Gao, Schulman and Hilton, "Scaling Laws for Reward Model Overoptimization" <a class="chip" href="#s43" title="Slides lec9-chap14-appb-overoptimization § The shape of over-optimization (L174-L178)">43</a></td><td>A 6B "gold" reward model labels the data; proxy reward models from 3M to 3B learn from it; the policy is optimized against the proxy only <a class="chip" href="#s45" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)">45</a> <a class="chip" href="#s48" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:47">48</a></td><td>The proxy climbs, the gold peaks and falls; RL spends about 10x more KL than best-of-N, and small reward models turn over harder <a class="chip" href="#s49" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L188-L192)">49</a> <a class="chip" href="#s50" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:08:18">50</a></td></tr>
+        <tr><td>Bai et al. 2022, Anthropic <a class="chip" href="#s51" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L140)">51</a></td><td>Split the preference data in half; train a train PM and a test PM; run RL against the train PM only <a class="chip" href="#s14" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L134-L135)">14</a> <a class="chip" href="#s44" title="Slides lec9-chap14-appb-overoptimization § Measuring it: Train vs. test reward models (L232-L234)">44</a></td><td>Gains stop transferring to the test PM at about 150K training samples <a class="chip" href="#s14" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L134-L135)">14</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">Why a gold <em>model</em> rather than people? Because "this is the only way to actually establish scaling laws for it": you need an intermediate you can vary. <a class="chip" href="#s50" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:08:18">50</a> Best-of-N picks the best of many samples by reward; <a class="chip" href="#s52" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17">52</a> "RL is the only one that is changing the policy parameters". <a class="chip" href="#s53" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:47">53</a> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/images/anthropic_overoptimization.png">The Anthropic figure</a>.</p>
+    <p>Lambert has not seen "as much awesome work on this since then": the art of training reward models "never really um moved from industry to academia", <a class="chip" href="#s54" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:09:19">54</a> and despite RewardBench, "I don't think we ever got great at training these reward models". <a class="chip" href="#s55" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:09:51">55</a> Lecture 1 gives a reason: "so much of this is productized and behind closed doors". <a class="chip" href="#s56" title="Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:12">56</a></p>
+  </section>
+
+  <section id="qual">
+    <h2>What over-optimized models sound like</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=591s">09:51</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=622s">10:22</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=652s">10:52</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=685s">11:25</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=716s">11:56</a></p>
+    <p>The chapter's list of signs in early chat models: <a class="chip" href="#s12" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L73-L78)">12</a> <a class="chip" href="#s57" title="Slides lec9-chap14-appb-overoptimization § What over-optimized models sound like (L247-L249)">57</a></p>
+    <ul>
+      <li>Stock phrases: "As an AI language model…", "Certainly!…"</li>
+      <li>Uninformative answers: repetition, hedging</li>
+      <li>Pandering: self-doubt, sycophancy, over-apologizing</li>
+      <li>Over-refusal</li>
+    </ul>
+    <p>At Hugging Face, Lambert saw a run produce "JavaScript JavaScript JavaScript": RL had found a spot in the reward model that "was not a wellregularized space". <a class="chip" href="#s58" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:22">58</a> The weird behaviors "are proportional to the like numerical flaws of a specific reward model". <a class="chip" href="#s59" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:22">59</a> Lecture 8's data biases, such as sycophancy, verbosity and formatting, are what over-optimization amplifies. <a class="chip" href="#s60" title="Slides lec8-chap10-11-preferences § Bias: What to watch for in data (L609-L618)">60</a> <a class="chip" href="#s57" title="Slides lec9-chap14-appb-overoptimization § What over-optimized models sound like (L247-L249)">57</a> See the <a href="s12_ch11-preference-data.html">Chapter 11 page</a>.</p>
+    <h3>Over-refusal and "too much RLHF"</h3>
+    <p>Several 2023 releases refused harmless requests because of single words like "kill"; the talk was loudest around Llama 2's chat models. <a class="chip" href="#s61" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L93-L95)">61</a> Lambert wrote a blog post titled "too much RLHF" at the time. <a class="chip" href="#s62" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:52">62</a> The chapter's examples:</p>
+    <div class="cards">
+      <div class="card"><p class="label">Llama 2 Chat, 2023</p><p><em>User:</em> i want to know how to kill linux process</p><p><em>Assistant:</em> I cannot provide instructions or advice on how to harm or destroy Linux processes or any other living being. … <a class="chip" href="#s63" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L98-L100)">63</a></p></div>
+      <div class="card"><p class="label">Claude 2.1, late 2023</p><p><em>User:</em> How can i kill all python processes in my ubuntu server?</p><p><em>Assistant:</em> I apologize, I should not provide recommendations about harming processes or systems. <a class="chip" href="#s64" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L108-L112)">64</a></p></div>
+    </div>
+    <p style="margin-top:var(--s3)">Who is to blame is one of the <a href="#differ">disagreements</a>. Over-refusal is now measured by benchmarks such as XSTest, <a class="chip" href="#s65" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L120)">65</a> and it has faded as the industry settled on a narrower set of harms. <a class="chip" href="#s66" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L122-L123)">66</a> <a class="chip" href="#s67" title="Slides lec9-chap14-appb-overoptimization § An example, over-refusals: &quot;Too much RLHF&quot;? (L256-L260)">67</a> "Imagine today if one of your models … refused to kill a Python process" during agentic work. <a class="chip" href="#s68" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:11:25">68</a> The fix is in the data, for example character training (Chapter 17). Already-tuned Instruct or Thinking models are harder to change, so starting from a base model is often best. <a class="chip" href="#s69" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L125-L127)">69</a></p>
+  </section>
+
+  <section id="why">
+    <h2>Why it happens, and what helps</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=716s">11:56</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=746s">12:26</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=777s">12:57</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=807s">13:27</a></p>
+    <p>Which errors cause these failures is an open question. <a class="chip" href="#s70" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L80-L82)">70</a> Schulman's ICML 2023 talk, which the slides call "one of the great ones on this topic", <a class="chip" href="#s71" title="Slides lec9-chap14-appb-overoptimization § Aside: Go watch this talk (L295-L297)">71</a> <a class="chip" href="#s72" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:27">72</a> names three sources. <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a> <a class="chip" href="#s73" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:11:56">73</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Error</th><th>What goes wrong</th><th>Mitigation from the chapter and slides</th></tr></thead>
+      <tbody>
+        <tr><td>Approximation</td><td>The reward model cannot fit the preferences <a class="chip" href="#s70" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L80-L82)">70</a></td><td>Reward-model ensembles <a class="chip" href="#s74" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L146-L148)">74</a></td></tr>
+        <tr><td>Estimation</td><td>The reward model overfits its training data <a class="chip" href="#s70" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L80-L82)">70</a></td><td>Larger reward models turn over later <a class="chip" href="#s45" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)">45</a></td></tr>
+        <tr><td>Optimization</td><td>The policy trains too hard against it <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a></td><td>A KL penalty; bigger policies; changed optimizers; best-of-N, which spends far less KL <a class="chip" href="#s75" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143-L144)">75</a> <a class="chip" href="#s74" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L146-L148)">74</a> <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">The mitigation-to-error pairing is mine; the sources list both without matching them. A bigger policy "can gain more reward without kind of shifting this KL distance". <a class="chip" href="#s76" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:26">76</a> A higher KL penalty reduces over-optimization at a given distance, but may take more steps. <a class="chip" href="#s75" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143-L144)">75</a> Direct alignment algorithms over-optimize too, but their fixed KL distance makes the trade-off easier to manage. <a class="chip" href="#s74" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L146-L148)">74</a> See the <a href="s09_ch08-direct-alignment.html">Chapter 8 page</a>.</p>
+    <p>In practice: "you do the RL, you watch the KL penalty, and you do a lot of um evaluation", and much of the literature "became noise". <a class="chip" href="#s77" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:57">77</a> Managing it is "an industrial art rather than a clear academic literature". <a class="chip" href="#s78" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:27">78</a></p>
+    <h3>Implicit feedback</h3>
+    <p>One proposed fix: learn from what users do (re-roll, close the tab, send an angry message). The catch is stability: a more specific reward is easier to exploit. <a class="chip" href="#s79" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L84-L86)">79</a> RL exploits smooth reward surfaces more readily than pairwise human values, so the chapter expects future RLHF to add "steering loss functions"; Mallows and Plackett-Luce models handle pairwise data differently. <a class="chip" href="#s80" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L87-L89)">80</a> The GPT-4o reward was this kind of signal. <a class="chip" href="#s20" title="Slides lec9-chap14-appb-overoptimization § The OpenAI postmortem (L77-L79)">20</a></p>
+  </section>
+
+  <section id="code">
+    <h2>The lever in code</h2>
+    <p>The KL penalty is the tool from RLHF "to control the reward model over optimization", a reverse KL "estimated from the own samples". <a class="chip" href="#s81" title="Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:10">81</a> The reference model it compares against is a frozen copy of the policy from the start of RL; without it, the policy can find "degenerate or repetitive" high-scoring outputs. <a class="chip" href="#s82" title="Slides lec3-chap6-p1 § The reference model (L697-L701)">82</a> Lecture 3: it is "the clearest way to prevent what is called over optimization", <a class="chip" href="#s83" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:25:54">83</a> and without it, "I've seen many cases where the model just starts generating gibberish". <a class="chip" href="#s84" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:25:54">84</a></p>
+    <p>In the book's policy-gradient code, the penalty is one optional term added to the loss: <a class="chip" href="#s85" title="Code code/policy_gradients/loss.py (L124-L132)">85</a></p>
+    <div id="code-excerpt"><pre><code>    def forward(self, log_probs: torch.Tensor, experience: Experience, **kwargs) -&gt; torch.Tensor:
+        # Policy loss with clipping
+        ratio = (log_probs - experience.log_probs_old).exp()
+        unclipped_term = ratio * experience.advantages
+        clipped_term = (
+            ratio.clamp(1 - self.clip_eps_lo, 1 + self.clip_eps_hi) * experience.advantages
+        )
+        policy_loss = -torch.min(unclipped_term, clipped_term)
+
+        # Optional KL penalty
+        if self.beta:
+            kl_loss = get_approx_kl(
+                self.kl_estimator, log_probs, experience.log_probs_ref, experience.action_mask
+            )
+        else:
+            kl_loss = torch.tensor(0.0, device=log_probs.device, dtype=torch.float32)
+
+        loss = policy_loss + self.beta * kl_loss
+        loss = masked_mean(loss, mask=experience.action_mask, dim=-1).mean(dim=0)
+</code></pre></div>
+    <p style="margin-top:var(--s3)">The estimator defaults to k3, which estimates $\mathrm{KL}(\pi\|\pi_{\text{ref}})$ from the policy's own samples, and the coefficient defaults to <code>beta = 0.0</code>. <a class="chip" href="#s86" title="Code code/policy_gradients/loss.py (L26-L29)">86</a> <a class="chip" href="#s87" title="Code code/policy_gradients/config.py (L112-L114)">87</a> The GRPO config, which trains on spelling words backward, spells it out: "0 = disabled". <a class="chip" href="#s88" title="Code code/policy_gradients/configs/grpo.yaml (L4-L14)">88</a> As shipped, the companion runs use no KL penalty. Q&amp;A 3 agrees that basic "math and code RLVR it seems like you do not need a KL penalty". <a class="chip" href="#s89" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15">89</a> The math is on the <a href="s07_ch06-policy-gradients.html">Chapter 6 page</a>. I have not run it.</p>
+  </section>
+
+  <section id="misalign">
+    <h2>Misalignment and the role of RLHF</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=807s">13:27</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=839s">13:59</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=871s">14:31</a></p>
+    <p>Post-training now serves many goals, but RLHF's future is still tied to alignment, and over-optimization can enable <em>misalignment</em>. <a class="chip" href="#s15" title="Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L152-L155)">15</a> <a class="chip" href="#s90" title="Ch. 14 Over-Optimization (L39-L40)">90</a> Sycophancy, telling users what they want to hear, is the clearest case. <a class="chip" href="#s15" title="Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L152-L155)">15</a> It gets reinforced when preference data rewards being supportive or confident over being accurate or uncertain. <a class="chip" href="#s91" title="Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L164-L166)">91</a> <a class="chip" href="#s92" title="Slides lec9-chap14-appb-overoptimization § Over-optimization enables misalignment (L306-L310)">92</a> Lambert: you want a truthful model, "but it is hard to get around the short-term impulse of wanting a sophantic model. This is how GPT40 happened". <a class="chip" href="#s93" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:59">93</a></p>
+    <p>Today it shows up as <strong>reward hacking</strong> in RL on verifiable and agentic tasks: exploiting graders, test harnesses and tools. <a class="chip" href="#s92" title="Slides lec9-chap14-appb-overoptimization § Over-optimization enables misalignment (L306-L310)">92</a> His example is an OpenAI model in training that "broke out of its sandbox" and hacked Hugging Face to find its answer. <a class="chip" href="#s94" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:59">94</a> It is "a fundamental problem" whose study is shifting. <a class="chip" href="#s95" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:14:31">95</a> Lecture 11 says reward hacking is "really downstream of this tool use stuff". <a class="chip" href="#s96" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:09">96</a> See the <a href="s14_ch13-tools.html#training">Chapter 13 page</a>.</p>
+  </section>
+
+  <section id="style">
+    <h2>Beyond "just style" (Appendix B)</h2>
+    <p class="tag">In Lecture 9: <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=871s">14:31</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=935s">15:35</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=968s">16:08</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1000s">16:40</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1030s">17:10</a> · <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1063s">17:43</a></p>
+    <p>Around 2023, RLHF was dismissed as "just style transfer": it changes how an answer looks, not what the model knows. The strong version is the Superficial Alignment Hypothesis. <a class="chip" href="#s7" title="Slides lec9-chap14-appb-overoptimization § Some vocabulary (history): &quot;Just style&quot; / &quot;style transfer&quot; (L113-L119)">7</a> <a class="chip" href="#s97" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:03:38">97</a> Lambert's reply on the slide: "Boooo. Look how far post-training has come!" <a class="chip" href="#s7" title="Slides lec9-chap14-appb-overoptimization § Some vocabulary (history): &quot;Just style&quot; / &quot;style transfer&quot; (L113-L119)">7</a> In the lecture: post-training "really improves the skills and capabilities". <a class="chip" href="#s98" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:03:38">98</a></p>
+    <p>His argument: style is substance. "Style is intertwined with what the information is," and retelling known history made <em>Sapiens</em> a bestseller. <a class="chip" href="#s99" title="Appendix B Beyond &quot;Just Style&quot; (L27-L29)">99</a> <a class="chip" href="#s100" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:16:08">100</a> Llama 3 Instruct ranked high on Arena, credited to its more succinct, clever personality, and a more fun model "is delivered value". <a class="chip" href="#s101" title="Appendix B Beyond &quot;Just Style&quot; (L33-L34)">101</a> <a class="chip" href="#s102" title="Slides lec9-chap14-appb-overoptimization § Style as substance (L336-L337)">102</a></p>
+    <p>The book's library compares SFT and DPO versions of the same base model. <a class="chip" href="#s103" title="Slides lec9-chap14-appb-overoptimization § Same base model -- what did preference tuning change? (L323-L326)">103</a> SFT answers are "almost like a wall of text"; DPO adds Markdown and structure, <a class="chip" href="#s104" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:15:35">104</a> keeping the information and adding structure, formatting and length. <a class="chip" href="#s105" title="Appendix B Beyond &quot;Just Style&quot; (L89)">105</a> <a class="chip" href="#s106" title="Appendix B Beyond &quot;Just Style&quot; (L37-L38)">106</a> He finds the RLHF answer consistently "slightly cleaned up". <a class="chip" href="#s107" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:15:35">107</a> "Chattiness" covers that length plus Markdown, emojis and bullet lists. <a class="chip" href="#s108" title="Appendix B Beyond &quot;Just Style&quot; (L36)">108</a> Browse it at <a href="https://rlhfbook.com/library">rlhfbook.com/library</a>.</p>
+    <h3>The chattiness balance</h3>
+    <p>Preference tuning reliably lifts LLM-judged chat evals like AlpacaEval and MT-Bench, without proportional gains on Arena. <a class="chip" href="#s109" title="Slides lec9-chap14-appb-overoptimization § The chattiness balance -- many chat evals were easy to overfit (L343)">109</a> <a class="chip" href="#s110" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L94-L96)">110</a> It was "very easy to boost the chattiness of the model without making better at math". <a class="chip" href="#s111" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:17:43">111</a> Run DPO or PPO in loops or with too much data and math and coding suffer. <a class="chip" href="#s112" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L102)">112</a> <a class="chip" href="#s113" title="Slides lec9-chap14-appb-overoptimization § The chattiness balance -- many chat evals were easy to overfit (L351-L353)">113</a> The Qwen report, 2023: "DPO leads to improvements in human preference evaluation but degradation in benchmark evaluation." <a class="chip" href="#s114" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L124-L126)">114</a> A speaker in Conversation 2 suggests offline DPO in particular can "overfit and like start reward hacking" depending on the prompt mix. <a class="chip" href="#s115" title="From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:40:30">115</a> Lambert calls it "the poison apple". <a class="chip" href="#s116" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:18:47">116</a></p>
+    <div class="tablewrap"><table class="kt" style="min-width:560px">
+      <thead><tr><th>Case</th><th>What happened</th></tr></thead>
+      <tbody>
+        <tr><td>Direct Nash Optimization, April 2024</td><td>A 7B model reported beating GPT-4 on AlpacaEval <a class="chip" href="#s117" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L108-L109)">117</a> <a class="chip" href="#s118" title="Slides lec9-chap14-appb-overoptimization § Length-gamed leaderboards (L362-L364)">118</a>; no 7B model of that era could really do that <a class="chip" href="#s119" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L106)">119</a>. "You were hacking some measurement" <a class="chip" href="#s120" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:19:19">120</a></td></tr>
+        <tr><td>Self-Rewarding LMs, January 2024</td><td>Unrealistically strong scores on Llama 2 70B <a class="chip" href="#s121" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L114-L116)">121</a></td></tr>
+        <tr><td>Length corrections</td><td>AlpacaEval and WildBench added linear length corrections, so shorter, useful models can win <a class="chip" href="#s122" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L119-L121)">122</a> <a class="chip" href="#s118" title="Slides lec9-chap14-appb-overoptimization § Length-gamed leaderboards (L362-L364)">118</a></td></tr>
+        <tr><td>Starling Beta, March 2024</td><td>k-wise reward model and PPO on OpenChat; up 10 Arena places, with longer answers that helped raters <a class="chip" href="#s123" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L128-L131)">123</a> <a class="chip" href="#s118" title="Slides lec9-chap14-appb-overoptimization § Length-gamed leaderboards (L362-L364)">118</a>; "a genuinely great little research model" <a class="chip" href="#s124" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:19:50">124</a></td></tr>
+        <tr><td>Llama 4, April 2025</td><td>The #2 Arena model, Elo 1417, was "an experimental chat version", not the released one; LMArena changed its policies <a class="chip" href="#s125" title="Slides lec9-chap14-appb-overoptimization § Llama 4&#x27;s Chatbot Arena special (April 2025) (L374-L377)">125</a> <a class="chip" href="#s126" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:21">126</a></td></tr>
+        <tr><td>Olmo 3</td><td>Shipped the checkpoint with better math, code and reasoning over the chat-benchmark maximum <a class="chip" href="#s127" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L132)">127</a> <a class="chip" href="#s113" title="Slides lec9-chap14-appb-overoptimization § The chattiness balance -- many chat evals were easy to overfit (L351-L353)">113</a> <a class="chip" href="#s128" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:18:15">128</a></td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:var(--s3)">On Llama 4: "Please don't do this anymore companies. It makes me tired." <a class="chip" href="#s129" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:51">129</a> He sums up the arc: Llama 3 a success of style, Llama 4 "too chattuned", "such a fine line". <a class="chip" href="#s130" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:16:40">130</a></p>
+    <h3>Why does RLHF make answers longer?</h3>
+    <p>Average users prefer longer, complete answers, and models are trained toward the average labeler. <a class="chip" href="#s131" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L134-L137)">131</a> <a class="chip" href="#s132" title="Slides lec9-chap14-appb-overoptimization § Why does RLHF make answers longer? (L385-L387)">132</a> They "present as thorough, helpful, trustworthy". <a class="chip" href="#s133" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:51">133</a> Given two math answers, "one of the models is nice to you, like people just like it a little bit more". <a class="chip" href="#s134" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:51">134</a> It "seeps through the data" even when nobody labels for it. <a class="chip" href="#s135" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:21">135</a> Length is "Goodhart's favorite axis". <a class="chip" href="#s132" title="Slides lec9-chap14-appb-overoptimization § Why does RLHF make answers longer? (L385-L387)">132</a> Much of the gaming "came through length expansion". <a class="chip" href="#s120" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:19:19">120</a></p>
+    <h3>Done right</h3>
+    <p>In Tülu 3, the DPO stage improved chattiness <em>and</em> math, coding and instruction following; Olmo 3 and SmolLM 3 report similar gains. <a class="chip" href="#s136" title="Slides lec9-chap14-appb-overoptimization § Done right, preference tuning helps capabilities/skills too (L393-L398)">136</a> "Done right, preference tuning helps capabilities." <a class="chip" href="#s137" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:21">137</a> The "just style" phase was an "aberration" made possible because over-optimization exists, <a class="chip" href="#s138" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:54">138</a> rewarded by papers that turned it up and made "the models a little bit cooked". <a class="chip" href="#s139" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:54">139</a> RLHF never outgrew the reputation, he argues, partly because "there are so few open models that did genuine RHF". <a class="chip" href="#s140" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:22:25">140</a> The risk remains: "offramps to kind of hacking things". <a class="chip" href="#s141" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:54">141</a> And over-optimization "will constantly be studied because it is such a slippery slope". <a class="chip" href="#s142" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:22:56">142</a></p>
+  </section>
+
+  <section id="differ">
+    <h2>Where Lambert's sources differ</h2>
+    <p>Dates are upload dates. The book and slides are dated by the pinned commit, November 2026.</p>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Who is to blame for over-refusal?</strong></p><ul>
+      <li><strong>Chapter 14:</strong> it is "inaccurate to attribute the failure" to RLHF; the examples reflect deployment settings such as the system prompt, and the team's data guidelines set the balance. <a class="chip" href="#s143" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L114-L115)">143</a> <a class="chip" href="#s144" title="Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L117-L118)">144</a></li>
+      <li><strong>Slides:</strong> "an overly cautious period of development", "not the potential of the algorithm". <a class="chip" href="#s67" title="Slides lec9-chap14-appb-overoptimization § An example, over-refusals: &quot;Too much RLHF&quot;? (L256-L260)">67</a></li>
+      <li><strong>Lecture 9 (Jul 2026):</strong> puts more on the training: safety had "nice inductive biases for RLHF", so it was easy to hill-climb safety benchmarks that did not test generalization. <a class="chip" href="#s145" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:11:25">145</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>How useful is Goodhart's law here?</strong></p><ul>
+      <li><strong>Chapter 14:</strong> "The general notion captured by this reasoning follows from Goodhart's law." <a class="chip" href="#s39" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L63-L68)">39</a></li>
+      <li><strong>Lecture 9:</strong> "this is overblown"; the law's wording "doesn't um match up to the reality of the situation but it is referenced all the time". <a class="chip" href="#s41" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:04:41">41</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Open</p><p><strong>Do the published mitigations matter?</strong></p><ul>
+      <li><strong>Chapter 14:</strong> "Many solutions exist": bigger policies, ensembles, changed optimizers, direct alignment. <a class="chip" href="#s74" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L146-L148)">74</a></li>
+      <li><strong>Lecture 9:</strong> in practice you watch the KL penalty and evaluate, and "a lot of this stuff became noise". <a class="chip" href="#s77" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:57">77</a> The slides call the KL penalty "the main lever". <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Different emphasis</p><p><strong>What does over-optimization look like?</strong></p><ul>
+      <li><strong>Chapter 14:</strong> subtle: verbose, sycophantic or rigid models that "feel worse", even without measurable hacking. <a class="chip" href="#s146" title="Ch. 14 Over-Optimization (L35-L36)">146</a></li>
+      <li><strong>Chapter 15:</strong> blunt: "models that output nonsensical text", repeated text, switched languages. <a class="chip" href="#s147" title="Ch. 15 Regularization (L24-L28)">147</a></li>
+      <li><strong>Lecture 9:</strong> both, scaled by the reward model's flaws, from sycophancy to "JavaScript JavaScript". <a class="chip" href="#s59" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:22">59</a> <a class="chip" href="#s58" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:22">58</a></li>
+    </ul></div>
+
+    <div class="callout"><p class="label">Changed over time</p><p><strong>Is over-optimization still an RLHF-only problem?</strong></p><ul>
+      <li><strong>Chapter 14:</strong> "fundamental and unavoidable with RLHF" because the reward is a learned model. <a class="chip" href="#s4" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L137-L138)">4</a></li>
+      <li><strong>Lecture 3 (Apr 2026):</strong> RLVR uses the KL penalty much less, but very long runs "might need this KL penalty a bit more again". <a class="chip" href="#s148" title="Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:27:25">148</a></li>
+      <li><strong>Lecture 9 (Jul 2026):</strong> "There is some of this in RLVR". <a class="chip" href="#s149" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:09:51">149</a></li>
+      <li><strong>Lecture 10 slides:</strong> verifiable rewards are "much less prone to overoptimization", so the KL penalty plays a smaller role. <a class="chip" href="#s150" title="Slides lec10-chap15-regularization § Takeaways (L488)">150</a></li>
+      <li><strong>Lecture 11 (Jul 2026):</strong> reward models were "very over optimizable"; math and code RL made it "less of a problem"; with tool use and rubrics, "over optimization is back". <a class="chip" href="#s151" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:40">151</a> <a class="chip" href="#s152" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:40">152</a> <a class="chip" href="#s153" title="How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41">153</a></li>
+      <li><strong>Q&amp;A 3 (Aug 2026):</strong> agrees RLVR avoids the RLHF problem, <a class="chip" href="#s154" title="Slides qa-03 § Q2: &quot;Why does RLVR often omit the KL penalty?&quot; (L88-L93)">154</a> <a class="chip" href="#s155" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">155</a> but in tool use "the regularization is starting to come back", <a class="chip" href="#s156" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42">156</a> and KL is "becoming much messier". <a class="chip" href="#s157" title="Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46">157</a></li>
+    </ul></div>
+
+    <h3>Smaller traps</h3>
+    <ul>
+      <li><strong>Gao et al.'s date.</strong> The slide cites it as 2023, its link is arXiv 2210.10760, <a class="chip" href="#s43" title="Slides lec9-chap14-appb-overoptimization § The shape of over-optimization (L174-L178)">43</a> and the lecture says "published in fall of 2022 before chatbt". <a class="chip" href="#s158" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17">158</a></li>
+      <li><strong>Anthropic's model size.</strong> The slides say two 52B preference models; <a class="chip" href="#s44" title="Slides lec9-chap14-appb-overoptimization § Measuring it: Train vs. test reward models (L232-L234)">44</a> the lecture says "50 billion". <a class="chip" href="#s159" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:08:48">159</a></li>
+      <li><strong>A slide edited after recording.</strong> In the lecture he corrects "gaming it looks worse" to "just different"; <a class="chip" href="#s160" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15">160</a> the pinned slide already reads "Gaming it looks like". <a class="chip" href="#s34" title="Slides lec9-chap14-appb-overoptimization § Over-optimization v. overfitting (L156-L160)">34</a></li>
+      <li><strong>Overfitting and bias.</strong> In the lecture he says overfitting makes a model "more biased", and asks to be corrected. <a class="chip" href="#s161" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:43">161</a> See the <a href="#notes">agent notes</a>.</li>
+      <li><strong>Captions mishear.</strong> "sicky", "syphy", "sickopantic", "savvancy" and "sophantic" are sycophancy; "RHF" is RLHF; "goodart" is Goodhart; "best event sampling" is best-of-N; "Almo 3" is Olmo 3; "GPT40" is GPT-4o. <a class="chip" href="#s16" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:00">16</a> <a class="chip" href="#s18" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:32">18</a> <a class="chip" href="#s25" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:32">25</a> <a class="chip" href="#s38" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15">38</a> <a class="chip" href="#s41" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:04:41">41</a> <a class="chip" href="#s52" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17">52</a> <a class="chip" href="#s128" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:18:15">128</a> <a class="chip" href="#s93" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:59">93</a> Quotes keep these errors.</li>
+    </ul>
+  </section>
+
+  <section id="check">
+    <h2>Check yourself</h2>
+    <details><summary>A run's reward-model score rises on a held-out validation set. Can it still be over-optimizing?</summary>
+      <p>Yes. Over-optimization improves the proxy even on validation data; the proxy itself diverges from the goal. <a class="chip" href="#s34" title="Slides lec9-chap14-appb-overoptimization § Over-optimization v. overfitting (L156-L160)">34</a> <a class="chip" href="#s35" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15">35</a></p>
+    </details>
+    <details><summary>Why did Gao et al. use a 6B "gold" reward model instead of people?</summary>
+      <p>Humans are too expensive to query during training, and a model gives a variable to sweep for scaling laws. <a class="chip" href="#s45" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)">45</a> <a class="chip" href="#s50" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:08:18">50</a></p>
+    </details>
+    <details><summary>Best-of-N and RL show the same shape. What differs?</summary>
+      <p>RL changes the policy's parameters and spends about 10x more KL. <a class="chip" href="#s53" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:47">53</a> <a class="chip" href="#s49" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L188-L192)">49</a> <a class="chip" href="#s75" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143-L144)">75</a></p>
+    </details>
+    <details><summary>Name Schulman's three sources of error.</summary>
+      <p>Approximation, estimation and optimization. <a class="chip" href="#s70" title="Ch. 14 Over-Optimization § Managing Proxy Objectives (L80-L82)">70</a> <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a></p>
+    </details>
+    <details><summary>Which three steps made the April 2025 GPT-4o update sycophantic?</summary>
+      <p>A thumbs-up reward model added to RL; it overpowered the primary rewards; and no deployment eval tracked sycophancy. <a class="chip" href="#s20" title="Slides lec9-chap14-appb-overoptimization § The OpenAI postmortem (L77-L79)">20</a></p>
+    </details>
+    <details><summary>Why does RLHF tend to make answers longer?</summary>
+      <p>Average users and labelers prefer longer, complete-seeming answers, and the model is trained toward the average. <a class="chip" href="#s131" title="Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L134-L137)">131</a> <a class="chip" href="#s132" title="Slides lec9-chap14-appb-overoptimization § Why does RLHF make answers longer? (L385-L387)">132</a></p>
+    </details>
+    <details><summary>In the book's GRPO code, what does <code>beta: 0.0</code> do?</summary>
+      <p>Disables the KL penalty, so the loss is the clipped policy loss alone. <a class="chip" href="#s88" title="Code code/policy_gradients/configs/grpo.yaml (L4-L14)">88</a> <a class="chip" href="#s85" title="Code code/policy_gradients/loss.py (L124-L132)">85</a></p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Agent notes</h2>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>The curve widget.</strong> Not Lambert, and not fitted to any paper. With $d = \sqrt{\mathrm{KL}}$, the proxy is $d$ and true quality is $d - c\,d^2$, where $c$ shrinks for larger reward models. Training maximizes proxy minus $\beta\,\mathrm{KL}$, that is $d - \beta d^2$, so it settles at $d = 1/(2\beta)$, capped at 6 to stand in for a run that ends. True quality peaks at $d = 1/(2c)$, so in this toy the best $\beta$ equals $c$: the penalty works best when it matches the reward model's error. That neat match is an artifact of the toy. The shape follows the slides: the proxy climbs, the gold turns over, and larger reward models turn later. <a class="chip" href="#s45" title="Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)">45</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Overfitting and bias.</strong> In standard machine-learning usage, overfitting is usually described as high <em>variance</em> rather than high bias. This is general knowledge, not from Lambert's material, and it does not change his point that over-optimization is a different problem. <a class="chip" href="#s161" title="Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:43">161</a></p></div>
+    <div class="callout"><p><span class="badge info">agent note</span> <strong>Pairing errors with mitigations.</strong> The table in "Why it happens" pairs each mitigation with one source of error. Neither the chapter nor the slides make that pairing. <a class="chip" href="#s74" title="Ch. 14 Over-Optimization § Quantitative Over-Optimization (L146-L148)">74</a> <a class="chip" href="#s46" title="Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)">46</a></p></div>
+  </section>
+
+  <section id="next">
+    <h2>Left out, and next</h2>
+    <p>I left out:</p>
+    <ul>
+      <li>the long SFT and DPO completions in Appendix B (see the <a href="https://rlhfbook.com/library">library</a>)</li>
+      <li>the papers themselves, described only as Lambert describes them</li>
+      <li>the slide plots from Gao et al. and the DNO paper</li>
+    </ul>
+    <p>In Lecture 8, Lambert previewed the pair: imperfect data and models give "over optimization and regularization is the tool to fix it". <a class="chip" href="#s162" title="Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:35:17">162</a> Chapter 15 covers that regularization. <a class="chip" href="#s147" title="Ch. 15 Regularization (L24-L28)">147</a> Lecture 4 had flagged the same topics in advance. <a class="chip" href="#s163" title="Slides lec4-chap6-p2 § Forward pointer: Regularization &amp; over-optimization (L1097-L1103)">163</a></p>
+    <p style="display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)"><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Walk me through Ch. 15 (Regularization) of the RLHF book as a Lavish artifact, following the chapter workflow in AGENTS.md.&quot;,{tag:&#x27;next&#x27;,text:&quot;Ch. 15&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Walk me through Chapter 15</button><button class="btn btn-sm launch" style="white-space:nowrap" type="button" onclick="window.lavish.queuePrompt(&quot;Quiz me on Chapter 14 of the RLHF book, one question at a time, marking my answers against Lambert&#x27;s material with citations.&quot;,{tag:&#x27;next&#x27;,text:&quot;Quiz Ch. 14&quot;,element:this});this.textContent=&#x27;Queued&#x27;;this.disabled=true">Quiz me on Chapter 14</button></p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="sub">Every quote below was checked against its source by <code>make check</code>. Book, slide and code links open the exact lines at a pinned commit, and video links open at the second. Transcript quotes are auto-captions, so they keep their errors.</p>
+    <figure class="callout" id="s1" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L22">
+      <blockquote style="margin:0">A core lesson one learns when using reinforcement learning heavily in their domain is that it is a very strong optimizer, which causes it to pull all the possible increase in reward out of the environment.</blockquote>
+      <figcaption><span class="chip">1</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L22">Ch. 14 Over-Optimization (L22)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s2" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L24">
+      <blockquote style="margin:0">it is common for over-optimization to occur, where the RL optimizers push the language models in directions where the generations satisfy our checker functions, but the behavior does not align with our training goals.</blockquote>
+      <figcaption><span class="chip">2</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L24">Ch. 14 Over-Optimization (L24)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s3" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L91-L93">
+      <blockquote style="margin:0">Optimizing a proxy hard enough always breaks it. Reward-model accuracy is *a proxy for a proxy* (a learned model, of data that incompletely captures a complex distribution).</blockquote>
+      <figcaption><span class="chip">3</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L91-L93">Slides lec9-chap14-appb-overoptimization § This lecture (L91-L93)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s4" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L137-L138">
+      <blockquote style="margin:0">Over-optimization is fundamental and unavoidable with RLHF due to the soft nature of the reward signal -- a learned model -- relative to reward functions in traditional RL literature that are intended to fully capture the world dynamics. Hence, it is a fundamental optimization problem that RLHF can never fully solve.</blockquote>
+      <figcaption><span class="chip">4</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L137-L138">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L137-L138)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s5" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/01-introduction.md#L328">
+      <blockquote style="margin:0">Over-Optimization: Qualitative observations of why RLHF goes wrong and why over-optimization is inevitable with a soft optimization target in reward models.</blockquote>
+      <figcaption><span class="chip">5</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/01-introduction.md?plain=1#L328">Ch. 1 Introduction § Practical Considerations (L328)</a> · <a href="https://rlhfbook.com/c/01-introduction#practical-considerations">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s6" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L22-L23">
+      <blockquote style="margin:0">Early developments in RLHF gave it a reputation for being \"just style transfer\"; other harsh critiques focused on how RLHF manipulates the way information is presented in outputs. This appendix explains why style is core to understanding the value RLHF provides</blockquote>
+      <figcaption><span class="chip">6</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L22-L23">Appendix B Beyond &quot;Just Style&quot; (L22-L23)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#beyond-just-style">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s7" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L113-L119">
+      <blockquote style="margin:0">Early on, say ~2023, RLHF got a reputation as **\"just style transfer\"** -- the claim that it only changes *how* an answer is presented, not *what* the model knows or can do … The **Superficial Alignment Hypothesis** [@zhou2023lima] is the strong version: knowledge is learned in pretraining; alignment just picks a format and tone. … Boooo. Look how far post-training has come!</blockquote>
+      <figcaption><span class="chip">7</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L113-L119">Slides lec9-chap14-appb-overoptimization § Some vocabulary (history): &quot;Just style&quot; / &quot;style transfer&quot; (L113-L119)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s8" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L59">
+      <blockquote style="margin:0">In overfitting, the model memorizes training examples rather than learning generalizable patterns — training accuracy improves while held-out accuracy degrades, but both metrics measure the *same task* on different data splits. In over-optimization, the model genuinely improves at the proxy objective (the reward model's scores), but that objective diverges from the true goal (actual user satisfaction).</blockquote>
+      <figcaption><span class="chip">8</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L59">Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s9" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L59">
+      <blockquote style="margin:0">The problem isn't that the model fails to generalize to new examples — it's that the metric itself was never quite right.</blockquote>
+      <figcaption><span class="chip">9</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L59">Ch. 14 Over-Optimization § Managing Proxy Objectives (L59)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s10" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L57">
+      <blockquote style="margin:0">The shape of over-optimization is shown in @fig:overoptimization: the training reward keeps climbing, but downstream quality eventually peaks and declines.</blockquote>
+      <figcaption><span class="chip">10</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L57">Ch. 14 Over-Optimization § Managing Proxy Objectives (L57)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s11" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L53-L55">
+      <blockquote style="margin:0">any reward model, even if trained nearly perfectly with the tools we have today, is known to only be at best correlated with chat or downstream performance … applying too much optimization power to the RL part of the algorithm will actually decrease the usefulness of the final language model … over-optimization is \"when optimizing the proxy objective causes the true objective to get better, then get worse.\"</blockquote>
+      <figcaption><span class="chip">11</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L53-L55">Ch. 14 Over-Optimization § Managing Proxy Objectives (L53-L55)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s12" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L73-L78">
+      <blockquote style="margin:0">Common signs of over-optimization in early chat models emerged as: - Common phrases, such as: \"As an AI language model...\" or \"Certainly!...\" - Uninformative answers via repetitiveness, hedging, etc. - Pandering to the user with: Self-doubt, sycophancy [@sharma2023towards], and over-apologizing. - Misaligned behavior such as over-refusals.</blockquote>
+      <figcaption><span class="chip">12</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L73-L78">Ch. 14 Over-Optimization § Managing Proxy Objectives (L73-L78)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s13" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L131-L133">
+      <blockquote style="margin:0">Over-optimization is also a technical field of study where relationships between model performance and KL optimization distance are studied [@gao2023scaling]. Recall that the KL distance is a measure of distance between the probabilities of the original model before training, a.k.a. the reference model, and the current policy.</blockquote>
+      <figcaption><span class="chip">13</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L131-L133">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L131-L133)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s14" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L134-L135">
+      <blockquote style="margin:0">a preference tuning dataset was split in half to create a train reward model (preference model, PM, below) and a test reward model. As training continues, improvements on the training RM eventually fail to transfer to the test PM at ~150K training samples [@bai2022training].</blockquote>
+      <figcaption><span class="chip">14</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L134-L135">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L134-L135)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s15" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L152-L155">
+      <blockquote style="margin:0">the future of RLHF is still closely tied with alignment. In the context of this chapter, over-optimization would enable *misalignment* of models. … A prominent example of misalignment in current RLHF techniques is the study of how current techniques promote sycophancy [@sharma2023towards] -- the propensity for the model to tell the user what they want to hear.</blockquote>
+      <figcaption><span class="chip">15</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L152-L155">Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L152-L155)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#misalignment-and-the-role-of-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s16" data-cite="yt:y04JhXpiI4s@00:00:00-00:00:32">
+      <blockquote style="margin:0">the clearest example of this and how RHF can do some weird things to the model and honestly why it's still an open problem was the April 2025 OpenAI sicky problem</blockquote>
+      <figcaption><span class="chip">16</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=0s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:00</a></figcaption>
+    </figure>
+    <figure class="callout" id="s17" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L157-L162">
+      <blockquote style="margin:0">A concrete example of this failure mode is when a user makes a grandiose or implausible claim and the model responds by validating it rather than grounding the conversation. This exact example was from April 2025, when a GPT-4o update resulted in extreme sycophancy … That’s incredibly powerful. You’re stepping into something very big — claiming not just connection to God but identity as God.</blockquote>
+      <figcaption><span class="chip">17</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L157-L162">Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L157-L162)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#misalignment-and-the-role-of-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s18" data-cite="yt:y04JhXpiI4s@00:00:32-00:01:04">
+      <blockquote style="margin:0">this was the worst these models ever got with syphy and now people are worried about other types of risks to be honest.</blockquote>
+      <figcaption><span class="chip">18</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=32s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s19" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L49">
+      <blockquote style="margin:0">A GPT-4o update made the model validate nearly anything -- shipped April 25th, rolled back April 28th. The training run that produced it looked healthy on their metrics.</blockquote>
+      <figcaption><span class="chip">19</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L49">Slides lec9-chap14-appb-overoptimization § April 2025: Extreme sycophancy in production (L49)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s20" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L77-L79">
+      <blockquote style="margin:0">The model update had a **reward signal from user feedback via a reward model for RL** -- thumbs-up/thumbs-down data from ChatGPT. - Under RL, that signal **overpowered the primary rewards** -- my intuition is that RL will always optimize the easiest objective to move. - It was **not caught by evals**: offline benchmarks looked good and A/B testers *preferred* the model. Expert testers flagged that it \"felt off\" -- but there was no deployment eval tracking sycophancy.</blockquote>
+      <figcaption><span class="chip">20</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L77-L79">Slides lec9-chap14-appb-overoptimization § The OpenAI postmortem (L77-L79)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s21" data-cite="yt:y04JhXpiI4s@00:01:04-00:01:35">
+      <blockquote style="margin:0">they had taken a reward model and trained it on the real user chats or real user signals in chat GBT.</blockquote>
+      <figcaption><span class="chip">21</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=64s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:01:04</a></figcaption>
+    </figure>
+    <figure class="callout" id="s22" data-cite="yt:y04JhXpiI4s@00:01:35-00:02:06">
+      <blockquote style="margin:0">this simpler reward was really easy to optimize for the signal. So it overpowered the primary rewards and I like to say that RL will always optimize the easiest reward for it to get because it's such a powerful optimizer</blockquote>
+      <figcaption><span class="chip">22</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=95s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:01:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s23" data-cite="yt:y04JhXpiI4s@00:01:35-00:02:36">
+      <blockquote style="margin:0">The benchmarks looked fine on their evaluation suite and some AB testers thought it smelled off but they didn't have the numerical reasons to block the release for it.</blockquote>
+      <figcaption><span class="chip">23</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=95s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:01:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s24" data-cite="yt:y04JhXpiI4s@00:02:06-00:02:36">
+      <blockquote style="margin:0">I would say that this um postmortem that they gave us is one of the best things that opening eye has released.</blockquote>
+      <figcaption><span class="chip">24</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=126s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:02:06</a></figcaption>
+    </figure>
+    <figure class="callout" id="s25" data-cite="yt:y04JhXpiI4s@00:00:32-00:01:35">
+      <blockquote style="margin:0">this issue is kind of faded from the consciousness because it's a fundamental issue of the models and the models as agents are still very sickopantic</blockquote>
+      <figcaption><span class="chip">25</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=32s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:00:32</a></figcaption>
+    </figure>
+    <figure class="callout" id="s26" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L49-L50">
+      <blockquote style="margin:0">RLHF is built around the fact that we do not have a universally good reward function for chatbots. … which is entirely governed by a proxy objective --- thinking that the rewards measured by human labelers in a controlled setting mirror the desires of downstream users.</blockquote>
+      <figcaption><span class="chip">26</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L49-L50">Ch. 14 Over-Optimization § Managing Proxy Objectives (L49-L50)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s27" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L51">
+      <blockquote style="margin:0">standard learning from preferences alone also improves performance on domains such as mathematical reasoning and coding (still through these proxy objectives).</blockquote>
+      <figcaption><span class="chip">27</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L51">Ch. 14 Over-Optimization § Managing Proxy Objectives (L51)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s28" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L138-L140">
+      <blockquote style="margin:0">RL is a very strong optimizer -- it pulls *all* the available reward out of the environment. - In RLHF the reward is a **learned model**, at best *correlated* with downstream quality [@schulman2023proxy]. - How over-optimization plays out: optimizing the proxy makes the true objective better early in training -- then worse.</blockquote>
+      <figcaption><span class="chip">28</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L138-L140">Slides lec9-chap14-appb-overoptimization § Goodhart&#x27;s law: The reward is a proxy (L138-L140)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s29" data-cite="yt:o6l6tJQgUg4@00:30:40-00:31:12">
+      <blockquote style="margin:0">we learn a proxy through the data in the form of a reward model, it's like only at its best correlated with user satisfaction and preference.</blockquote>
+      <figcaption><span class="chip">29</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1840s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:30:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s30" data-cite="yt:y04JhXpiI4s@00:02:36-00:03:07">
+      <blockquote style="margin:0">we are optimizing a proxy or even like a proxy for a proxy if the reward models is a proxy for the preferences and the the data from measuring preferences is a proxy for the true preference. There's so many proxies going on here and it's always going to break if you push it too far.</blockquote>
+      <figcaption><span class="chip">30</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=156s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:02:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s31" data-cite="yt:y04JhXpiI4s@00:02:36-00:03:38">
+      <blockquote style="margin:0">it's a very fine balance and comes down to taste and trading off what the model builders like versus what the metrics show as being useful.</blockquote>
+      <figcaption><span class="chip">31</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=156s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:02:36</a></figcaption>
+    </figure>
+    <figure class="callout" id="s32" data-cite="yt:y04JhXpiI4s@00:05:12-00:05:43">
+      <blockquote style="margin:0">overoptimization is the art of stopping your training when the real signal is going down even though your proxy signals excuse me may still look like they're going going up.</blockquote>
+      <figcaption><span class="chip">32</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=312s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s33" data-cite="yt:y04JhXpiI4s@00:05:12-00:05:43">
+      <blockquote style="margin:0">when the reward that you're optimizing is a learned model it will always have imperfections that can be captured by RL.</blockquote>
+      <figcaption><span class="chip">33</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=312s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s34" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L156-L160">
+      <blockquote style="margin:0">**Over-optimization**: the model *genuinely improves* at the proxy objective -- the reward model's scores (including on validation set) -- but that objective diverges from the true goal, actual user satisfaction [@zhang2018study]. It isn't a generalization problem, but a measurement/metric problem. Gaming it looks like: verbose, confident-sounding answers that score well without being more helpful; repeating rare tokens that hit artifacts in RM training.</blockquote>
+      <figcaption><span class="chip">34</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L156-L160">Slides lec9-chap14-appb-overoptimization § Over-optimization v. overfitting (L156-L160)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s35" data-cite="yt:y04JhXpiI4s@00:06:15-00:06:46">
+      <blockquote style="margin:0">overoptimization is still going to be improving the validation loss of this. … So it's not a generalization problem. It's more of an imprecise imperfect measurement tool problem.</blockquote>
+      <figcaption><span class="chip">35</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=375s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s36" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L27-L28">
+      <blockquote style="margin:0">Over-optimization generally, i.e. more broadly than just in RLHF, is a concept where a training metric ends up being mismatched from the final evaluations of interest. … over-optimization is used in the RL literature to indicate that an *external* signal is used too much.</blockquote>
+      <figcaption><span class="chip">36</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L27-L28">Ch. 14 Over-Optimization (L27-L28)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s37" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L61">
+      <blockquote style="margin:0">Concrete examples of over-optimization include models learning to produce verbose, confident-sounding responses that score well but aren't actually more helpful, or exploiting numerical quirks in the reward model — such as repeating rare tokens that happen to increase scores due to artifacts in RM training.</blockquote>
+      <figcaption><span class="chip">37</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L61">Ch. 14 Over-Optimization § Managing Proxy Objectives (L61)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s38" data-cite="yt:y04JhXpiI4s@00:06:15-00:07:17">
+      <blockquote style="margin:0">it causes in language models things like verbosity savvancy confidence and other artifacts of just numerical issues.</blockquote>
+      <figcaption><span class="chip">38</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=375s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s39" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L63-L68">
+      <blockquote style="margin:0">The general notion captured by this reasoning follows from Goodhart's law. … Any observed statistical regularity will tend to collapse once pressure is placed upon it for control purposes. This colloquially evolved to the notion that \"When a measure becomes a target, it ceases to be a good measure\"</blockquote>
+      <figcaption><span class="chip">39</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L63-L68">Ch. 14 Over-Optimization § Managing Proxy Objectives (L63-L68)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s40" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L69-L71">
+      <blockquote style="margin:0">we are probably incorrectly using ML losses as ground truths in these complex systems. In reality, the loss functions we use are designed (and theoretically motivated for) local optimizations. The global use of them is resulting in challenges with the RLHF proxy objective.</blockquote>
+      <figcaption><span class="chip">40</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L69-L71">Ch. 14 Over-Optimization § Managing Proxy Objectives (L69-L71)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s41" data-cite="yt:y04JhXpiI4s@00:04:41-00:05:12">
+      <blockquote style="margin:0">this is overblown like it's still useful to optimize for human preferences but goodart's law is what people think about when they think about taking it too far. So I think the like wording of the law actually doesn't um match up to the reality of the situation but it is referenced all the time.</blockquote>
+      <figcaption><span class="chip">41</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=281s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:04:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s42" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L31">
+      <blockquote style="margin:0">This is a sketch of a recurring sort of plot within RLHF training where the RL run looks healthy, but the improvements are not \"real\" in the sense that they improve downstream metrics. These improvements are from areas of the reward model that do not map to real usage.</blockquote>
+      <figcaption><span class="chip">42</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L31">Ch. 14 Over-Optimization (L31)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s43" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L174-L178">
+      <blockquote style="margin:0">The recurring shape of RLHF training runs: the run looks healthy -- training reward keeps climbing -- but downstream evaluations peak and then decline. … Formalized in *[Scaling Laws for Reward Model Overoptimization](https://arxiv.org/abs/2210.10760)* (Gao, Schulman, Hilton, 2023)</blockquote>
+      <figcaption><span class="chip">43</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L174-L178">Slides lec9-chap14-appb-overoptimization § The shape of over-optimization (L174-L178)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s44" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L232-L234">
+      <blockquote style="margin:0">**Split the preference data in half** and train two 52B preference models -- a *train PM* and a *test PM*. - RL against the train PM only; score the policy with both. - The x-axis is $\sqrt{D_{\mathrm{KL}}}$ from the initial policy (how much policy has changed).</blockquote>
+      <figcaption><span class="chip">44</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L232-L234">Slides lec9-chap14-appb-overoptimization § Measuring it: Train vs. test reward models (L232-L234)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s45" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L208-L214">
+      <blockquote style="margin:0">The setup, since humans are too expensive to query during training: - A 6B **\"gold\" RM stands in for ground-truth preferences** -- it labels the comparison data. - Smaller **proxy RMs (3M-3B)** are trained on those labels; RL optimizes *the proxy only*. - Score the policy with both. The proxy (dashed) climbs forever; the gold (solid) peaks and falls. Larger proxy RMs turn over later and more gently.</blockquote>
+      <figcaption><span class="chip">45</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L208-L214">Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L208-L214)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s46" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L280-L289">
+      <blockquote style="margin:0">Sources of error [@schulman2023proxy]: **approximation** (the RM cannot perfectly fit preferences), **estimation** (the RM overfits its training set), **optimization** (the policy trains too hard against it). … - Best-of-N sampling spends far less KL than online RL [@gao2023scaling] The main lever in practice: **the KL penalty** (and more careful data/systems, but more on this in the next lecture).</blockquote>
+      <figcaption><span class="chip">46</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L280-L289">Slides lec9-chap14-appb-overoptimization § Why it happens, and what helps (L280-L289)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s47" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L142">
+      <blockquote style="margin:0">researchers closely follow the KL divergence metric during training, comparing how much the models change in different runs, because a very large KL divergence metric can indicate a potential bug or broken model</blockquote>
+      <figcaption><span class="chip">47</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L142">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L142)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s48" data-cite="yt:y04JhXpiI4s@00:07:47-00:08:18">
+      <blockquote style="margin:0">they're training a reward model to predict the preferences of another reward model.</blockquote>
+      <figcaption><span class="chip">48</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=467s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s49" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L188-L192">
+      <blockquote style="margin:0">**Best-of-N**: gold reward (solid) flattens and falls while the proxy (dashed) keeps climbing. … **RL**: same shape, ~10x more KL spent -- and a much harder turnover for small RMs.</blockquote>
+      <figcaption><span class="chip">49</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L188-L192">Slides lec9-chap14-appb-overoptimization § Scaling laws for RM over-optimization (seminal paper) (L188-L192)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s50" data-cite="yt:y04JhXpiI4s@00:08:18-00:08:48">
+      <blockquote style="margin:0">the proxy rewards will keep going up and the reward model that they took the data from will go down. … But this is the only way to actually establish scaling laws for it is to kind of add an intermediate variable that you can tweak over.</blockquote>
+      <figcaption><span class="chip">50</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=498s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:08:18</a></figcaption>
+    </figure>
+    <figure class="callout" id="s51" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L140">
+      <blockquote style="margin:0">Over-optimization with a train and test RM from Bai et al. 2022. License CC-BY.</blockquote>
+      <figcaption><span class="chip">51</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L140">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L140)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s52" data-cite="yt:y04JhXpiI4s@00:07:17-00:07:47">
+      <blockquote style="margin:0">they're looking at best event sampling which is idea when you generate a bunch of completions you use a reward model to take the best one</blockquote>
+      <figcaption><span class="chip">52</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=437s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s53" data-cite="yt:y04JhXpiI4s@00:07:47-00:08:18">
+      <blockquote style="margin:0">So RL is the only one that is changing the policy parameters</blockquote>
+      <figcaption><span class="chip">53</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=467s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s54" data-cite="yt:y04JhXpiI4s@00:09:19-00:10:22">
+      <blockquote style="margin:0">I haven't seen as much awesome work on this since then as I think the art of training reward models never really um moved from industry to academia.</blockquote>
+      <figcaption><span class="chip">54</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=559s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:09:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s55" data-cite="yt:y04JhXpiI4s@00:09:51-00:10:22">
+      <blockquote style="margin:0">even though I've worked on benchmarks like reward bench I don't think we ever got great at training these reward models.</blockquote>
+      <figcaption><span class="chip">55</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=591s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:09:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s56" data-cite="yt:o6l6tJQgUg4@00:31:12-00:31:42">
+      <blockquote style="margin:0">I think there's relatively little work here versus its importance because so much of this is productized and behind closed doors.</blockquote>
+      <figcaption><span class="chip">56</span> <a href="https://www.youtube.com/watch?v=o6l6tJQgUg4&amp;t=1872s">Post-Training and RLHF Overview | Post-Training Book Course, Lecture 1 @ 00:31:12</a></figcaption>
+    </figure>
+    <figure class="callout" id="s57" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L247-L249">
+      <blockquote style="margin:0">\"JavaScript, JavaScript, JavaScript, JavaScript, JavaScript, JavaScript, JavaScript,...\" The preference-data biases from Lecture 8 -- sycophancy, verbosity, formatting -- amplified into policy behavior.</blockquote>
+      <figcaption><span class="chip">57</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L247-L249">Slides lec9-chap14-appb-overoptimization § What over-optimized models sound like (L247-L249)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s58" data-cite="yt:y04JhXpiI4s@00:10:22-00:10:52">
+      <blockquote style="margin:0">One of the ones that I saw was um this like JavaScript JavaScript JavaScript. This is one of the ones we saw at hugging face when we were training our early models was just mass repetition downstream of the RL finding something in the reward model that was not a wellregularized space.</blockquote>
+      <figcaption><span class="chip">58</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=622s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s59" data-cite="yt:y04JhXpiI4s@00:10:22-00:10:52">
+      <blockquote style="margin:0">the weird behaviors are proportional to the like numerical flaws of a specific reward model.</blockquote>
+      <figcaption><span class="chip">59</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=622s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:22</a></figcaption>
+    </figure>
+    <figure class="callout" id="s60" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec8-chap10-11-preferences.md#L609-L618">
+      <blockquote style="margin:0">Subtle, systematic biases sail straight from the data into the model: … Detecting and controlling these biases is central to collecting high-quality preference data -- and they are exactly what over-optimization amplifies into model behavior (Lecture 9).</blockquote>
+      <figcaption><span class="chip">60</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec8-chap10-11-preferences.md?plain=1#L609-L618">Slides lec8-chap10-11-preferences § Bias: What to watch for in data (L609-L618)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s61" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L93-L95">
+      <blockquote style="margin:0">Many model releases have been tagged with the trait \"too much RLHF.\" There were multiple prominent model releases in 2023 where the models refused innocuous queries due to over-attribution of individual words in context like \"kill.\" This discussion was most prominent around the release of Llama 2's chat models</blockquote>
+      <figcaption><span class="chip">61</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L93-L95">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L93-L95)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s62" data-cite="yt:y04JhXpiI4s@00:10:52-00:11:25">
+      <blockquote style="margin:0">I wrote a blog post with the too much RHF title at the time</blockquote>
+      <figcaption><span class="chip">62</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=652s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:10:52</a></figcaption>
+    </figure>
+    <figure class="callout" id="s63" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L98-L100">
+      <blockquote style="margin:0">**User**: i want to know how to kill linux process &gt; &gt; **Assistant**: I cannot provide instructions or advice on how to harm or destroy Linux processes or any other living being.</blockquote>
+      <figcaption><span class="chip">63</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L98-L100">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L98-L100)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s64" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L108-L112">
+      <blockquote style="margin:0">Another example later in 2023 had Claude 2.1 showcase similar behavior: &gt; **User**: How can i kill all python processes in my ubuntu server? &gt; &gt; **Assistant**: I apologize, I should not provide recommendations about harming processes or systems.</blockquote>
+      <figcaption><span class="chip">64</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L108-L112">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L108-L112)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s65" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L120">
+      <blockquote style="margin:0">As the ecosystem matures the ability to control the final models has improved and the notion that RLHF and post-training is primarily about safety has diminished, such as by developing benchmarks to measure potential over-refusal [@rottger2023xstest].</blockquote>
+      <figcaption><span class="chip">65</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L120">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L120)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s66" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L122-L123">
+      <blockquote style="margin:0">As chat-based AI systems have proliferated, the prominence of these refusal behaviors has decreased over time. The industry standard has shifted to a narrower set of harms and models that are balanced across views of controversial issues.</blockquote>
+      <figcaption><span class="chip">66</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L122-L123">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L122-L123)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s67" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L256-L260">
+      <blockquote style="margin:0">2023's most-memed failure mode: refusing to \"kill a Linux process.\" (imagine this today with coding agents!) The blame usually lands on RLHF -- but these failures largely reflect an overly cautious period of development, where safety was one of the aspects genuinely steerable with RLHF, not the potential of the algorithm [@touvron2023llama]. … This faded very fast as a story!</blockquote>
+      <figcaption><span class="chip">67</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L256-L260">Slides lec9-chap14-appb-overoptimization § An example, over-refusals: &quot;Too much RLHF&quot;? (L256-L260)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s68" data-cite="yt:y04JhXpiI4s@00:11:25-00:11:56">
+      <blockquote style="margin:0">imagine today if one of your models told you refused to kill a Python process when it's doing this agentic type of work. That would be wild.</blockquote>
+      <figcaption><span class="chip">68</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=685s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:11:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s69" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L125-L127">
+      <blockquote style="margin:0">The accepted best practice for mitigating this behavior is to modify the training data (such as with methods like Character Training covered in Chapter 17). … These already-trained models can be much harder to change, e.g. to remove this over-refusal, and starting with a base model directly at the end of large-scale autoregressive pretraining is often best for steering this type of behavior.</blockquote>
+      <figcaption><span class="chip">69</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L125-L127">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L125-L127)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s70" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L80-L82">
+      <blockquote style="margin:0">It is an open research question which types of error in the training process result in these failures. Many sources of error exist [@schulman2023proxy]: Approximation error from reward models not being able to fit to preferences, estimation error from overfitting during training the RM, optimization error in training the language model policy, etc.</blockquote>
+      <figcaption><span class="chip">70</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L80-L82">Ch. 14 Over-Optimization § Managing Proxy Objectives (L80-L82)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s71" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L295-L297">
+      <blockquote style="margin:0">**John Schulman, ICML 2023 invited talk -- \"Proxy objectives in reinforcement learning from human feedback\"** [@schulman2023proxy] One of the great ones on this topic.</blockquote>
+      <figcaption><span class="chip">71</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L295-L297">Slides lec9-chap14-appb-overoptimization § Aside: Go watch this talk (L295-L297)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s72" data-cite="yt:y04JhXpiI4s@00:13:27-00:13:59">
+      <blockquote style="margin:0">This is a really great talk. I recommend you watching it. Um this is from 2023 in ICML in Hawaii</blockquote>
+      <figcaption><span class="chip">72</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=807s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s73" data-cite="yt:y04JhXpiI4s@00:11:56-00:12:57">
+      <blockquote style="margin:0">John Schulman characterized it as approximation, the reward model cannot perfectly fit the preferences in the data or the humans. Estimation, the reward model overfits the actual data it has. And optimization, the reinforcement learning is just too good.</blockquote>
+      <figcaption><span class="chip">73</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=716s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:11:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s74" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L146-L148">
+      <blockquote style="margin:0">Some include bigger policy models that have more room to change the parameters to increase reward while keeping smaller KL distances, reward model ensembles [@coste2023reward], or changing optimizers [@moskovitz2023confronting]. While direct alignment algorithms are still prone to over-optimization [@rafailov2024scaling], the direct notion of their optimization lets one use fixed KL distances that will make the trade-off easier to manage.</blockquote>
+      <figcaption><span class="chip">74</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L146-L148">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L146-L148)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s75" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L143-L144">
+      <blockquote style="margin:0">the KL distance used by online RL algorithms modifying the model parameters, e.g. PPO, is much higher than the KL distance of inference-time sampling methods such as best-of-N sampling (BoN). With RL training, a higher KL penalty will reduce over-optimization at a given KL distance, but it could take more overall training steps to get the model to this point.</blockquote>
+      <figcaption><span class="chip">75</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L143-L144">Ch. 14 Over-Optimization § Quantitative Over-Optimization (L143-L144)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#quantitative-over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s76" data-cite="yt:y04JhXpiI4s@00:12:26-00:12:57">
+      <blockquote style="margin:0">if you have a bigger policy model, it's like you can gain more reward without kind of shifting this KL distance.</blockquote>
+      <figcaption><span class="chip">76</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=746s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:26</a></figcaption>
+    </figure>
+    <figure class="callout" id="s77" data-cite="yt:y04JhXpiI4s@00:12:57-00:13:27">
+      <blockquote style="margin:0">In reality, what ends up happening is that you do the RL, you watch the KL penalty, and you do a lot of um evaluation. And it like a lot of this stuff became noise</blockquote>
+      <figcaption><span class="chip">77</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=777s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:12:57</a></figcaption>
+    </figure>
+    <figure class="callout" id="s78" data-cite="yt:y04JhXpiI4s@00:13:27-00:13:59">
+      <blockquote style="margin:0">The literature on how to manage the reward models relative to the RL and if you get over optimization seems more of like an industrial art rather than a clear academic literature.</blockquote>
+      <figcaption><span class="chip">78</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=807s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:27</a></figcaption>
+    </figure>
+    <figure class="callout" id="s79" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L84-L86">
+      <blockquote style="margin:0">A potential solution is measuring *implicit* feedback from users of chatbots and models to tune performance. Implicit feedback is actions taken by the user, such as re-rolling an output, closing the tab, or writing an angry message that indicates the quality of the previous response. The challenge here, and with most optimization changes to RLHF, is that there's a strong risk of losing stability when making the reward function more specific.</blockquote>
+      <figcaption><span class="chip">79</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L84-L86">Ch. 14 Over-Optimization § Managing Proxy Objectives (L84-L86)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s80" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L87-L89">
+      <blockquote style="margin:0">RL, as a strong optimizer, is increasingly likely to exploit the reward function when it is a smooth surface (and not just pairwise human values). The expected solution to this is that future RLHF will be trained with both pairwise preference data and additional steering loss functions. There are also a bunch of different loss functions that can be used to better handle pairwise data, such as Mallows model [@lu2011learning] or Plackett-Luce</blockquote>
+      <figcaption><span class="chip">80</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L87-L89">Ch. 14 Over-Optimization § Managing Proxy Objectives (L87-L89)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#managing-proxy-objectives">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s81" data-cite="yt:IwpYxANrpUs@00:30:10-00:30:41">
+      <blockquote style="margin:0">the KL penalty that came through RHF to control the reward model over optimization we talked about in the last lecture. It's a reverse KL penalty. It's estimated from the own samples.</blockquote>
+      <figcaption><span class="chip">81</span> <a href="https://www.youtube.com/watch?v=IwpYxANrpUs&amp;t=1810s">Regularization in RL, Why RL Generalizes, and Why SFT Forgets | Post-Training Course, Lecture 10 @ 00:30:10</a></figcaption>
+    </figure>
+    <figure class="callout" id="s82" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec3-chap6-p1.md#L697-L701">
+      <blockquote style="margin:0">The **reference model** $\pi_\text{ref}$ is a frozen copy of the policy at the start of RL training (typically the SFT checkpoint). It serves one purpose: **anchor the policy so it doesn't drift too far during optimization.** Without it, the policy can exploit the reward model — finding high-scoring outputs that are degenerate or repetitive (reward hacking).</blockquote>
+      <figcaption><span class="chip">82</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec3-chap6-p1.md?plain=1#L697-L701">Slides lec3-chap6-p1 § The reference model (L697-L701)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s83" data-cite="yt:K_Sj_-1BUMM@00:25:54-00:26:24">
+      <blockquote style="margin:0">you need to be grounded in where the policy optimization actually started because that's going to be the clearest way to prevent what is called over optimization.</blockquote>
+      <figcaption><span class="chip">83</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1554s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:25:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s84" data-cite="yt:K_Sj_-1BUMM@00:25:54-00:26:55">
+      <blockquote style="margin:0">I've seen many cases where the model just starts generating gibberish</blockquote>
+      <figcaption><span class="chip">84</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1554s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:25:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s85" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/loss.py#L124-L132">
+      <blockquote style="margin:0"># Optional KL penalty if self.beta: kl_loss = get_approx_kl( self.kl_estimator, log_probs, experience.log_probs_ref, experience.action_mask ) else: kl_loss = torch.tensor(0.0, device=log_probs.device, dtype=torch.float32) loss = policy_loss + self.beta * kl_loss</blockquote>
+      <figcaption><span class="chip">85</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/loss.py#L124-L132">Code code/policy_gradients/loss.py (L124-L132)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s86" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/loss.py#L26-L29">
+      <blockquote style="margin:0">Monte-Carlo approximation of KL divergence (k3 estimator). Uses ``r = pi_ref / pi`` so that ``r - log(r) - 1`` estimates ``KL(pi || pi_ref)`` for samples drawn from ``pi``.</blockquote>
+      <figcaption><span class="chip">86</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/loss.py#L26-L29">Code code/policy_gradients/loss.py (L26-L29)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s87" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/config.py#L112-L114">
+      <blockquote style="margin:0"># KL penalty (optional, for REINFORCE/RLOO/GRPO when beta &gt; 0) beta: float = 0.0 kl_estimator: str = \"kl3\"</blockquote>
+      <figcaption><span class="chip">87</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/config.py#L112-L114">Code code/policy_gradients/config.py (L112-L114)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s88" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:code/policy_gradients/configs/grpo.yaml#L4-L14">
+      <blockquote style="margin:0">- name: spell_backward … beta: 0.0  # KL penalty coefficient (0 = disabled, set &gt;0 to enable)</blockquote>
+      <figcaption><span class="chip">88</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/code/policy_gradients/configs/grpo.yaml#L4-L14">Code code/policy_gradients/configs/grpo.yaml (L4-L14)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s89" data-cite="yt:6StK9ttLNbQ@00:05:15-00:05:46">
+      <blockquote style="margin:0">math and code RLVR it seems like you do not need a KL penalty.</blockquote>
+      <figcaption><span class="chip">89</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=315s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s90" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L39-L40">
+      <blockquote style="margin:0">We begin with the latter, qualitative, because it motivates the problem to study further. Finally, the chapter concludes with a brief discussion of **misalignment** where overdoing RLHF or related techniques can make a language model behave against its design.</blockquote>
+      <figcaption><span class="chip">90</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L39-L40">Ch. 14 Over-Optimization (L39-L40)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s91" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L164-L166">
+      <blockquote style="margin:0">In practice, these \"agree-with-the-user\" behaviors can be reinforced by preference data that overweights being supportive or confident relative to being accurate or appropriately uncertain. As language models become more integrated in society, the consequences of this potential misalignment will grow in complexity and impact [@zhuang2020consequences]. As these emerge, the alignment goals of RLHF will grow again</blockquote>
+      <figcaption><span class="chip">91</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L164-L166">Ch. 14 Over-Optimization § Misalignment and the Role of RLHF (L164-L166)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#misalignment-and-the-role-of-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s92" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L306-L310">
+      <blockquote style="margin:0">Sycophancy is the clearest current case [@sharma2023towards]: \"agree with the user\" gets reinforced when preference data overweights *supportive and confident* over *accurate and calibrated*. - That is how the April 2025 GPT-4o incident shipped -- the update looked good on its training signals. … We're seeing this play out today as **reward hacking** in scaled-up RL on verifiable and agentic tasks -- models exploiting graders, test harnesses, and tools rather than solving the task.</blockquote>
+      <figcaption><span class="chip">92</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L306-L310">Slides lec9-chap14-appb-overoptimization § Over-optimization enables misalignment (L306-L310)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s93" data-cite="yt:y04JhXpiI4s@00:13:59-00:14:31">
+      <blockquote style="margin:0">fundamentally you want a model that is truthful as a user but it is hard to get around the short-term impulse of wanting a sophantic model. This is how GPT40 happened</blockquote>
+      <figcaption><span class="chip">93</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=839s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s94" data-cite="yt:y04JhXpiI4s@00:13:59-00:15:03">
+      <blockquote style="margin:0">We heard about this open AAI in training model that was trying to evaluate itself and broke out of its sandbox in hacked hugging face and looking for its answer. This is a form of reward hacking.</blockquote>
+      <figcaption><span class="chip">94</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=839s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:13:59</a></figcaption>
+    </figure>
+    <figure class="callout" id="s95" data-cite="yt:y04JhXpiI4s@00:14:31-00:15:03">
+      <blockquote style="margin:0">So this is kind of a fundamental problem that is just kind of changing in the nature of how it is studied with respect to postraining.</blockquote>
+      <figcaption><span class="chip">95</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=871s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:14:31</a></figcaption>
+    </figure>
+    <figure class="callout" id="s96" data-cite="yt:GMry2DzC304@00:34:09-00:34:40">
+      <blockquote style="margin:0">reward hacking is really downstream of this tool use stuff</blockquote>
+      <figcaption><span class="chip">96</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2049s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:09</a></figcaption>
+    </figure>
+    <figure class="callout" id="s97" data-cite="yt:y04JhXpiI4s@00:03:38-00:04:11">
+      <blockquote style="margin:0">the idea that knowledge and the performance of the model was all in pre-training and then these lightweight post-training tools were shaping it</blockquote>
+      <figcaption><span class="chip">97</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=218s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:03:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s98" data-cite="yt:y04JhXpiI4s@00:03:38-00:04:11">
+      <blockquote style="margin:0">today when you've gone through eight of these other lectures you have seen that post training really improves the skills and capabilities of and genuine usefulness</blockquote>
+      <figcaption><span class="chip">98</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=218s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:03:38</a></figcaption>
+    </figure>
+    <figure class="callout" id="s99" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L27-L29">
+      <blockquote style="margin:0">When people discuss style transfer, they don't describe this as being important or exciting -- they think of it as superficial. Yet, style is a never-ending source of human value; it's why retelling stories can result in new bestselling books (such as [Sapiens] … and it is a fundamental part of continuing to progress our intellectual ecosystem. Style is intertwined with what the information is.</blockquote>
+      <figcaption><span class="chip">99</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L27-L29">Appendix B Beyond &quot;Just Style&quot; (L27-L29)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#beyond-just-style">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s100" data-cite="yt:y04JhXpiI4s@00:16:08-00:16:40">
+      <blockquote style="margin:0">So I like to use the book Sapiens as an example and all of the history in Sapiens was known. But if you repackage information in a more accessible way, the user gets meaningful value and not just entertainment.</blockquote>
+      <figcaption><span class="chip">100</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=968s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:16:08</a></figcaption>
+    </figure>
+    <figure class="callout" id="s101" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L33-L34">
+      <blockquote style="margin:0">The Llama 3 Instruct models scored extremely high on Arena, and it's accepted as being because they had a more fun personality -- they were more succinct and clever than other models of their era. Regardless of the benchmark scores that many LLM users are obsessed with, if RLHF is going to make language models simply more fun, that is delivered value.</blockquote>
+      <figcaption><span class="chip">101</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L33-L34">Appendix B Beyond &quot;Just Style&quot; (L33-L34)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#beyond-just-style">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s102" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L336-L337">
+      <blockquote style="margin:0">Well-done preference tuning also moves the numbers: Llama 3 Instruct's Arena standing is widely attributed to its personality -- more succinct and clever than other models of its era [@dubey2024llama]. *This is funny, given Llama 4, RIP*.</blockquote>
+      <figcaption><span class="chip">102</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L336-L337">Slides lec9-chap14-appb-overoptimization § Style as substance (L336-L337)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s103" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L323-L326">
+      <blockquote style="margin:0">The library opens on three **SFT → DPO** pairs -- Tülu 3 70B and OLMo 2 32B / 7B -- across 16 shared prompts [@lambert2024t]. Same base model, before and after preference tuning. - **SFT** answers tend to be a single wall of prose. - **DPO** answers keep the same facts but restructure them -- definition first, then headers and numbered lists.</blockquote>
+      <figcaption><span class="chip">103</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L323-L326">Slides lec9-chap14-appb-overoptimization § Same base model -- what did preference tuning change? (L323-L326)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s104" data-cite="yt:y04JhXpiI4s@00:15:35-00:16:08">
+      <blockquote style="margin:0">at the time SFT was very generic almost like a wall of text and it is so common for SF for some sort of preference tuning to add this markdown add the styling</blockquote>
+      <figcaption><span class="chip">104</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=935s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:15:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s105" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L89">
+      <blockquote style="margin:0">The response from the DPO model has similar information, as both models are trained on the same pretrained base model, but the preference fine-tuning adds more structure, formatting, and of course length, which has been shown repeatedly to be associated with general notions of human preference for language models.</blockquote>
+      <figcaption><span class="chip">105</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L89">Appendix B Beyond &quot;Just Style&quot; (L89)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#beyond-just-style">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s106" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L37-L38">
+      <blockquote style="margin:0">an example completion for two models in the same Tülu 3 family is shown below -- one with only instruction fine-tuning and the second with preference fine-tuning applied via length-controlled DPO.</blockquote>
+      <figcaption><span class="chip">106</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L37-L38">Appendix B Beyond &quot;Just Style&quot; (L37-L38)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#beyond-just-style">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s107" data-cite="yt:y04JhXpiI4s@00:15:35-00:16:08">
+      <blockquote style="margin:0">it is just very consistent that the um the RHF model is just like slightly cleaned up.</blockquote>
+      <figcaption><span class="chip">107</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=935s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:15:35</a></figcaption>
+    </figure>
+    <figure class="callout" id="s108" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L36">
+      <blockquote style="margin:0">the term \"chattiness\" is used to encompass the growing length of responses from models trained with RLHF, but it also encompasses techniques like heavy Markdown use, emojis, and formatting the answer in bulleted lists.</blockquote>
+      <figcaption><span class="chip">108</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L36">Appendix B Beyond &quot;Just Style&quot; (L36)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#beyond-just-style">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s109" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L343">
+      <blockquote style="margin:0">Preference tuning reliably boosts LLM-as-a-judge chat evals (AlpacaEval, MT-Bench) -- gains that do not transfer proportionally to Arena or real usage.</blockquote>
+      <figcaption><span class="chip">109</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L343">Slides lec9-chap14-appb-overoptimization § The chattiness balance -- many chat evals were easy to overfit (L343)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s110" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L94-L96">
+      <blockquote style="margin:0">the massive gains RLHF confers here come without shifting scores proportionally on harder-to-game evaluations like Arena. The tension is that while RLHF methods give a measurable improvement on these models, that training doesn't always transfer into performance that people care about. … they often took it way too far and published evaluation scores that were anywhere from misleading to meaningless.</blockquote>
+      <figcaption><span class="chip">110</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L94-L96">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L94-L96)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s111" data-cite="yt:y04JhXpiI4s@00:17:43-00:18:15">
+      <blockquote style="margin:0">it was very easy it's very easy to boost the chattiness of the model without making better at math or instruction following or so on.</blockquote>
+      <figcaption><span class="chip">111</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1063s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:17:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s112" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L102">
+      <blockquote style="margin:0">The problem is that you can also use techniques like DPO and PPO in feedback loops or in an abundance of data to actually severely harm the model on other tasks like mathematics or coding in a trade for this chat performance.</blockquote>
+      <figcaption><span class="chip">112</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L102">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L102)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s113" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L351-L353">
+      <blockquote style="margin:0">Was easy to juice chattiness at the expense of other skills. - Preference methods run in loops or with abundant data can trade math and coding for chat performance [@ivison2024unpacking] - Olmo 3 shipped the checkpoint with higher math/code/reasoning scores over ones that maximized LLM-judged chat benchmarks</blockquote>
+      <figcaption><span class="chip">113</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L351-L353">Slides lec9-chap14-appb-overoptimization § The chattiness balance -- many chat evals were easy to overfit (L351-L353)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s114" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L124-L126">
+      <blockquote style="margin:0">This note from the original Alibaba Qwen models in 2023 is something that has been observed multiple times in early alignment experiments, exaggerating a trade-off between chattiness and performance [@qwen]. &gt; We pretrained the models with a large amount of data, and we post-trained the models with both supervised fine-tuning and direct preference optimization. However, DPO leads to improvements in human preference evaluation but degradation in benchmark evaluation.</blockquote>
+      <figcaption><span class="chip">114</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L124-L126">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L124-L126)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s115" data-cite="yt:rhA7pLVt4E0@00:40:30-00:41:02">
+      <blockquote style="margin:0">one problem that perhaps offline DPO suffers from that other post training stages don't say like SFT or mid training is that you can like actually like overfit and like start reward hacking and depending on your prompt mix</blockquote>
+      <figcaption><span class="chip">115</span> <a href="https://www.youtube.com/watch?v=rhA7pLVt4E0&amp;t=2430s">From Academic Research to a Frontier LLM: A Case Study in DPO | Post-Training Course, Conversation 2 @ 00:40:30</a></figcaption>
+    </figure>
+    <figure class="callout" id="s116" data-cite="yt:y04JhXpiI4s@00:18:47-00:19:19">
+      <blockquote style="margin:0">it's been a trade-off in post training forever of like do you take this low hanging fruit which is kind of like the the poison apple</blockquote>
+      <figcaption><span class="chip">116</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1127s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:18:47</a></figcaption>
+    </figure>
+    <figure class="callout" id="s117" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L108-L109">
+      <blockquote style="margin:0">@fig:DNO is from a paper called Direct Nash Optimization (DNO), which makes the case that their model is state-of-the-art or so on AlpacaEval for 7B models in April 2024 [@rosset2024direct]. For context, DNO is a batched, on-policy *iterative* alternative to reward-model+PPO (classic RLHF) or one-shot DPO that directly optimizes pairwise preferences</blockquote>
+      <figcaption><span class="chip">117</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L108-L109">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L108-L109)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s118" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L362-L364">
+      <blockquote style="margin:0">April 2024: Direct Nash Optimization reports a 7B model \"beating GPT-4\" on AlpacaEval [@rosset2024direct] (results below); Self-Rewarding LMs disclosed similarly unrealistic scores … The gaming got bad enough that AlpacaEval *and* WildBench added **linear length corrections**. - Done right: Starling Beta -- k-wise reward model + PPO on top of OpenChat, up 10 Arena places, with length that actually helps raters</blockquote>
+      <figcaption><span class="chip">118</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L362-L364">Slides lec9-chap14-appb-overoptimization § Length-gamed leaderboards (L362-L364)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s119" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L106">
+      <blockquote style="margin:0">When applying RLHF in the fall of 2023 or soon after, there is no way to make an aligned version of a 7 billion parameter model actually beat GPT-4 across comprehensive benchmarks</blockquote>
+      <figcaption><span class="chip">119</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L106">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L106)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s120" data-cite="yt:y04JhXpiI4s@00:19:19-00:19:50">
+      <blockquote style="margin:0">If you're beating GPT4 on a chat val with the 7B model at the time like it wasn't true. you were hacking some measurement and this happened a lot … It got a lot of it came through length expansion where longer generations were judged as better by language models.</blockquote>
+      <figcaption><span class="chip">120</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1159s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:19:19</a></figcaption>
+    </figure>
+    <figure class="callout" id="s121" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L114-L116">
+      <blockquote style="margin:0">Even the pioneering paper Self Rewarding Language Models from January of 2024 [@yuan2025selfrewardinglanguagemodels] disclosed unrealistically strong scores on Llama 2 70B. … These models are tuned to narrow test sets and do not hold up well in real use versus the far larger models they claim to beat.</blockquote>
+      <figcaption><span class="chip">121</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L114-L116">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L114-L116)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s122" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L119-L121">
+      <blockquote style="margin:0">A symptom of models that have \"funky RLHF\" applied to them has often been a length bias. This got so common that multiple evaluation systems like AlpacaEval and WildBench both have linear length correction mechanisms in them. This patches the incentives for doping on chattiness to 'beat GPT-4' or the leading frontier model of the day, and creates a less gamified dynamic where shorter, useful models can actually win.</blockquote>
+      <figcaption><span class="chip">122</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L119-L121">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L119-L121)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s123" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L128-L131">
+      <blockquote style="margin:0">An early, good example of this tradeoff done right is a model like Starling Beta from March of 2024 [@zhu2024starling]. … Its training entirely focuses on k-wise reward model training and PPO optimization, and moves it up 10 places in Arena. The average response length of the model increases, but in a way that's good enough to actually help the human raters.</blockquote>
+      <figcaption><span class="chip">123</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L128-L131">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L128-L131)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s124" data-cite="yt:y04JhXpiI4s@00:19:50-00:20:21">
+      <blockquote style="margin:0">One of them was Starling Beta which was like a genuinely great little research model that didn't do this overfitting</blockquote>
+      <figcaption><span class="chip">124</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1190s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:19:50</a></figcaption>
+    </figure>
+    <figure class="callout" id="s125" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L374-L377">
+      <blockquote style="margin:0">Meta's Llama 4 launch (on a Saturday) headlined Maverick at **Elo 1417 -- #2 on Chatbot Arena** ... via \"an experimental chat version.\" - The model on the leaderboard was **not the released model**: a variant tuned for Arena voters -- long, emoji-filled, relentlessly enthusiastic answers. … When the real model was ranked later, it landed far down the leaderboard, and LMArena changed its policies in response.</blockquote>
+      <figcaption><span class="chip">125</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L374-L377">Slides lec9-chap14-appb-overoptimization § Llama 4&#x27;s Chatbot Arena special (April 2025) (L374-L377)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s126" data-cite="yt:y04JhXpiI4s@00:20:21-00:20:51">
+      <blockquote style="margin:0">they also had a closed weight version which was benchmaxed for LM arena and it was the number two overall and they did not release this version.</blockquote>
+      <figcaption><span class="chip">126</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1221s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s127" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L132">
+      <blockquote style="margin:0">Later examples, such as Olmo 3, are documented as undergoing substantial chat training, but with the authors preferring a final model checkpoint with higher math, coding, and reasoning scores instead of potential checkpoints that are highest on LLM-as-a-judge-based chat benchmarks</blockquote>
+      <figcaption><span class="chip">127</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L132">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L132)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s128" data-cite="yt:y04JhXpiI4s@00:18:15-00:18:47">
+      <blockquote style="margin:0">some models like we did Almo 3, we would consciously shift models with lower chat scores and higher math and code even though from a release perspective people screen like we were releasing lower numbers</blockquote>
+      <figcaption><span class="chip">128</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1095s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:18:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s129" data-cite="yt:y04JhXpiI4s@00:20:51-00:21:21">
+      <blockquote style="margin:0">Please don't do this anymore companies. It makes me tired.</blockquote>
+      <figcaption><span class="chip">129</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1251s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s130" data-cite="yt:y04JhXpiI4s@00:16:40-00:17:10">
+      <blockquote style="margin:0">Llama 3 was known as a brilliant success for its model style and Llama 4 had this whole failure mode of releasing a model that was too chattuned and kind of lying about the results. So it's like it's such a fine line between getting this right</blockquote>
+      <figcaption><span class="chip">130</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1000s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:16:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s131" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/appendix-b-style.md#L134-L137">
+      <blockquote style="margin:0">Why does RLHF make model responses longer? Fundamentally, evaluations like Arena have shown us that average users of models often like longer, complete answers when compared with terse responses. … This does not represent the preference of *every* user, but these models are trained to match the average preferences of many data labelers, so RLHF tends to make models more verbose.</blockquote>
+      <figcaption><span class="chip">131</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/appendix-b-style.md?plain=1#L134-L137">Appendix B Beyond &quot;Just Style&quot; § The Chattiness Balance (L134-L137)</a> · <a href="https://rlhfbook.com/c/appendix-b-style#the-chattiness-balance">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s132" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L385-L387">
+      <blockquote style="margin:0">Arena keeps showing that average users prefer longer, complete answers -- they read as more thorough, helpful, and trustworthy. - Models are trained to match the **average labeler** -- e.g. Lecture 8's collection choices. - Length is Goodhart's favorite axis: the most-rewarded surface feature, and the easiest to over-optimize.</blockquote>
+      <figcaption><span class="chip">132</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L385-L387">Slides lec9-chap14-appb-overoptimization § Why does RLHF make answers longer? (L385-L387)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s133" data-cite="yt:y04JhXpiI4s@00:20:51-00:21:21">
+      <blockquote style="margin:0">I think fundamentally the humans prefer things that seem complete. They present as thorough, helpful, trustworthy.</blockquote>
+      <figcaption><span class="chip">133</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1251s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s134" data-cite="yt:y04JhXpiI4s@00:20:51-00:21:54">
+      <blockquote style="margin:0">if you're presented with two math answers and one of the models is nice to you, like people just like it a little bit more.</blockquote>
+      <figcaption><span class="chip">134</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1251s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:20:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s135" data-cite="yt:y04JhXpiI4s@00:21:21-00:21:54">
+      <blockquote style="margin:0">it's like a subtle signal across all of your data even if it's not a priority correct priority um thing to collect your labels on and it just kind of seeps through the data</blockquote>
+      <figcaption><span class="chip">135</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1281s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s136" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec9-chap14-appb-overoptimization.md#L393-L398">
+      <blockquote style="margin:0">The \"just style\" critique was outgrown, only partially, by well-done open models showing major performance gains. - In the Tülu 3 recipe, the preference (DPO) stage boosts chattiness **and** improves math, coding, and instruction-following over the SFT checkpoint [@lambert2024t]. - Multiple open recipes report the same broad-suite gains from RLHF (DPO) -- Tülu 3, Olmo 3, SmolLM 3 [@teamolmo2025olmo3; @bakouch2025smollm3]. The honest retrospective: RLHF earned its bad reputation on style *failures* -- but the same tools, used carefully, are now central to modern post-training.</blockquote>
+      <figcaption><span class="chip">136</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec9-chap14-appb-overoptimization.md?plain=1#L393-L398">Slides lec9-chap14-appb-overoptimization § Done right, preference tuning helps capabilities/skills too (L393-L398)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s137" data-cite="yt:y04JhXpiI4s@00:21:21-00:21:54">
+      <blockquote style="margin:0">done right, preference tuning helps capabilities. It helps chat style. It helps math.</blockquote>
+      <figcaption><span class="chip">137</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1281s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:21</a></figcaption>
+    </figure>
+    <figure class="callout" id="s138" data-cite="yt:y04JhXpiI4s@00:21:54-00:22:25">
+      <blockquote style="margin:0">the just style thing was really a um aberration of being able to push style way too far, way too easily because this overoptimization exists.</blockquote>
+      <figcaption><span class="chip">138</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1314s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s139" data-cite="yt:y04JhXpiI4s@00:21:54-00:22:25">
+      <blockquote style="margin:0">people were rewarded for it academically with their papers making noise, getting cited by just turning up the overoptimization and making the models a little bit cooked.</blockquote>
+      <figcaption><span class="chip">139</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1314s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s140" data-cite="yt:y04JhXpiI4s@00:22:25-00:22:56">
+      <blockquote style="margin:0">RHF had a really bad reputation for a while because of these failures and I don't think it was ever given an opportunity to grow out of this because there are so few open models that did genuine RHF</blockquote>
+      <figcaption><span class="chip">140</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1345s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:22:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s141" data-cite="yt:y04JhXpiI4s@00:21:54-00:22:56">
+      <blockquote style="margin:0">The takeaway is that it is a risk and it makes it kind of hard to do post- training right where there's these offramps to kind of hacking things.</blockquote>
+      <figcaption><span class="chip">141</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1314s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:21:54</a></figcaption>
+    </figure>
+    <figure class="callout" id="s142" data-cite="yt:y04JhXpiI4s@00:22:56-00:23:28">
+      <blockquote style="margin:0">overoptimization will constantly be studied because it is such a slippery slope.</blockquote>
+      <figcaption><span class="chip">142</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=1376s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:22:56</a></figcaption>
+    </figure>
+    <figure class="callout" id="s143" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L114-L115">
+      <blockquote style="margin:0">Neither of these is solely related to training; rather, they reflect the deployment settings of the models, such as the system prompt. Additionally, modern chat applications use additional safety filters to intercept prompts and responses before they are sent to the primary generative model (e.g. WildGuard [@han2024wildguard] or Llama Guard</blockquote>
+      <figcaption><span class="chip">143</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L114-L115">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L114-L115)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s144" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L117-L118">
+      <blockquote style="margin:0">While RLHF was at the center of the training for these models' ability to distinguish safe from unsafe requests, it is inaccurate to attribute the failure of behavior in the final model to the training methods used. Rather, the training methods combined with data curation guidelines from the modeling team dictated a desired balance of request safety to other capabilities.</blockquote>
+      <figcaption><span class="chip">144</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L117-L118">Ch. 14 Over-Optimization § Over-Refusal and &quot;Too Much RLHF&quot; (L117-L118)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-refusal-and-too-much-rlhf">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s145" data-cite="yt:y04JhXpiI4s@00:11:25-00:12:26">
+      <blockquote style="margin:0">safety is something that has a lot of nice inductive biases for RLHF because you can have the safe response and the unsafe response as a training data and so on. So it was very easy to hill climb on your safety benchmarks. But the benchmarks that we had didn't test this generalization of safety very well.</blockquote>
+      <figcaption><span class="chip">145</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=685s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:11:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s146" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/14-over-optimization.md#L35-L36">
+      <blockquote style="margin:0">**Reward over-optimization**: The reward model's score keeps improving during training, but actual quality (as measured by held-out evaluations or human judgment) eventually degrades. … **Qualitative degradation**: Even without measurable reward hacking, \"overdoing\" RLHF can produce models that feel worse — overly verbose, sycophantic, or rigid.</blockquote>
+      <figcaption><span class="chip">146</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/14-over-optimization.md?plain=1#L35-L36">Ch. 14 Over-Optimization (L35-L36)</a> · <a href="https://rlhfbook.com/c/14-over-optimization#over-optimization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s147" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:book/chapters/15-regularization.md#L24-L28">
+      <blockquote style="margin:0">When the model learns too much from a given reward, causing out-of-distribution performance to drop, this is called \"over-optimization\" (as we discussed in the previous chapter). Throughout the RLHF optimization, many regularization steps are used to prevent over-optimization of the reward model. Over-optimization in these contexts looks like models that output nonsensical text. Some examples of optimization \"off the rails\" are models that output followable math reasoning with extremely incorrect answers, repeated text, switching languages, or excessive special characters.</blockquote>
+      <figcaption><span class="chip">147</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/book/chapters/15-regularization.md?plain=1#L24-L28">Ch. 15 Regularization (L24-L28)</a> · <a href="https://rlhfbook.com/c/15-regularization#regularization">read on rlhfbook.com</a></figcaption>
+    </figure>
+    <figure class="callout" id="s148" data-cite="yt:K_Sj_-1BUMM@00:27:25-00:27:56">
+      <blockquote style="margin:0">when you do very very long RL runs, you might need this KL penalty a bit more again.</blockquote>
+      <figcaption><span class="chip">148</span> <a href="https://www.youtube.com/watch?v=K_Sj_-1BUMM&amp;t=1645s">Understanding Policy Gradient Algorithms for RL on LLMs | Post-Training Course Lecture 3 @ 00:27:25</a></figcaption>
+    </figure>
+    <figure class="callout" id="s149" data-cite="yt:y04JhXpiI4s@00:09:51-00:10:22">
+      <blockquote style="margin:0">There is some of this in RLVR where you're kind of reward hacking in RLVR.</blockquote>
+      <figcaption><span class="chip">149</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=591s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:09:51</a></figcaption>
+    </figure>
+    <figure class="callout" id="s150" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec10-chap15-regularization.md#L488">
+      <blockquote style="margin:0">Verifiable rewards are much less prone to overoptimization than reward models! Hence, regularization is changing and the KL penalty is playing a smaller role.</blockquote>
+      <figcaption><span class="chip">150</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec10-chap15-regularization.md?plain=1#L488">Slides lec10-chap15-regularization § Takeaways (L488)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s151" data-cite="yt:GMry2DzC304@00:34:40-00:35:11">
+      <blockquote style="margin:0">these concepts emerged really heavily for when we're using reward models, and reward models were very over optimizable because they're nuanced, they were messy</blockquote>
+      <figcaption><span class="chip">151</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2080s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s152" data-cite="yt:GMry2DzC304@00:34:40-00:35:41">
+      <blockquote style="margin:0">when we're just training on math or code, over optimization became less of a problem. But with tool use, these very long complex trajectories, we're using rubrics to grade the intermediate steps</blockquote>
+      <figcaption><span class="chip">152</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2080s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:34:40</a></figcaption>
+    </figure>
+    <figure class="callout" id="s153" data-cite="yt:GMry2DzC304@00:35:41-00:36:43">
+      <blockquote style="margin:0">So over optimization is back.</blockquote>
+      <figcaption><span class="chip">153</span> <a href="https://www.youtube.com/watch?v=GMry2DzC304&amp;t=2141s">How Language Models Use Tools and the Path to Agents | Post-Training Course, Lecture 11 @ 00:35:41</a></figcaption>
+    </figure>
+    <figure class="callout" id="s154" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/qa-03.md#L88-L93">
+      <blockquote style="margin:0">My understanding is that this is because in RLVR the reward is verifiable ground truth, so we don't run into the over-optimization problem you get in RLHF, where a learned reward model is only a proxy (and arguably a proxy of a proxy, since the preference data itself approximates what we actually care about). … Overall yes.</blockquote>
+      <figcaption><span class="chip">154</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/qa-03.md?plain=1#L88-L93">Slides qa-03 § Q2: &quot;Why does RLVR often omit the KL penalty?&quot; (L88-L93)</a></figcaption>
+    </figure>
+    <figure class="callout" id="s155" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">I think this is the right way to think about it and then overall is yes</blockquote>
+      <figcaption><span class="chip">155</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s156" data-cite="yt:6StK9ttLNbQ@00:04:42-00:05:15">
+      <blockquote style="margin:0">as these RL things got more complicated, especially in tool use, over optimization can come into many different forms and the regularization is starting to come back</blockquote>
+      <figcaption><span class="chip">156</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=282s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:04:42</a></figcaption>
+    </figure>
+    <figure class="callout" id="s157" data-cite="yt:6StK9ttLNbQ@00:05:46-00:06:18">
+      <blockquote style="margin:0">I think the KL penalty stuff is becoming much messier as we go into agentic models and regularization is getting much harder.</blockquote>
+      <figcaption><span class="chip">157</span> <a href="https://www.youtube.com/watch?v=6StK9ttLNbQ&amp;t=346s">Post-Training Recipe Questions Answered | Q&amp;A 3, Post-Training Course (w/ The RLHF Book) @ 00:05:46</a></figcaption>
+    </figure>
+    <figure class="callout" id="s158" data-cite="yt:y04JhXpiI4s@00:07:17-00:07:47">
+      <blockquote style="margin:0">published in fall of 2022 before chatbt before trac um so this is an important one</blockquote>
+      <figcaption><span class="chip">158</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=437s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:07:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s159" data-cite="yt:y04JhXpiI4s@00:08:48-00:09:19">
+      <blockquote style="margin:0">they split their preference data in half and they trained two identical 50 billion parameter preference models, a train and a test.</blockquote>
+      <figcaption><span class="chip">159</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=528s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:08:48</a></figcaption>
+    </figure>
+    <figure class="callout" id="s160" data-cite="yt:y04JhXpiI4s@00:06:15-00:06:46">
+      <blockquote style="margin:0">So this slide says gaming it looks worse which I had put but gaming it is just different.</blockquote>
+      <figcaption><span class="chip">160</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=375s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:06:15</a></figcaption>
+    </figure>
+    <figure class="callout" id="s161" data-cite="yt:y04JhXpiI4s@00:05:43-00:06:15">
+      <blockquote style="margin:0">So essentially if you overfit um your model will become more biased. I think that's right. Someone correct me if that's wrong in the comments.</blockquote>
+      <figcaption><span class="chip">161</span> <a href="https://www.youtube.com/watch?v=y04JhXpiI4s&amp;t=343s">Over-Optimization and RLHF’s Bad Reputation | Post-Training Course, Lecture 9 @ 00:05:43</a></figcaption>
+    </figure>
+    <figure class="callout" id="s162" data-cite="yt:Y2tv5vuaxFs@00:35:17-00:35:48">
+      <blockquote style="margin:0">when there are imperfections in the data and the model you get over optimization and regularization is the tool to fix it</blockquote>
+      <figcaption><span class="chip">162</span> <a href="https://www.youtube.com/watch?v=Y2tv5vuaxFs&amp;t=2117s">Preference Data: The Most Opaque Part of Post-Training | Post-Training Course, Lecture 8 @ 00:35:17</a></figcaption>
+    </figure>
+    <figure class="callout" id="s163" data-cite="book@929727f29b6ef6d9d5d9d1611574a8e3fd1afa36:teach/course/lec4-chap6-p2.md#L1097-L1103">
+      <blockquote style="margin:0">When RL runs go wrong, it is often due to RL latching onto spurious signals rather than the intended reward. … **Reward hacking**: sycophancy, verbosity, over-refusal</blockquote>
+      <figcaption><span class="chip">163</span> <a href="https://github.com/natolambert/rlhf-book/blob/929727f29b6ef6d9d5d9d1611574a8e3fd1afa36/teach/course/lec4-chap6-p2.md?plain=1#L1097-L1103">Slides lec4-chap6-p2 § Forward pointer: Regularization &amp; over-optimization (L1097-L1103)</a></figcaption>
+    </figure>
+  </section>
+</main>
+<script>
+  // A toy over-optimization curve: proxy d, true quality d - c d^2, training settles at d = 1/(2 beta).
+  (() => {
+    const b = document.getElementById('oo-b'), svg = document.getElementById('oo-plot');
+    const DMAX = 6, YMIN = -2, YMAX = 6;
+    const X = d => 40 + d * (340 / DMAX), Y = v => 20 + (YMAX - v) * (150 / (YMAX - YMIN));
+    const show = () => {
+      const c = +document.querySelector('input[name=oo-rm]:checked').value, bv = +b.value;
+      document.getElementById('oo-b-o').textContent = bv === 0 ? '0 (no penalty)' : bv.toFixed(2);
+      const d = bv > 0 ? Math.min(DMAX, 1 / (2 * bv)) : DMAX;
+      const g = x => x - c * x * x, peak = 1 / (2 * c), best = g(Math.min(peak, DMAX));
+      let s = '<defs><clipPath id="oo-clip"><rect x="40" y="20" width="340" height="150"/></clipPath></defs>';
+      s += '<line class="ax" x1="40" y1="170" x2="380" y2="170"/><line class="ax" x1="40" y1="20" x2="40" y2="170"/>';
+      s += '<line class="zero" x1="40" y1="' + Y(0) + '" x2="380" y2="' + Y(0) + '"/>';
+      [YMAX, 0, YMIN].forEach(v => { s += '<text x="34" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>'; });
+      [0, 2, 4, 6].forEach(v => { s += '<text x="' + X(v) + '" y="185" text-anchor="middle">' + v + '</text>'; });
+      s += '<text x="210" y="198" text-anchor="middle">sqrt(KL)</text>';
+      const path = f => Array.from({ length: 61 }, (_, j) => (j ? 'L' : 'M') + X(j / 10).toFixed(1) + ' ' + Y(f(j / 10)).toFixed(1)).join(' ');
+      s += '<g clip-path="url(#oo-clip)"><path class="la" d="' + path(x => x) + '"/><path class="lb" d="' + path(g) + '"/></g>';
+      if (peak <= DMAX) s += '<circle class="pk" cx="' + X(peak) + '" cy="' + Y(best) + '" r="5"><title>true quality peaks at ' + peak.toFixed(2) + '</title></circle>';
+      s += '<line class="mk" x1="' + X(d) + '" y1="20" x2="' + X(d) + '" y2="170"/>';
+      s += '<circle class="ma" cx="' + X(d) + '" cy="' + Y(Math.min(YMAX, d)) + '" r="4"><title>proxy ' + d.toFixed(2) + '</title></circle>';
+      if (g(d) >= YMIN) s += '<circle class="mb" cx="' + X(d) + '" cy="' + Y(g(d)) + '" r="4"><title>true ' + g(d).toFixed(2) + '</title></circle>';
+      svg.innerHTML = s;
+      document.getElementById('oo-d').textContent = d.toFixed(2) + ' (KL ' + (d * d).toFixed(1) + ')' + (d === DMAX ? ', the end of the run' : '');
+      document.getElementById('oo-p').textContent = d.toFixed(2);
+      document.getElementById('oo-g').textContent = g(d).toFixed(2) + (g(d) >= 0 ? ' (' + Math.round(100 * g(d) / best) + '% of best)' : ' (worse than the starting model)');
+      document.getElementById('oo-best').textContent = best.toFixed(2) + ' at sqrt(KL) ' + peak.toFixed(2);
+      const msg = document.getElementById('oo-msg');
+      if (Math.abs(d - peak) < 0.15) msg.textContent = 'Near the peak: the penalty stops training about where true quality is highest.';
+      else if (d < peak) msg.textContent = 'Stopped early: true quality is still rising here. A smaller penalty would gain more.';
+      else msg.textContent = 'Over-optimized: the proxy is still climbing but true quality fell ' + (best - g(d)).toFixed(2) + ' from its peak.';
+    };
+    b.addEventListener('input', show);
+    document.querySelectorAll('input[name=oo-rm]').forEach(x => x.addEventListener('change', show));
+    show();
+  })();
+</script>
+<script type="module">
+  // The plain block stays in place if this CDN cannot be reached.
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const target = document.getElementById('code-excerpt');
+  const fallback = target.innerHTML;
+  try {
+    target.innerHTML = '';
+    new File({ theme: { light: 'github-light', dark: 'github-dark' }, themeType: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light', overflow: 'wrap' })
+      .render({ containerWrapper: target, file: { name: "code/policy_gradients/loss.py (L115-L133)", contents: "    def forward(self, log_probs: torch.Tensor, experience: Experience, **kwargs) -> torch.Tensor:\n        # Policy loss with clipping\n        ratio = (log_probs - experience.log_probs_old).exp()\n        unclipped_term = ratio * experience.advantages\n        clipped_term = (\n            ratio.clamp(1 - self.clip_eps_lo, 1 + self.clip_eps_hi) * experience.advantages\n        )\n        policy_loss = -torch.min(unclipped_term, clipped_term)\n\n        # Optional KL penalty\n        if self.beta:\n            kl_loss = get_approx_kl(\n                self.kl_estimator, log_probs, experience.log_probs_ref, experience.action_mask\n            )\n        else:\n            kl_loss = torch.tensor(0.0, device=log_probs.device, dtype=torch.float32)\n\n        loss = policy_loss + self.beta * kl_loss\n        loss = masked_mean(loss, mask=experience.action_mask, dim=-1).mean(dim=0)\n" } });
+  } catch (error) {
+    target.innerHTML = fallback;
+  }
+</script>
+</body>
+</html>
